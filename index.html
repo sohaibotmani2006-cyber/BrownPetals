@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brown Petals — Luxury Flower Shop Morocco</title>
+  
+  <!-- Font Families -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@200..800&display=swap" rel="stylesheet">
+  
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            luxuryBeige: '#F5E6D3',
+            softBeige: '#FAF3E7',
+            coffeeBrown: '#6F4E37',
+            luxuryGold: '#C8A96A',
+            darkBrown: '#3D2A1C',
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN (For Admin Dashboard Analytics) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Import Map for Firebase Bare Imports -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+        "firebase/analytics": "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"
+      }
+    }
+  </script>
+
+  <!-- Custom Styles for Premium Look & Custom Scrollbar -->
+  <style>
+    body {
+      background-color: #FAF3E7;
+      color: #3D2A1C;
+    }
+    .luxury-gradient {
+      background: linear-gradient(135deg, #FAF3E7 0%, #F5E6D3 100%);
+    }
+    .gold-gradient {
+      background: linear-gradient(135deg, #C8A96A 0%, #A8894A 100%);
+    }
+    .dark-gradient {
+      background: linear-gradient(135deg, #3D2A1C 0%, #6F4E37 100%);
+    }
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(200, 169, 106, 0.2);
+    }
+    .glassmorphism-dark {
+      background: rgba(61, 42, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(200, 169, 106, 0.15);
+    }
+    /* Smooth Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF3E7;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #C8A96A;
+      border-radius: 3px;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased overflow-x-hidden">
+
+  <!-- React Root -->
+  <div id="root"></div>
+
+  <!-- React & ReactDOM CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone CDN -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- data-type="module" ensures ES imports run directly and natively in the browser -->
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "firebase/app";
+    import { getAnalytics } from "firebase/analytics";
+    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment } from "firebase/firestore";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "firebase/auth";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB6hjHQ8qpp4yymMTtp1wYlQaV1dWlVeBs",
+      authDomain: "brown-petals.firebaseapp.com",
+      projectId: "brown-petals",
+      storageBucket: "brown-petals.firebasestorage.app",
+      messagingSenderId: "620510912091",
+      appId: "1:620510912091:web:49e1d751b624e6401ee97e",
+      measurementId: "G-08EQ2F0LLX"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const appId = "brown-petals";
+
+    // Fallback Image
+    const fallbackImage = "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&q=80&w=800";
+
+    // React Safe Inline Icon Component (Prevents manual DOM mutation clashes with React Virtual DOM)
+    const Icon = ({ name, className = "w-5 h-5" }) => {
+      const paths = {
+        search: <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        "shield-alert": (
+          <g>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <line x1="12" y1="8" x2="12" y2="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <line x1="12" y1="16" x2="12.01" y2="16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        "shopping-bag": (
+          <g>
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <line x1="3" y1="6" x2="21" y2="6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M16 10a4 4 0 01-8 0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        menu: <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        instagram: (
+          <g>
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        facebook: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        phone: <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        "message-circle": <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        x: <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        gem: (
+          <g>
+            <path d="M6 3h12l4 6-10 13L2 9z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M11 3L8 9l4 13 4-13-3-6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M2 9h20" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        truck: (
+          <g>
+            <rect x="1" y="3" width="15" height="13" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <circle cx="5.5" cy="18.5" r="2.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <circle cx="18.5" cy="18.5" r="2.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        gift: (
+          <g>
+            <rect x="3" y="8" width="18" height="14" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M12 5V22M3 12h18M12 5a3 3 0 10-3-3M12 5a3 3 0 113-3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        "arrow-down": <path d="M12 5v14M19 12l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />,
+        "shield-check": (
+          <g>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M9 11l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        lock: (
+          <g>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        banknote: (
+          <g>
+            <rect x="2" y="6" width="20" height="12" rx="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <circle cx="12" cy="12" r="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M6 12h.01M18 12h.01" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        "shopping-cart": (
+          <g>
+            <circle cx="9" cy="21" r="1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <circle cx="20" cy="21" r="1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        clock: (
+          <g>
+            <circle cx="12" cy="12" r="10" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        "check-circle-2": (
+          <g>
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        ),
+        flower: (
+          <g>
+            <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M12 5a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M12 11a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M5 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path d="M11 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </g>
+        )
+      };
+
+      return (
+        <svg
+          className={className}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          {paths[name] || null}
+        </svg>
+      );
+    };
+
+    function App() {
+      // Auth & Basic State
+      const [user, setUser] = useState(null);
+      const [isAdmin, setIsAdmin] = useState(false);
+      const [adminView, setAdminView] = useState("dashboard"); // "dashboard", "products", "orders", "reviews"
+      
+      // Nav State
+      const [currentPage, setCurrentPage] = useState("home"); // "home", "shop", "about", "contact", "admin"
+      const [cartOpen, setCartOpen] = useState(false);
+      const [searchQuery, setSearchQuery] = useState("");
+      const [selectedCategory, setSelectedCategory] = useState("All");
+
+      // Core Data States
+      const [products, setProducts] = useState([]);
+      const [orders, setOrders] = useState([]);
+      const [reviews, setReviews] = useState([]);
+      const [analytics, setAnalytics] = useState({
+        dailyRevenue: 0,
+        dailyOrders: 0,
+        topProducts: [],
+        topCategories: [],
+      });
+
+      // Cart Local State
+      const [cart, setCart] = useState(() => {
+        try {
+          const savedCart = localStorage.getItem("bp_cart");
+          return savedCart ? JSON.parse(savedCart) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      // Feedback / Form States
+      const [adminForm, setAdminForm] = useState({ username: "", password: "" });
+      const [adminError, setAdminError] = useState("");
+      const [addReviewForm, setAddReviewForm] = useState({ productId: "", customerName: "", rating: 5, comment: "" });
+      const [checkoutForm, setCheckoutForm] = useState({ customerName: "", phone: "", address: "" });
+      const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+      // Product Management Forms
+      const [productEditForm, setProductEditForm] = useState(null); // Null or Product Object to edit/add
+      const [isAddingNewProduct, setIsAddingNewProduct] = useState(false);
+
+      // Detail Modal
+      const [selectedProductDetails, setSelectedProductDetails] = useState(null);
+
+      // Alert Toast State
+      const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+      const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3500);
+      };
+
+      // 1. Authenticate user silently and safely (Rule 3)
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            await signInAnonymously(auth);
+          } catch (error) {
+            console.error("Auth initialization failed:", error);
+          }
+        };
+        initAuth();
+
+        const unsubscribe = onAuthStateChanged(auth, (usr) => {
+          if (usr) {
+            setUser(usr);
+          }
+        });
+        return () => unsubscribe();
+      }, []);
+
+      // Save Cart Persistence
+      useEffect(() => {
+        localStorage.setItem("bp_cart", JSON.stringify(cart));
+      }, [cart]);
+
+      // 2. Real-time Firebase Sync (Rule 1 & Rule 2 compliance)
+      useEffect(() => {
+        if (!user) return;
+
+        // Path definitions according to Strict Rule 1
+        const productsCol = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+        const reviewsCol = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
+        const analyticsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'analytics', 'live');
+
+        // Products Listener
+        const unsubProducts = onSnapshot(productsCol, (snapshot) => {
+          const prodList = [];
+          snapshot.forEach((doc) => {
+            prodList.push({ id: doc.id, ...doc.data() });
+          });
+          // Seed defaults if empty
+          if (prodList.length === 0) {
+            seedInitialProducts();
+          } else {
+            setProducts(prodList);
+          }
+        }, (error) => {
+          console.error("Products subscription error", error);
+        });
+
+        // Orders Listener
+        const unsubOrders = onSnapshot(ordersCol, (snapshot) => {
+          const ordList = [];
+          snapshot.forEach((doc) => {
+            ordList.push({ id: doc.id, ...doc.data() });
+          });
+          setOrders(ordList.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        }, (error) => {
+          console.error("Orders subscription error", error);
+        });
+
+        // Reviews Listener
+        const unsubReviews = onSnapshot(reviewsCol, (snapshot) => {
+          const revList = [];
+          snapshot.forEach((doc) => {
+            revList.push({ id: doc.id, ...doc.data() });
+          });
+          setReviews(revList.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        }, (error) => {
+          console.error("Reviews subscription error", error);
+        });
+
+        // Analytics Listener
+        const unsubAnalytics = onSnapshot(analyticsDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setAnalytics(docSnap.data());
+          } else {
+            // Seed base analytics
+            setDoc(analyticsDocRef, {
+              dailyRevenue: 18500,
+              dailyOrders: 24,
+              topProducts: ["Luxury Rose Bouquet", "Graceful Orchids Box"],
+              topCategories: ["Flowers bouquet", "Flower boxes"],
+              updatedAt: serverTimestamp()
+            });
+          }
+        }, (error) => {
+          console.error("Analytics subscription error", error);
+        });
+
+        return () => {
+          unsubProducts();
+          unsubOrders();
+          unsubReviews();
+          unsubAnalytics();
+        };
+      }, [user]);
+
+      // Seed Initial luxury Moroccan-flavored bouquets if collection is empty
+      const seedInitialProducts = async () => {
+        const initialProducts = [
+          {
+            name: "Royal Majorelle Bouquet",
+            price: 650,
+            discountPrice: 550,
+            imageURL: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&q=80&w=800",
+            description: "An elegant combination of deep blues, royal purple iris, and golden-tinged cream roses inspired by the Majorelle Garden in Marrakech.",
+            category: "Flowers bouquet",
+            isPromotion: true,
+            isBestSeller: true,
+            limitedStock: true,
+            stock: 8,
+            rating: 5.0,
+            reviewsCount: 42,
+            createdAt: new Date()
+          },
+          {
+            name: "Imperial Sahara Gold Box",
+            price: 1200,
+            discountPrice: 990,
+            imageURL: "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&q=80&w=800",
+            description: "Signature Premium Gold roses nestled in a bespoke velvet brown box. Represents ultimate sophistication.",
+            category: "Flower boxes",
+            isPromotion: true,
+            isBestSeller: true,
+            limitedStock: false,
+            stock: 15,
+            rating: 4.9,
+            reviewsCount: 88,
+            createdAt: new Date()
+          },
+          {
+            name: "Casablanca Pure Lily Dome",
+            price: 450,
+            discountPrice: 399,
+            imageURL: "https://images.unsplash.com/photo-1596436889106-be35e843f974?auto=format&fit=crop&q=80&w=800",
+            description: "Majestic snow-white Casablanca lilies paired with premium silver-dollar eucalyptus.",
+            category: "Flowers bouquet",
+            isPromotion: false,
+            isBestSeller: false,
+            limitedStock: true,
+            stock: 5,
+            rating: 4.8,
+            reviewsCount: 31,
+            createdAt: new Date()
+          },
+          {
+            name: "Atlas Rose & Peony Garland",
+            price: 1500,
+            discountPrice: 1350,
+            imageURL: "https://images.unsplash.com/photo-1587334206572-ee2624b49436?auto=format&fit=crop&q=80&w=800",
+            description: "Premium rich pink peonies and delicate spray roses curated carefully for premium romance and weddings.",
+            category: "Wedding flowers",
+            isPromotion: true,
+            isBestSeller: false,
+            limitedStock: false,
+            stock: 10,
+            rating: 5.0,
+            reviewsCount: 19,
+            createdAt: new Date()
+          },
+          {
+            name: "Moroccan Sunset Warmth Box",
+            price: 800,
+            discountPrice: 720,
+            imageURL: "https://images.unsplash.com/photo-1533608364117-198165cf86f8?auto=format&fit=crop&q=80&w=800",
+            description: "Stunning orange spray roses, amber-colored carnations, and dried pampas details mimicking Marrakech sunset vibes.",
+            category: "Flower boxes",
+            isPromotion: false,
+            isBestSeller: true,
+            limitedStock: true,
+            stock: 4,
+            rating: 4.9,
+            reviewsCount: 65,
+            createdAt: new Date()
+          },
+          {
+            name: "Amour Infini Luxury Box",
+            price: 950,
+            discountPrice: 850,
+            imageURL: "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=800",
+            description: "Deep burgundy luxury roses curated perfectly with heart details, spelling ultimate love and commitment.",
+            category: "Romantic flowers",
+            isPromotion: true,
+            isBestSeller: true,
+            limitedStock: true,
+            stock: 12,
+            rating: 5.0,
+            reviewsCount: 112,
+            createdAt: new Date()
+          }
+        ];
+
+        for (let prod of initialProducts) {
+          const docRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'products'));
+          await setDoc(docRef, prod);
+        }
+      };
+
+      // Cart Functions
+      const addToCart = (product) => {
+        const existing = cart.find(item => item.id === product.id);
+        if (existing) {
+          if (product.stock && existing.quantity >= product.stock) {
+            showToast(`Only ${product.stock} items left in stock`, "error");
+            return;
+          }
+          setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+        } else {
+          setCart([...cart, { ...product, quantity: 1 }]);
+        }
+        showToast(`"${product.name}" added to cart`);
+      };
+
+      const removeFromCart = (id) => {
+        setCart(cart.filter(item => item.id !== id));
+      };
+
+      const updateQuantity = (id, delta) => {
+        setCart(cart.map(item => {
+          if (item.id === id) {
+            const newQty = item.quantity + delta;
+            if (newQty <= 0) return null;
+            if (item.stock && newQty > item.stock) {
+              showToast(`Only ${item.stock} items left in stock`, "error");
+              return item;
+            }
+            return { ...item, quantity: newQty };
+          }
+          return item;
+        }).filter(Boolean));
+      };
+
+      const cartTotal = useMemo(() => {
+        return cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+      }, [cart]);
+
+      // Admin Authentication Logic
+      const handleAdminLogin = (e) => {
+        e.preventDefault();
+        if (adminForm.username === "SOHAIBDEV2006" && adminForm.password === "SOHAIBDEV2006") {
+          setIsAdmin(true);
+          setAdminError("");
+          showToast("Welcome Back, SOHAIBDEV2006! Admin mode active.");
+        } else {
+          setAdminError("Invalid credentials. Try again.");
+        }
+      };
+
+      // Review Management & Posting
+      const postReview = async (e) => {
+        e.preventDefault();
+        if (!addReviewForm.productId || !addReviewForm.customerName || !addReviewForm.comment) {
+          showToast("Please fill all fields to post a review", "error");
+          return;
+        }
+
+        try {
+          const reviewsCol = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
+          await addDoc(reviewsCol, {
+            productId: addReviewForm.productId,
+            customerName: addReviewForm.customerName,
+            rating: Number(addReviewForm.rating),
+            comment: addReviewForm.comment,
+            createdAt: new Date()
+          });
+
+          // Also adjust product rating count in client and firestore
+          const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', addReviewForm.productId);
+          await updateDoc(productRef, {
+            reviewsCount: increment(1),
+          });
+
+          showToast("Review published successfully!");
+          setAddReviewForm({ productId: "", customerName: "", rating: 5, comment: "" });
+        } catch (error) {
+          showToast("Could not post review", "error");
+        }
+      };
+
+      // Place Order (WhatsApp + DB save)
+      const handleCheckout = async (e) => {
+        e.preventDefault();
+        if (cart.length === 0) {
+          showToast("Your cart is empty", "error");
+          return;
+        }
+        if (!checkoutForm.customerName || !checkoutForm.phone || !checkoutForm.address) {
+          showToast("Please fill all checkout fields", "error");
+          return;
+        }
+
+        setCheckoutLoading(true);
+
+        try {
+          const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+          
+          const orderItems = cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.discountPrice || item.price
+          }));
+
+          const newOrder = {
+            items: orderItems,
+            total: cartTotal,
+            customerName: checkoutForm.customerName,
+            phone: checkoutForm.phone,
+            address: checkoutForm.address,
+            status: "pending",
+            paymentMethod: "WhatsApp",
+            createdAt: new Date()
+          };
+
+          // Save to Firestore
+          await addDoc(ordersCol, newOrder);
+
+          // Update Analytics Incrementally
+          const analyticsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'analytics', 'live');
+          await updateDoc(analyticsDocRef, {
+            dailyRevenue: increment(cartTotal),
+            dailyOrders: increment(1)
+          });
+
+          // Generate Elegant WhatsApp Message
+          let msg = `Hello Brown Petals 🌸\n\n`;
+          msg += `I want to place an order:\n`;
+          cart.forEach(item => {
+            msg += `- ${item.name} x${item.quantity} (${item.discountPrice || item.price} MAD)\n`;
+          });
+          msg += `\n*Total:* ${cartTotal} MAD\n\n`;
+          msg += `*Name:* ${checkoutForm.customerName}\n`;
+          msg += `*Address:* ${checkoutForm.address}\n`;
+          msg += `*Phone:* ${checkoutForm.phone}\n\n`;
+          msg += `Thank you! Elegant flowers are my passion.`;
+
+          const encodedMsg = encodeURIComponent(msg);
+          const whatsappURL = `https://wa.me/212777467304?text=${encodedMsg}`;
+
+          // Clear state & redirect
+          setCart([]);
+          setCheckoutForm({ customerName: "", phone: "", address: "" });
+          setCartOpen(false);
+          setCheckoutLoading(false);
+          showToast("Order placed! Opening WhatsApp to coordinate delivery.");
+
+          window.open(whatsappURL, "_blank");
+        } catch (err) {
+          console.error(err);
+          setCheckoutLoading(false);
+          showToast("Order processing failed. Please retry.", "error");
+        }
+      };
+
+      // Admin CRUD Tools
+      const handleSaveProduct = async (e) => {
+        e.preventDefault();
+        if (!productEditForm.name || !productEditForm.price || !productEditForm.imageURL) {
+          showToast("Name, price, and image URL are required.", "error");
+          return;
+        }
+
+        try {
+          const productsCol = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+          
+          const productPayload = {
+            name: productEditForm.name,
+            price: Number(productEditForm.price),
+            discountPrice: productEditForm.discountPrice ? Number(productEditForm.discountPrice) : null,
+            imageURL: productEditForm.imageURL,
+            description: productEditForm.description || "Premium fresh flowers from Brown Petals",
+            category: productEditForm.category || "Flowers bouquet",
+            isPromotion: !!productEditForm.isPromotion,
+            isBestSeller: !!productEditForm.isBestSeller,
+            limitedStock: !!productEditForm.limitedStock,
+            stock: Number(productEditForm.stock || 10),
+            rating: Number(productEditForm.rating || 5.0),
+            reviewsCount: Number(productEditForm.reviewsCount || 0),
+            createdAt: productEditForm.createdAt || new Date()
+          };
+
+          if (productEditForm.id) {
+            // Update existing
+            const docRef = doc(productsCol, productEditForm.id);
+            await updateDoc(docRef, productPayload);
+            showToast("Product updated successfully!");
+          } else {
+            // Create new
+            await addDoc(productsCol, productPayload);
+            showToast("Product created successfully!");
+          }
+
+          setProductEditForm(null);
+          setIsAddingNewProduct(false);
+        } catch (error) {
+          showToast("Failed to save product", "error");
+        }
+      };
+
+      const handleDeleteProduct = async (id) => {
+        if (confirm("Are you sure you want to delete this premium item?")) {
+          try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', id);
+            await deleteDoc(docRef);
+            showToast("Product deleted gracefully.");
+          } catch (err) {
+            showToast("Failed to delete.", "error");
+          }
+        }
+      };
+
+      const handleUpdateOrderStatus = async (orderId, newStatus) => {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', orderId);
+          await updateDoc(docRef, { status: newStatus });
+          showToast(`Order status updated to: ${newStatus}`);
+        } catch (err) {
+          showToast("Error updating status.", "error");
+        }
+      };
+
+      // Filters & Search logic
+      const filteredProducts = useMemo(() => {
+        return products.filter(product => {
+          const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
+          const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                product.description.toLowerCase().includes(searchQuery.toLowerCase());
+          return matchesCategory && matchesSearch;
+        });
+      }, [products, selectedCategory, searchQuery]);
+
+      // Categories list
+      const categories = ["All", "Flowers bouquet", "Flower boxes", "Wedding flowers", "Romantic flowers", "Premium floral gifting"];
+
+      // Render mini chart logic on Admin view mounting
+      useEffect(() => {
+        if (isAdmin && adminView === "dashboard" && orders.length >= 0) {
+          const ctx = document.getElementById('analyticsChart');
+          if (ctx) {
+            // Clean old instances
+            if (window.analyticsChartInstance) {
+              window.analyticsChartInstance.destroy();
+            }
+
+            // Group orders by recent 7 orders totals
+            const lastSevenOrders = orders.slice(0, 7).reverse();
+            const labels = lastSevenOrders.map((o, idx) => o.customerName || `Order #${idx+1}`);
+            const data = lastSevenOrders.map(o => o.total);
+
+            window.analyticsChartInstance = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: labels.length ? labels : ["No Orders Yet"],
+                datasets: [{
+                  label: 'Order Value (MAD)',
+                  data: data.length ? data : [0],
+                  backgroundColor: 'rgba(200, 169, 106, 0.75)',
+                  borderColor: 'rgba(111, 78, 55, 1)',
+                  borderWidth: 1.5,
+                  borderRadius: 6
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { display: false }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(61, 42, 28, 0.05)' }
+                  },
+                  x: {
+                    grid: { display: false }
+                  }
+                }
+              }
+            });
+          }
+        }
+      }, [isAdmin, adminView, orders]);
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between text-darkBrown selection:bg-luxuryGold selection:text-white">
+          
+          {/* TOAST SYSTEM */}
+          {toast.show && (
+            <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl transition-all transform translate-y-0 scale-100 border ${
+              toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-[#FAF3E7] border-luxuryGold text-darkBrown'
+            }`}>
+              <div className="w-2.5 h-2.5 rounded-full bg-luxuryGold animate-ping"></div>
+              <span className="font-medium text-sm tracking-wide">{toast.message}</span>
+            </div>
+          )}
+
+          {/* HEADER / NAVIGATION */}
+          <header className="sticky top-0 z-40 bg-[#FAF3E7]/90 backdrop-blur-md border-b border-luxuryGold/20 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+              
+              {/* Logo / Brand */}
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setCurrentPage("home"); setSelectedCategory("All"); }}>
+                <span className="text-3xl font-serif tracking-widest text-coffeeBrown flex items-center gap-1">
+                  BROWN <span className="text-luxuryGold font-light font-sans text-xl tracking-normal">PETALS</span>
+                </span>
+              </div>
+
+              {/* Navigation Menu (Desktop) */}
+              <nav className="hidden md:flex items-center gap-8 text-sm uppercase tracking-widest font-medium">
+                <button 
+                  onClick={() => { setCurrentPage("home"); setSelectedCategory("All"); }}
+                  className={`hover:text-luxuryGold transition ${currentPage === 'home' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}`}>
+                  Home
+                </button>
+                <button 
+                  onClick={() => { setCurrentPage("shop"); setSelectedCategory("All"); }}
+                  className={`hover:text-luxuryGold transition ${currentPage === 'shop' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}`}>
+                  La Boutique
+                </button>
+                <button 
+                  onClick={() => setCurrentPage("about")}
+                  className={`hover:text-luxuryGold transition ${currentPage === 'about' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}`}>
+                  Our Atelier
+                </button>
+                <button 
+                  onClick={() => setCurrentPage("contact")}
+                  className={`hover:text-luxuryGold transition ${currentPage === 'contact' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}`}>
+                  Contact & Delivery
+                </button>
+              </nav>
+
+              {/* Right Menu Icons */}
+              <div className="flex items-center gap-4">
+                
+                {/* Search Bar Simple (Desktop) */}
+                <div className="hidden lg:relative lg:block">
+                  <input
+                    type="text"
+                    placeholder="Search bouquet..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (currentPage !== "shop") setCurrentPage("shop");
+                    }}
+                    className="pl-9 pr-4 py-1.5 text-xs rounded-full border border-luxuryGold/30 bg-white/50 focus:outline-none focus:border-luxuryGold transition w-44"
+                  />
+                  <Icon name="search" className="w-3.5 h-3.5 absolute left-3 top-2.5 text-coffeeBrown/60" />
+                </div>
+
+                {/* Admin Quick Switch Icon */}
+                <button 
+                  onClick={() => setCurrentPage("admin")}
+                  className="p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/40"
+                  title="Admin Dashboard">
+                  <Icon name="shield-alert" className={`w-5.5 h-5.5 ${isAdmin ? 'text-luxuryGold' : 'text-coffeeBrown'}`} />
+                </button>
+
+                {/* Cart Trigger */}
+                <button 
+                  onClick={() => setCartOpen(true)}
+                  className="relative p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/40"
+                  title="Shopping Cart">
+                  <Icon name="shopping-bag" className="w-5.5 h-5.5 text-coffeeBrown" />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-luxuryGold text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-md">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    </span>
+                  )}
+                </button>
+
+                {/* Mobile Hamburger / Simple toggle to Shop */}
+                <button 
+                  onClick={() => {
+                    setCurrentPage(currentPage === "shop" ? "home" : "shop");
+                  }}
+                  className="md:hidden p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/40">
+                  <Icon name="menu" className="w-6 h-6 text-coffeeBrown" />
+                </button>
+
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN SPA CONTENT ROUTER */}
+          <main className="flex-grow">
+            {currentPage === "home" && renderHome()}
+            {currentPage === "shop" && renderShop()}
+            {currentPage === "about" && renderAbout()}
+            {currentPage === "contact" && renderContact()}
+            {currentPage === "admin" && renderAdmin()}
+          </main>
+
+          {/* FOOTER */}
+          <footer className="bg-darkBrown text-[#FAF3E7] pt-16 pb-8 border-t border-luxuryGold/30">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+              
+              <div className="space-y-4">
+                <h3 className="text-2xl font-serif tracking-widest text-luxuryGold">BROWN PETALS</h3>
+                <p className="text-sm text-softBeige/70 font-light leading-relaxed">
+                  Crafting emotions and luxury experiences through the finest handpicked roses and magnificent floral arrangements across Morocco.
+                </p>
+                <div className="flex gap-4 pt-2">
+                  <a href="https://instagram.com" target="_blank" className="hover:text-luxuryGold transition"><Icon name="instagram" className="w-5 h-5" /></a>
+                  <a href="https://facebook.com" target="_blank" className="hover:text-luxuryGold transition"><Icon name="facebook" className="w-5 h-5" /></a>
+                  <a href="https://wa.me/212777467304" target="_blank" className="hover:text-luxuryGold transition"><Icon name="phone" className="w-5 h-5" /></a>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Collections</h4>
+                <ul className="space-y-2 text-sm text-softBeige/60 font-light">
+                  {categories.slice(1).map(cat => (
+                    <li key={cat}>
+                      <button 
+                        onClick={() => { setSelectedCategory(cat); setCurrentPage("shop"); }}
+                        className="hover:text-luxuryGold transition text-left">
+                        {cat}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Atelier Boutique</h4>
+                <p className="text-sm text-softBeige/60 font-light leading-relaxed">
+                  Boulevard Al Massira Al Khadra, Casablanca, Morocco 🇲🇦<br />
+                  Signature deliveries to Rabat, Marrakech, Tangier, and Casablanca.
+                </p>
+                <p className="text-xs text-luxuryGold/80 mt-2">Open Daily: 9:00 AM — 10:00 PM</p>
+              </div>
+
+              <div>
+                <h4 className="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Join The Atelier</h4>
+                <p className="text-sm text-softBeige/60 font-light mb-4">
+                  Subscribe to receive private invitations to our luxury seasonal flower releases & VIP masterclasses.
+                </p>
+                <form onSubmit={(e) => { e.preventDefault(); showToast("Subscribed successfully! Welcome to Brown Petals VIP."); }} className="flex">
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="Your email address" 
+                    className="px-4 py-2 text-xs w-full bg-white/10 text-[#FAF3E7] border border-luxuryGold/40 focus:outline-none focus:border-luxuryGold rounded-l-lg"
+                  />
+                  <button type="submit" className="bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown px-4 py-2 text-xs font-bold uppercase rounded-r-lg transition">
+                    Join
+                  </button>
+                </form>
+              </div>
+
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-softBeige/40 font-light flex flex-col md:flex-row justify-between items-center gap-4">
+              <p>© 2026 Brown Petals Luxury Morocco. All Rights Reserved. Crafted with deep elegance.</p>
+              <div className="flex gap-6">
+                <a href="#" onClick={(e) => {e.preventDefault(); setCurrentPage("admin");}} className="hover:text-luxuryGold transition">Admin Portal</a>
+                <a href="#" className="hover:text-luxuryGold transition">Terms & Privacy</a>
+                <a href="#" className="hover:text-luxuryGold transition">Delivery Policies</a>
+              </div>
+            </div>
+          </footer>
+
+          {/* FLOATING WHATSAPP CHAT CTA */}
+          <a 
+            href="https://wa.me/212777467304" 
+            target="_blank" 
+            className="fixed bottom-6 left-6 z-40 bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110"
+            title="Chat with Royal Florist on WhatsApp">
+            <Icon name="message-circle" className="w-6 h-6" />
+          </a>
+
+          {/* STICKY BOTTOM CART FOR MOBILE (only if cart has items) */}
+          {cart.length > 0 && !cartOpen && (
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-luxuryGold/30 px-6 py-4 flex items-center justify-between shadow-xl">
+              <div className="flex items-center gap-2">
+                <Icon name="shopping-bag" className="text-luxuryGold w-5 h-5" />
+                <div>
+                  <p className="text-xs text-gray-500">Your Luxury Selection</p>
+                  <p className="text-sm font-bold text-darkBrown">{cartTotal} MAD</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCartOpen(true)}
+                className="bg-luxuryGold text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">
+                Order Now
+              </button>
+            </div>
+          )}
+
+          {/* CART SLIDE-OVER DRAWER */}
+          {cartOpen && (
+            <div className="fixed inset-0 z-50 overflow-hidden">
+              <div className="absolute inset-0 bg-black/65 backdrop-blur-xs transition-opacity" onClick={() => setCartOpen(false)}></div>
+              
+              <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+                <div className="w-screen max-w-md bg-[#FAF3E7] border-l border-luxuryGold/30 flex flex-col shadow-2xl">
+                  
+                  {/* Cart Header */}
+                  <div className="p-6 border-b border-luxuryGold/20 flex justify-between items-center bg-[#F5E6D3]/40">
+                    <h2 className="text-xl font-serif text-coffeeBrown flex items-center gap-2">
+                      <Icon name="shopping-bag" className="text-luxuryGold w-6 h-6" /> Your Selection
+                    </h2>
+                    <button onClick={() => setCartOpen(false)} className="p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/40">
+                      <Icon name="x" className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {/* Cart Items List */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {cart.length === 0 ? (
+                      <div className="text-center py-12 space-y-4">
+                        <Icon name="flower" className="w-16 h-16 text-luxuryGold/30 mx-auto animate-spin" style={{ animationDuration: '8s' }} />
+                        <p className="font-serif text-lg text-coffeeBrown">Your luxury cart is empty</p>
+                        <p className="text-xs text-gray-400">Discover our signature bouquets to bring beauty to your life.</p>
+                        <button 
+                          onClick={() => { setCartOpen(false); setCurrentPage("shop"); }}
+                          className="mt-4 px-6 py-2 bg-luxuryGold text-white text-xs font-bold uppercase tracking-wider rounded-lg">
+                          Browse Boutique
+                        </button>
+                      </div>
+                    ) : (
+                      cart.map(item => (
+                        <div key={item.id} className="flex gap-4 p-3 bg-white/60 rounded-xl border border-luxuryGold/10 hover:border-luxuryGold/35 transition">
+                          <img 
+                            src={item.imageURL || fallbackImage} 
+                            alt={item.name} 
+                            className="w-20 h-20 object-cover rounded-lg border border-luxuryGold/20"
+                            onError={(e) => { e.target.src = fallbackImage; }}
+                          />
+                          <div className="flex-1 flex flex-col justify-between">
+                            <div>
+                              <h4 className="font-serif text-sm text-darkBrown font-medium line-clamp-1">{item.name}</h4>
+                              <p className="text-xs text-luxuryGold font-semibold mt-0.5">{item.discountPrice || item.price} MAD</p>
+                            </div>
+
+                            <div className="flex justify-between items-center mt-2">
+                              {/* Quantity Control */}
+                              <div className="flex items-center border border-luxuryGold/30 rounded-lg overflow-hidden bg-white">
+                                <button onClick={() => updateQuantity(item.id, -1)} className="px-2.5 py-1 hover:bg-luxuryBeige/50 text-xs font-bold">-</button>
+                                <span className="px-3 text-xs font-semibold">{item.quantity}</span>
+                                <button onClick={() => updateQuantity(item.id, 1)} className="px-2.5 py-1 hover:bg-luxuryBeige/50 text-xs font-bold">+</button>
+                              </div>
+
+                              {/* Remove */}
+                              <button onClick={() => removeFromCart(item.id)} className="text-xs text-red-500 hover:text-red-700 transition font-medium">
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Checkout & Summary */}
+                  {cart.length > 0 && (
+                    <div className="p-6 border-t border-luxuryGold/30 bg-[#F5E6D3]/30 space-y-4">
+                      <div className="flex justify-between items-center text-sm font-medium">
+                        <span className="text-coffeeBrown">Subtotal</span>
+                        <span className="text-xl font-serif font-bold text-darkBrown">{cartTotal} MAD</span>
+                      </div>
+                      
+                      <div className="bg-white/70 p-4 rounded-xl border border-luxuryGold/20">
+                        <p className="text-xs font-semibold text-coffeeBrown mb-3 uppercase tracking-wider">Recipient Delivery Information</p>
+                        <form onSubmit={handleCheckout} className="space-y-3">
+                          <input 
+                            type="text" 
+                            required
+                            placeholder="Full Name" 
+                            value={checkoutForm.customerName}
+                            onChange={(e) => setCheckoutForm({...checkoutForm, customerName: e.target.value})}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white"
+                          />
+                          <input 
+                            type="tel" 
+                            required
+                            placeholder="Phone Number (WhatsApp compatible)" 
+                            value={checkoutForm.phone}
+                            onChange={(e) => setCheckoutForm({...checkoutForm, phone: e.target.value})}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white"
+                          />
+                          <textarea 
+                            required
+                            placeholder="Delivery Address (e.g., Boulevard Massira, Casablanca)" 
+                            value={checkoutForm.address}
+                            onChange={(e) => setCheckoutForm({...checkoutForm, address: e.target.value})}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white h-14 resize-none"
+                          />
+
+                          <button 
+                            type="submit" 
+                            disabled={checkoutLoading}
+                            className="w-full py-3 bg-darkBrown text-white hover:bg-coffeeBrown font-bold uppercase tracking-widest text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                            {checkoutLoading ? "Processing Masterpiece..." : "Order & Confirm via WhatsApp"}
+                            <Icon name="send" className="w-3.5 h-3.5" />
+                          </button>
+                        </form>
+                      </div>
+
+                      <p className="text-[10px] text-center text-gray-500 leading-relaxed">
+                        🛵 Deliveries are manually verified and completed inside premium cooling vehicles across Moroccan major regions.
+                      </p>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PRODUCT DETAIL MODAL */}
+          {selectedProductDetails && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/75 backdrop-blur-xs" onClick={() => setSelectedProductDetails(null)}></div>
+              
+              <div className="relative bg-[#FAF3E7] w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row">
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setSelectedProductDetails(null)} 
+                  className="absolute top-4 right-4 z-20 p-2 text-white bg-darkBrown/50 rounded-full hover:bg-luxuryGold transition">
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+
+                {/* Left Side: Product Image */}
+                <div className="md:w-1/2 h-64 md:h-auto relative">
+                  <img 
+                    src={selectedProductDetails.imageURL || fallbackImage} 
+                    alt={selectedProductDetails.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = fallbackImage; }}
+                  />
+                  {selectedProductDetails.isPromotion && (
+                    <span className="absolute top-4 left-4 bg-red-600 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                      Collection Sale
+                    </span>
+                  )}
+                </div>
+
+                {/* Right Side: Product Details & Reviews */}
+                <div className="md:w-1/2 p-8 flex flex-col justify-between overflow-y-auto max-h-[85vh] md:max-h-[600px]">
+                  
+                  <div>
+                    <span className="text-xs uppercase tracking-widest text-luxuryGold font-semibold mb-2 block">
+                      {selectedProductDetails.category}
+                    </span>
+                    <h2 className="text-2xl font-serif text-coffeeBrown mb-3">{selectedProductDetails.name}</h2>
+                    
+                    {/* Rating display */}
+                    <div className="flex items-center gap-1 mb-4">
+                      <div className="flex text-amber-500">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Icon 
+                            key={i} 
+                            name="star" 
+                            className={`w-4 h-4 fill-current ${i < Math.floor(selectedProductDetails.rating || 5) ? 'text-amber-500' : 'text-gray-300'}`} 
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-coffeeBrown font-medium ml-1">
+                        {selectedProductDetails.rating || 5.0} ({selectedProductDetails.reviewsCount || 0} reviews)
+                      </span>
+                    </div>
+
+                    {/* Price with discount */}
+                    <div className="flex items-baseline gap-3 mb-4">
+                      {selectedProductDetails.discountPrice ? (
+                        <>
+                          <span className="text-2xl font-serif font-bold text-darkBrown">{selectedProductDetails.discountPrice} MAD</span>
+                          <span className="text-sm line-through text-gray-400">{selectedProductDetails.price} MAD</span>
+                        </>
+                      ) : (
+                        <span className="text-2xl font-serif font-bold text-darkBrown">{selectedProductDetails.price} MAD</span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-gray-600 leading-relaxed font-light mb-6">
+                      {selectedProductDetails.description}
+                    </p>
+
+                    <div className="border-t border-luxuryGold/20 pt-4 mb-6">
+                      <p className="text-xs font-medium text-coffeeBrown mb-1">
+                        Stock Status: {selectedProductDetails.limitedStock ? (
+                          <span className="text-red-600 font-bold">Limited Reserve ({selectedProductDetails.stock || 2} remaining)</span>
+                        ) : (
+                          <span className="text-emerald-700 font-bold">In Stock</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Add to Cart & Reviews Section */}
+                  <div>
+                    <button 
+                      onClick={() => {
+                        addToCart(selectedProductDetails);
+                        setSelectedProductDetails(null);
+                      }}
+                      className="w-full py-3 bg-luxuryGold hover:bg-luxuryGold/90 text-white font-bold uppercase tracking-widest text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-2 mb-6">
+                      <Icon name="shopping-bag" className="w-4 h-4" /> Add Arrangement To Order
+                    </button>
+
+                    {/* Write a Quick Review */}
+                    <div className="bg-[#F5E6D3]/40 p-4 rounded-xl border border-luxuryGold/20">
+                      <p className="text-xs font-bold text-coffeeBrown uppercase tracking-wider mb-2">Leave a Love Note</p>
+                      <form onSubmit={postReview} className="space-y-2">
+                        <input 
+                          type="text" 
+                          placeholder="Your Name" 
+                          required
+                          value={addReviewForm.customerName}
+                          onChange={(e) => setAddReviewForm({
+                            ...addReviewForm, 
+                            customerName: e.target.value,
+                            productId: selectedProductDetails.id
+                          })}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-luxuryGold/20 bg-white"
+                        />
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">Rating:</span>
+                          <select 
+                            value={addReviewForm.rating}
+                            onChange={(e) => setAddReviewForm({...addReviewForm, rating: Number(e.target.value)})}
+                            className="text-xs bg-white rounded border border-luxuryGold/20 px-2 py-1">
+                            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                            <option value="4">⭐⭐⭐⭐ (4)</option>
+                            <option value="3">⭐⭐⭐ (3)</option>
+                            <option value="2">⭐⭐ (2)</option>
+                            <option value="1">⭐ (1)</option>
+                          </select>
+                        </div>
+                        <textarea 
+                          placeholder="What did you love about this piece?" 
+                          required
+                          value={addReviewForm.comment}
+                          onChange={(e) => setAddReviewForm({...addReviewForm, comment: e.target.value})}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-luxuryGold/20 bg-white h-12 resize-none"
+                        />
+                        <button type="submit" className="w-full bg-darkBrown text-white text-[10px] uppercase font-bold tracking-widest py-1.5 rounded-lg hover:bg-coffeeBrown transition">
+                          Publish Review
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Display Related Product Reviews */}
+                    <div className="mt-6">
+                      <p className="text-xs font-semibold text-coffeeBrown mb-2 uppercase tracking-wider">Atelier Reviews</p>
+                      <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
+                        {reviews.filter(r => r.productId === selectedProductDetails.id).length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">No reviews for this premium arrangement yet. Be the first to express admiration!</p>
+                        ) : (
+                          reviews.filter(r => r.productId === selectedProductDetails.id).map(r => (
+                            <div key={r.id} className="bg-white/40 p-3 rounded-lg border border-luxuryGold/10">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-semibold text-coffeeBrown">{r.customerName}</span>
+                                <span className="text-[10px] text-luxuryGold">{"★".repeat(r.rating || 5)}</span>
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed font-light">{r.comment}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+
+      // ==========================================
+      // PAGE RENDERERS
+      // ==========================================
+
+      // HOME PAGE VIEW
+      function renderHome() {
+        return (
+          <div className="space-y-24">
+            
+            {/* CINEMATIC HERO SECTION */}
+            <section className="relative h-[90vh] flex items-center justify-center bg-black overflow-hidden">
+              {/* Cinematic Video/Image Background */}
+              <div className="absolute inset-0">
+                <img 
+                  src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=1800" 
+                  alt="Premium Luxury Rose Garland background" 
+                  className="w-full h-full object-cover opacity-60 scale-105 animate-pulse"
+                  style={{ animationDuration: '10s' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#FAF3E7] via-transparent to-black/50"></div>
+              </div>
+
+              {/* Hero Content */}
+              <div className="relative max-w-5xl mx-auto px-4 text-center space-y-8 z-10 text-[#FAF3E7]">
+                <p className="text-xs md:text-sm uppercase tracking-[0.4em] font-semibold text-luxuryGold">
+                  The Premium Floral Atelier of Morocco
+                </p>
+                <h1 className="text-5xl md:text-8xl font-serif tracking-tight leading-none text-white drop-shadow-xl">
+                  Breathtaking Bouquets <br />
+                  <span className="italic font-light text-luxuryBeige">Crafted with Royalty</span>
+                </h1>
+                <p className="text-sm md:text-lg max-w-2xl mx-auto text-softBeige/80 font-light leading-relaxed">
+                  Brown Petals curate high-end seasonal compositions designed specifically for luxurious moments, exclusive weddings, and romantic grand gestures in Morocco.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
+                  <button 
+                    onClick={() => { setCurrentPage("shop"); setSelectedCategory("All"); }}
+                    className="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">
+                    Discover Private Shop
+                  </button>
+                  <button 
+                    onClick={() => setCurrentPage("about")}
+                    className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 border border-luxuryGold/50 text-[#FAF3E7] font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition backdrop-blur-md">
+                    Explore Our Atelier
+                  </button>
+                </div>
+              </div>
+
+              {/* Floating indicators */}
+              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-xs tracking-widest text-[#6F4E37]/70 flex flex-col items-center gap-2 animate-bounce">
+                <span>SCROLL DOWN</span>
+                <Icon name="arrow-down" className="w-4 h-4" />
+              </div>
+            </section>
+
+            {/* THREE CORE BRAND VALUES */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                
+                <div className="p-8 bg-white/50 rounded-2xl border border-luxuryGold/10 shadow-sm text-center space-y-4 hover:shadow-lg transition">
+                  <div className="w-12 h-12 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto mb-4">
+                    <Icon name="gem" className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-serif text-xl text-coffeeBrown font-semibold">Exquisite Quality Only</h3>
+                  <p className="text-xs text-gray-500 font-light leading-relaxed">
+                    We select imported premium Dutch stems and authentic Atlas mountain roses for peerless fragrance, color intensity, and lifespan.
+                  </p>
+                </div>
+
+                <div className="p-8 bg-white/50 rounded-2xl border border-luxuryGold/10 shadow-sm text-center space-y-4 hover:shadow-lg transition">
+                  <div className="w-12 h-12 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto mb-4">
+                    <Icon name="truck" className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-serif text-xl text-coffeeBrown font-semibold">Cooled White-Glove Delivery</h3>
+                  <p className="text-xs text-gray-500 font-light leading-relaxed">
+                    Delivered on-time using specialized cooling transport vehicles. We protect the freshness of your luxury stems down to the final meter.
+                  </p>
+                </div>
+
+                <div className="p-8 bg-white/50 rounded-2xl border border-luxuryGold/10 shadow-sm text-center space-y-4 hover:shadow-lg transition">
+                  <div className="w-12 h-12 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto mb-4">
+                    <Icon name="gift" className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-serif text-xl text-coffeeBrown font-semibold">The Custom Royal Wax Seal</h3>
+                  <p className="text-xs text-gray-500 font-light leading-relaxed">
+                    Every luxury box leaves our atelier with custom card envelopes secured with high-grade golden hot wax seal bearing our official insignia.
+                  </p>
+                </div>
+
+              </div>
+            </section>
+
+            {/* PROMOTIONS & LIMITED RELEASES (Live Data) */}
+            <section className="luxury-gradient py-16 border-y border-luxuryGold/25">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                
+                <div className="text-center space-y-2">
+                  <span className="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Sensational Offers</span>
+                  <h2 className="text-3xl md:text-4xl font-serif text-darkBrown">Exclusive In-Season Promos</h2>
+                  <div className="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {products.filter(p => p.isPromotion).slice(0, 3).map(product => (
+                    <div key={product.id} className="group relative bg-white rounded-3xl overflow-hidden border border-luxuryGold/15 shadow-md hover:shadow-2xl transition-all duration-300">
+                      
+                      {/* Image Frame */}
+                      <div className="h-80 overflow-hidden relative cursor-pointer" onClick={() => setSelectedProductDetails(product)}>
+                        <img 
+                          src={product.imageURL || fallbackImage} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                          onError={(e) => { e.target.src = fallbackImage; }}
+                        />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition"></div>
+                        
+                        {/* Tags / Badges */}
+                        <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+                          <span className="bg-red-600 text-[#FAF3E7] text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                            Promotion Item
+                          </span>
+                          {product.isBestSeller && (
+                            <span className="bg-[#3D2A1C] text-[#FAF3E7] text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                              Bestseller
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Content Details */}
+                      <div className="p-6 space-y-4">
+                        <span className="text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">
+                          {product.category}
+                        </span>
+                        
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-serif text-lg text-coffeeBrown group-hover:text-luxuryGold transition cursor-pointer" onClick={() => setSelectedProductDetails(product)}>
+                            {product.name}
+                          </h3>
+                        </div>
+
+                        {/* Ratings snippet */}
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-amber-500">{"★".repeat(Math.round(product.rating || 5))}</span>
+                          <span className="text-gray-400 font-light">({product.reviewsCount || 10})</span>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2">
+                          <div className="flex items-baseline gap-2">
+                            {product.discountPrice ? (
+                              <>
+                                <span className="text-lg font-bold text-darkBrown">{product.discountPrice} MAD</span>
+                                <span className="text-xs line-through text-gray-400">{product.price} MAD</span>
+                              </>
+                            ) : (
+                              <span className="text-lg font-bold text-darkBrown">{product.price} MAD</span>
+                            )}
+                          </div>
+
+                          <button 
+                            onClick={() => addToCart(product)}
+                            className="px-4 py-2 bg-luxuryGold hover:bg-darkBrown text-[#FAF3E7] text-[10px] uppercase font-bold tracking-widest rounded-lg transition">
+                            Add To Cart
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            </section>
+
+            {/* CURATED MASTERPIECES (Live Data Best Sellers) */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+              
+              <div className="text-center space-y-2">
+                <span className="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Our Signatures</span>
+                <h2 className="text-3xl md:text-4xl font-serif text-darkBrown">Most Demanded Works</h2>
+                <div className="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {products.filter(p => p.isBestSeller).slice(0, 3).map(product => (
+                  <div key={product.id} className="group relative bg-white rounded-3xl overflow-hidden border border-luxuryGold/15 shadow-md hover:shadow-2xl transition-all duration-300">
+                    
+                    {/* Image Frame */}
+                    <div className="h-80 overflow-hidden relative cursor-pointer" onClick={() => setSelectedProductDetails(product)}>
+                      <img 
+                        src={product.imageURL || fallbackImage} 
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                        onError={(e) => { e.target.src = fallbackImage; }}
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition"></div>
+                      
+                      {/* Tags / Badges */}
+                      <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+                        <span className="bg-luxuryGold text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                          Bestseller
+                        </span>
+                        {product.limitedStock && (
+                          <span className="bg-red-700 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                            Limited stock
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content Details */}
+                    <div className="p-6 space-y-4">
+                      <span className="text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">
+                        {product.category}
+                      </span>
+                      
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-serif text-lg text-coffeeBrown group-hover:text-luxuryGold transition cursor-pointer" onClick={() => setSelectedProductDetails(product)}>
+                          {product.name}
+                        </h3>
+                      </div>
+
+                      {/* Ratings snippet */}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-amber-500">{"★".repeat(Math.round(product.rating || 5))}</span>
+                        <span className="text-gray-400 font-light">({product.reviewsCount || 10})</span>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2">
+                        <div className="flex items-baseline gap-2">
+                          {product.discountPrice ? (
+                            <>
+                              <span className="text-lg font-bold text-darkBrown">{product.discountPrice} MAD</span>
+                              <span className="text-xs line-through text-gray-400">{product.price} MAD</span>
+                            </>
+                          ) : (
+                            <span className="text-lg font-bold text-darkBrown">{product.price} MAD</span>
+                          )}
+                        </div>
+
+                        <button 
+                          onClick={() => addToCart(product)}
+                          className="px-4 py-2 bg-luxuryGold hover:bg-darkBrown text-[#FAF3E7] text-[10px] uppercase font-bold tracking-widest rounded-lg transition">
+                          Add To Cart
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center pt-6">
+                <button 
+                  onClick={() => { setCurrentPage("shop"); setSelectedCategory("All"); }}
+                  className="px-8 py-3.5 bg-darkBrown hover:bg-coffeeBrown text-white text-xs font-bold uppercase tracking-widest rounded-xl transition">
+                  Browse All Signature Collections
+                </button>
+              </div>
+
+            </section>
+
+            {/* HIGH-END TESTIMONIALS & REAL REVIEWS SLIDER */}
+            <section className="bg-coffeeBrown text-white py-20 border-t border-luxuryGold/20">
+              <div className="max-w-4xl mx-auto px-4 text-center space-y-8">
+                <p className="text-xs uppercase tracking-[0.3em] text-luxuryGold font-bold">Client Reverie</p>
+                <h2 className="text-3xl md:text-5xl font-serif">What Moroccan Royalty & VIPs Say</h2>
+                
+                {/* Carousel-like dynamic reviews from Firestore */}
+                <div className="space-y-6">
+                  {reviews.length === 0 ? (
+                    <div className="space-y-4 italic text-softBeige/70 font-light">
+                      <p className="text-lg">"The Royal Majorelle arrangement was spectacular. It redefined elegance in our Casablanca reception hall. Prompt and gorgeous."</p>
+                      <p className="text-xs text-luxuryGold font-bold">— Lalla Kenza, Rabat</p>
+                    </div>
+                  ) : (
+                    reviews.slice(0, 3).map((review, idx) => (
+                      <div key={review.id} className="space-y-4 border-b border-white/5 pb-6">
+                        <p className="text-lg italic font-serif text-softBeige">"{review.comment}"</p>
+                        <div className="flex justify-center items-center gap-2">
+                          <span className="text-xs text-luxuryGold font-bold">— {review.customerName}</span>
+                          <span className="text-xs text-amber-400">{"★".repeat(review.rating || 5)}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* INSTAGRAM LIVE LOOKBOOK STYLE GRID */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-16">
+              <div className="text-center">
+                <h2 className="text-3xl font-serif text-coffeeBrown">Our Living Lookbook</h2>
+                <p className="text-xs text-luxuryGold tracking-widest uppercase mt-2">Follow our creations @BrownPetalsLuxury</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="h-64 rounded-2xl overflow-hidden shadow-md group relative">
+                  <img src="https://images.unsplash.com/photo-1550950158-d0d960dff51b?auto=format&fit=crop&q=80&w=800" alt="Instagram lookbook" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Icon name="instagram" className="text-white w-8 h-8" /></div>
+                </div>
+                <div className="h-64 rounded-2xl overflow-hidden shadow-md group relative">
+                  <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=800" alt="Instagram lookbook" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Icon name="instagram" className="text-white w-8 h-8" /></div>
+                </div>
+                <div className="h-64 rounded-2xl overflow-hidden shadow-md group relative">
+                  <img src="https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&q=80&w=800" alt="Instagram lookbook" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Icon name="instagram" className="text-white w-8 h-8" /></div>
+                </div>
+                <div className="h-64 rounded-2xl overflow-hidden shadow-md group relative">
+                  <img src="https://images.unsplash.com/photo-1562240020-ce31ccb0fa7d?auto=format&fit=crop&q=80&w=800" alt="Instagram lookbook" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><Icon name="instagram" className="text-white w-8 h-8" /></div>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        );
+      }
+
+      // SHOP / LA BOUTIQUE PAGE
+      function renderShop() {
+        return (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+            
+            {/* Page Header */}
+            <div className="text-center space-y-2">
+              <span className="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Exquisite Compositions</span>
+              <h1 className="text-4xl md:text-5xl font-serif text-darkBrown">Explore Signature Collections</h1>
+              <p className="text-xs text-gray-500 max-w-lg mx-auto leading-relaxed">
+                Handcrafted arrangements paired with imported wrapping and signature packaging. Selected meticulously for premium taste.
+              </p>
+            </div>
+
+            {/* Layout containing Sidebar & Products Grid */}
+            <div className="flex flex-col lg:flex-row gap-8">
+              
+              {/* Sidebar Filters */}
+              <aside className="lg:w-1/4 space-y-8">
+                
+                {/* Search in Shop */}
+                <div className="bg-white/70 p-6 rounded-2xl border border-luxuryGold/20 space-y-3">
+                  <h3 className="font-serif text-md text-coffeeBrown font-semibold uppercase tracking-wider">Search Bouquet</h3>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Keyword..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white"
+                    />
+                    <Icon name="search" className="w-4 h-4 absolute left-3 top-2.5 text-coffeeBrown/60" />
+                  </div>
+                </div>
+
+                {/* Categories Selective Filter */}
+                <div className="bg-white/70 p-6 rounded-2xl border border-luxuryGold/20 space-y-4">
+                  <h3 className="font-serif text-md text-coffeeBrown font-semibold uppercase tracking-wider">Categories</h3>
+                  <div className="flex flex-col gap-2">
+                    {categories.map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`text-left px-3 py-2 rounded-xl text-xs font-medium tracking-wide transition ${
+                          selectedCategory === cat 
+                            ? 'bg-luxuryGold text-white font-bold' 
+                            : 'text-coffeeBrown hover:bg-luxuryBeige/40'
+                        }`}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Secure checkout assurance banner */}
+                <div className="bg-darkBrown text-softBeige p-6 rounded-2xl border border-luxuryGold/30 text-center space-y-3">
+                  <Icon name="shield-check" className="w-8 h-8 text-luxuryGold mx-auto" />
+                  <h4 className="font-serif text-sm">Secure Artisan Care</h4>
+                  <p className="text-[10px] text-softBeige/70 leading-relaxed font-light">
+                    Every transaction ends directly via private encrypted chat on WhatsApp to guarantee exquisite shipping details, timing, and custom personalization.
+                  </p>
+                </div>
+
+              </aside>
+
+              {/* Products Grid Output */}
+              <div className="lg:w-3/4 space-y-6">
+                
+                {/* Count Header */}
+                <div className="flex justify-between items-center bg-[#F5E6D3]/40 px-6 py-4 rounded-2xl border border-luxuryGold/25">
+                  <p className="text-xs text-coffeeBrown">
+                    Displaying <strong className="font-bold text-darkBrown">{filteredProducts.length}</strong> luxurious arrangement{filteredProducts.length !== 1 && 's'}
+                  </p>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-luxuryGold bg-white px-3 py-1 rounded-full shadow-xs">
+                    Morocco Wide
+                  </span>
+                </div>
+
+                {filteredProducts.length === 0 ? (
+                  <div className="text-center py-20 space-y-4">
+                    <Icon name="flower" className="w-16 h-16 text-luxuryGold/30 mx-auto animate-spin" style={{ animationDuration: '6s' }} />
+                    <h3 className="text-xl font-serif text-coffeeBrown">No Arrangement Found</h3>
+                    <p className="text-xs text-gray-400">Please try adjusting your filters or search keywords.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredProducts.map(product => (
+                      <div key={product.id} className="group relative bg-white rounded-3xl overflow-hidden border border-luxuryGold/15 shadow-md hover:shadow-2xl transition-all duration-300">
+                        
+                        {/* Image Frame */}
+                        <div className="h-72 overflow-hidden relative cursor-pointer" onClick={() => setSelectedProductDetails(product)}>
+                          <img 
+                            src={product.imageURL || fallbackImage} 
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                            onError={(e) => { e.target.src = fallbackImage; }}
+                          />
+                          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition"></div>
+                          
+                          {/* Tags / Badges */}
+                          <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+                            {product.isPromotion && (
+                              <span className="bg-red-600 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                                Promo
+                              </span>
+                            )}
+                            {product.isBestSeller && (
+                              <span className="bg-[#3D2A1C] text-[#FAF3E7] text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                                Bestseller
+                              </span>
+                            )}
+                            {product.limitedStock && (
+                              <span className="bg-amber-600 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">
+                                Limited Stock
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Content Details */}
+                        <div className="p-6 space-y-4">
+                          <span className="text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">
+                            {product.category}
+                          </span>
+                          
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-serif text-lg text-coffeeBrown group-hover:text-luxuryGold transition cursor-pointer" onClick={() => setSelectedProductDetails(product)}>
+                              {product.name}
+                            </h3>
+                          </div>
+
+                          {/* Ratings snippet */}
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-amber-500">{"★".repeat(Math.round(product.rating || 5))}</span>
+                            <span className="text-gray-400 font-light">({product.reviewsCount || 10})</span>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2">
+                            <div className="flex items-baseline gap-2">
+                              {product.discountPrice ? (
+                                <>
+                                  <span className="text-lg font-bold text-darkBrown">{product.discountPrice} MAD</span>
+                                  <span className="text-xs line-through text-gray-400">{product.price} MAD</span>
+                                </>
+                              ) : (
+                                <span className="text-lg font-bold text-darkBrown">{product.price} MAD</span>
+                              )}
+                            </div>
+
+                            <button 
+                              onClick={() => addToCart(product)}
+                              className="px-4 py-2 bg-luxuryGold hover:bg-darkBrown text-[#FAF3E7] text-[10px] uppercase font-bold tracking-widest rounded-lg transition">
+                              Add To Cart
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+        );
+      }
+
+      // ABOUT OUR ATELIER PAGE
+      function renderAbout() {
+        return (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+            <div className="text-center space-y-3">
+              <span className="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Moroccan Artistry</span>
+              <h1 className="text-4xl md:text-5xl font-serif text-darkBrown">Our Floral Legacy</h1>
+              <p className="text-sm text-gray-500 max-w-xl mx-auto font-light leading-relaxed">
+                How a passion for royal Moroccan aesthetics combined with Dutch botanical perfection created Morocco's most trusted luxury flower atelier.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/30">
+                <img src="https://images.unsplash.com/photo-1596436889106-be35e843f974?auto=format&fit=crop&q=80&w=800" alt="Inside the luxury flower shop" className="w-full h-[450px] object-cover" />
+              </div>
+              <div className="space-y-6">
+                <h3 className="font-serif text-2xl text-coffeeBrown">The Passion for Living Masterpieces</h3>
+                <p className="text-sm text-gray-600 leading-relaxed font-light">
+                  Brown Petals was established in Morocco with a single mission: to redefine floral gift-giving. Instead of quick, uninspired plastic-wrapped bouquets, we approached floral configuration as fine-art sculpting.
+                </p>
+                <p className="text-sm text-gray-600 leading-relaxed font-light">
+                  Our flagship Casablanca atelier selects only elite grade-A roses from specialized, organic partner growers. Each petal is monitored for optimal water holding and aesthetic thickness before reaching your vase.
+                </p>
+                <div className="border-l-4 border-luxuryGold pl-4 py-2 italic text-coffeeBrown font-serif text-sm">
+                  "Flowers are not just decorative; they hold and broadcast the unspoken secrets of our affection and royal commitments."
+                </div>
+              </div>
+            </div>
+
+            {/* Our Signature Golden Seal details */}
+            <div className="bg-[#F5E6D3]/40 p-8 rounded-3xl border border-luxuryGold/20 text-center space-y-6 max-w-3xl mx-auto">
+              <h3 className="font-serif text-2xl text-coffeeBrown">The Gold Hot-Wax Envelope Insignia</h3>
+              <p className="text-xs text-gray-600 leading-relaxed font-light">
+                To keep your custom messaging confidential, every personal note written by our clients is printed on high-density ivory paper, placed inside a chocolate-brown envelope, and sealed with 24-karat gold-tinted hot wax bearing the classic Brown Petals stamp.
+              </p>
+              <div className="inline-block px-4 py-2 bg-luxuryGold text-white text-[10px] uppercase font-bold tracking-widest rounded-lg">
+                Exclusive Signature Standard
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // CONTACT & DELIVERY PAGE
+      function renderContact() {
+        return (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+            
+            <div className="text-center space-y-3">
+              <span className="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Seamless Service</span>
+              <h1 className="text-4xl md:text-5xl font-serif text-darkBrown">Delivery & Consultations</h1>
+              <p className="text-sm text-gray-500 max-w-xl mx-auto font-light leading-relaxed">
+                Connect directly with our master florists or check shipping parameters across the kingdom.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              
+              {/* Delivery regions */}
+              <div className="bg-white/70 p-8 rounded-3xl border border-luxuryGold/20 space-y-6">
+                <h3 className="font-serif text-xl text-coffeeBrown">Standard Shipping Regions</h3>
+                <ul className="space-y-4 text-xs font-light text-gray-600">
+                  <li className="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span className="font-semibold text-darkBrown">Casablanca & Environs</span>
+                    <span className="text-emerald-700 font-bold">Same-Day Available (Free)</span>
+                  </li>
+                  <li className="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span className="font-semibold text-darkBrown">Rabat & Salé</span>
+                    <span className="text-emerald-700 font-bold">Same-Day / Next-Day (50 MAD)</span>
+                  </li>
+                  <li className="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span className="font-semibold text-darkBrown">Marrakech & Tangier</span>
+                    <span className="text-luxuryGold font-bold">Next-Day Shipping (100 MAD)</span>
+                  </li>
+                  <li className="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span className="font-semibold text-darkBrown">Fes & Meknes</span>
+                    <span className="text-luxuryGold font-bold">Next-Day Shipping (100 MAD)</span>
+                  </li>
+                </ul>
+                <p className="text-[10px] text-gray-400 leading-relaxed font-light">
+                  ⚠️ Special wedding arrangements or massive architectural installations require a 72-hour scheduling window directly with the Head Designer.
+                </p>
+              </div>
+
+              {/* Direct Inquiry form */}
+              <div className="bg-white/70 p-8 rounded-3xl border border-luxuryGold/20 space-y-6">
+                <h3 className="font-serif text-xl text-coffeeBrown">Direct Masterpiece Enquiry</h3>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  showToast("Message recorded! Our Royal Florist will reach out via phone shortly.");
+                }} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Your Full Name</label>
+                    <input type="text" required className="w-full px-4 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">WhatsApp Phone Number</label>
+                    <input type="tel" required className="w-full px-4 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Special request detail (e.g., 100 Royal Roses)</label>
+                    <textarea required className="w-full px-4 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold h-20 resize-none"></textarea>
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-darkBrown text-white hover:bg-coffeeBrown font-bold uppercase tracking-widest text-xs rounded-xl transition">
+                    Submit Private Request
+                  </button>
+                </form>
+              </div>
+
+            </div>
+
+          </div>
+        );
+      }
+
+      // ADMIN DASHBOARD & SECURE PORTAL
+      function renderAdmin() {
+        if (!isAdmin) {
+          return (
+            <div className="max-w-md mx-auto px-4 py-24 space-y-6">
+              
+              <div className="text-center space-y-3">
+                <Icon name="lock" className="w-12 h-12 text-luxuryGold mx-auto" />
+                <h1 className="text-3xl font-serif text-darkBrown">Secure Atelier Admin</h1>
+                <p className="text-xs text-gray-400">Provide luxury login credentials to access real-time stock, orders, and business metrics.</p>
+              </div>
+
+              <form onSubmit={handleAdminLogin} className="bg-white p-8 rounded-3xl border border-luxuryGold/30 shadow-2xl space-y-4">
+                {adminError && <p className="text-xs text-red-600 font-bold text-center">{adminError}</p>}
+                
+                <div>
+                  <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Username</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={adminForm.username}
+                    onChange={(e) => setAdminForm({...adminForm, username: e.target.value})}
+                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Password</label>
+                  <input 
+                    type="password" 
+                    required 
+                    value={adminForm.password}
+                    onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                    className="w-full px-4 py-2.5 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold" 
+                  />
+                </div>
+
+                <button type="submit" className="w-full py-3 bg-darkBrown hover:bg-coffeeBrown text-white font-bold uppercase tracking-widest text-xs rounded-xl transition">
+                  Authenticate Securely
+                </button>
+              </form>
+
+            </div>
+          );
+        }
+
+        return (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+            
+            {/* Admin Header banner */}
+            <div className="bg-[#3D2A1C] text-white p-8 rounded-3xl border border-luxuryGold/40 flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl">
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">VIP Workspace</span>
+                <h1 className="text-3xl font-serif">Royal Command Center</h1>
+                <p className="text-xs text-softBeige/70">Real-time store adjustments, order fulfillment, and premium telemetry.</p>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => { setIsAdmin(false); showToast("Admin credentials purged successfully."); }}
+                  className="px-4 py-2 bg-white/15 hover:bg-white/20 text-[#FAF3E7] text-xs font-bold uppercase tracking-widest rounded-lg border border-luxuryGold/40 transition">
+                  Logout Securely
+                </button>
+                <button 
+                  onClick={() => {
+                    setProductEditForm({
+                      name: "",
+                      price: 350,
+                      discountPrice: null,
+                      imageURL: "",
+                      description: "",
+                      category: "Flowers bouquet",
+                      isPromotion: false,
+                      isBestSeller: false,
+                      limitedStock: false,
+                      stock: 10,
+                      rating: 5.0,
+                      reviewsCount: 0
+                    });
+                    setIsAddingNewProduct(true);
+                  }}
+                  className="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown text-xs font-bold uppercase tracking-widest rounded-lg transition">
+                  Add New Arrangement
+                </button>
+              </div>
+            </div>
+
+            {/* Admin Navigation tabs */}
+            <div className="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
+              {["dashboard", "products", "orders", "reviews"].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setAdminView(tab)}
+                  className={`px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
+                    adminView === tab 
+                      ? 'bg-luxuryGold text-white shadow-md' 
+                      : 'text-coffeeBrown hover:bg-[#F5E6D3]/40'
+                  }`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* DYNAMIC VIEW CONTAINER */}
+            <div>
+              {adminView === "dashboard" && renderAdminDashboard()}
+              {adminView === "products" && renderAdminProducts()}
+              {adminView === "orders" && renderAdminOrders()}
+              {adminView === "reviews" && renderAdminReviews()}
+            </div>
+
+            {/* PRODUCT ADD/EDIT MODAL OVERLAY */}
+            {(isAddingNewProduct || productEditForm) && productEditForm !== null && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-xs" onClick={() => { setProductEditForm(null); setIsAddingNewProduct(false); }}></div>
+                
+                <form onSubmit={handleSaveProduct} className="relative bg-[#FAF3E7] w-full max-w-lg rounded-3xl p-8 border border-luxuryGold/30 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto">
+                  
+                  <h3 className="font-serif text-2xl text-coffeeBrown mb-4 border-b border-luxuryGold/20 pb-2">
+                    {productEditForm.id ? "Edit Luxury Piece" : "Add New Living Masterpiece"}
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Product Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={productEditForm.name} 
+                        onChange={(e) => setProductEditForm({...productEditForm, name: e.target.value})}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Category</label>
+                      <select 
+                        value={productEditForm.category} 
+                        onChange={(e) => setProductEditForm({...productEditForm, category: e.target.value})}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold">
+                        {categories.slice(1).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Standard Price (MAD)</label>
+                      <input 
+                        type="number" 
+                        required 
+                        value={productEditForm.price} 
+                        onChange={(e) => setProductEditForm({...productEditForm, price: Number(e.target.value)})}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Discount Price (MAD, Optional)</label>
+                      <input 
+                        type="number" 
+                        value={productEditForm.discountPrice || ""} 
+                        onChange={(e) => setProductEditForm({...productEditForm, discountPrice: e.target.value ? Number(e.target.value) : null})}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Premium High-Res Image URL</label>
+                    <input 
+                      type="url" 
+                      required 
+                      value={productEditForm.imageURL} 
+                      onChange={(e) => setProductEditForm({...productEditForm, imageURL: e.target.value})}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Artisan Composition Description</label>
+                    <textarea 
+                      required 
+                      value={productEditForm.description} 
+                      onChange={(e) => setProductEditForm({...productEditForm, description: e.target.value})}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold h-20 resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Real-time Stock Quantity</label>
+                      <input 
+                        type="number" 
+                        required 
+                        value={productEditForm.stock} 
+                        onChange={(e) => setProductEditForm({...productEditForm, stock: Number(e.target.value)})}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Rating Value</label>
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        required 
+                        value={productEditForm.rating} 
+                        onChange={(e) => setProductEditForm({...productEditForm, rating: Number(e.target.value)})}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white focus:outline-none focus:border-luxuryGold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Badges Toggles */}
+                  <div className="bg-[#F5E6D3]/40 p-4 rounded-xl border border-luxuryGold/15 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <label className="flex items-center gap-2 text-xs cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={!!productEditForm.isPromotion} 
+                        onChange={(e) => setProductEditForm({...productEditForm, isPromotion: e.target.checked})}
+                        className="rounded border-luxuryGold/30 text-luxuryGold focus:ring-luxuryGold"
+                      />
+                      <span>On Promotion</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={!!productEditForm.isBestSeller} 
+                        onChange={(e) => setProductEditForm({...productEditForm, isBestSeller: e.target.checked})}
+                        className="rounded border-luxuryGold/30 text-luxuryGold focus:ring-luxuryGold"
+                      />
+                      <span>Bestseller</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={!!productEditForm.limitedStock} 
+                        onChange={(e) => setProductEditForm({...productEditForm, limitedStock: e.target.checked})}
+                        className="rounded border-luxuryGold/30 text-luxuryGold focus:ring-luxuryGold"
+                      />
+                      <span>Limited Stock</span>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-3 justify-end pt-4 border-t border-luxuryGold/20">
+                    <button 
+                      type="button" 
+                      onClick={() => { setProductEditForm(null); setIsAddingNewProduct(false); }}
+                      className="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold tracking-widest border border-gray-200 hover:bg-gray-50 transition">
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-6 py-2 bg-[#3D2A1C] hover:bg-coffeeBrown text-white rounded-lg text-xs uppercase font-bold tracking-widest transition">
+                      {productEditForm.id ? "Apply Changes" : "Forge Masterpiece"}
+                    </button>
+                  </div>
+
+                </form>
+              </div>
+            )}
+
+          </div>
+        );
+      }
+
+      // SUB-ADMIN VIEW: DASHBOARD & TELEMETRY CHARTS
+      function renderAdminDashboard() {
+        const totalSales = orders.reduce((sum, o) => sum + o.total, 0);
+        const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+        const processedOrdersCount = orders.filter(o => o.status === 'processed' || o.status === 'completed').length;
+
+        return (
+          <div className="space-y-8 animate-fade-in">
+            
+            {/* Quick telemetry indicators */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              
+              <div className="bg-white/70 p-6 rounded-2xl border border-luxuryGold/20 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-luxuryBeige flex items-center justify-center text-luxuryGold">
+                  <Icon name="banknote" className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Gross Revenue</p>
+                  <p className="text-2xl font-serif font-bold text-darkBrown">{totalSales} MAD</p>
+                </div>
+              </div>
+
+              <div className="bg-white/70 p-6 rounded-2xl border border-luxuryGold/20 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-luxuryBeige flex items-center justify-center text-luxuryGold">
+                  <Icon name="shopping-cart" className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">All-time Orders</p>
+                  <p className="text-2xl font-serif font-bold text-darkBrown">{orders.length}</p>
+                </div>
+              </div>
+
+              <div className="bg-white/70 p-6 rounded-2xl border border-luxuryGold/20 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-700">
+                  <Icon name="clock" className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Orders</p>
+                  <p className="text-2xl font-serif font-bold text-red-700">{pendingOrdersCount}</p>
+                </div>
+              </div>
+
+              <div className="bg-white/70 p-6 rounded-2xl border border-luxuryGold/20 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <Icon name="check-circle-2" className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Fulfilled Orders</p>
+                  <p className="text-2xl font-serif font-bold text-emerald-700">{processedOrdersCount}</p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Dynamic Graph & Best Seller Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Graphical representation (ChartJS block) */}
+              <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-luxuryGold/20">
+                <h3 className="font-serif text-lg text-coffeeBrown mb-4 uppercase tracking-wider">Live Order Volumes</h3>
+                <div className="h-64 relative">
+                  <canvas id="analyticsChart"></canvas>
+                </div>
+              </div>
+
+              {/* Top Products live representation */}
+              <div className="bg-[#F5E6D3]/40 p-6 rounded-2xl border border-luxuryGold/20 space-y-4">
+                <h3 className="font-serif text-lg text-coffeeBrown uppercase tracking-wider">Top Compositions</h3>
+                <div className="space-y-3">
+                  {products.slice(0, 4).map((product, idx) => (
+                    <div key={product.id} className="flex items-center gap-3 border-b border-luxuryGold/10 pb-2">
+                      <span className="text-sm font-bold text-luxuryGold">#{idx+1}</span>
+                      <img src={product.imageURL || fallbackImage} alt={product.name} className="w-10 h-10 object-cover rounded-lg" onError={(e) => { e.target.src = fallbackImage; }} />
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-darkBrown line-clamp-1">{product.name}</p>
+                        <p className="text-[10px] text-gray-400">{product.category}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        );
+      }
+
+      // SUB-ADMIN VIEW: PRODUCTS MANAGEMENT
+      function renderAdminProducts() {
+        return (
+          <div className="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="font-serif text-xl text-coffeeBrown">Product Database ({products.length})</h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-darkBrown">
+                <thead className="bg-[#FAF3E7] uppercase font-bold tracking-wider border-b border-luxuryGold/25">
+                  <tr>
+                    <th className="p-4">Composition</th>
+                    <th className="p-4">Category</th>
+                    <th className="p-4">Price</th>
+                    <th className="p-4">Stock</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {products.map(product => (
+                    <tr key={product.id} className="hover:bg-[#FAF3E7]/50 transition">
+                      <td className="p-4 flex items-center gap-3">
+                        <img 
+                          src={product.imageURL || fallbackImage} 
+                          alt={product.name} 
+                          className="w-12 h-12 object-cover rounded-lg border border-luxuryGold/20" 
+                          onError={(e) => { e.target.src = fallbackImage; }}
+                        />
+                        <div>
+                          <p className="font-semibold">{product.name}</p>
+                          <p className="text-[10px] text-gray-400">Rating: {product.rating} ★</p>
+                        </div>
+                      </td>
+                      <td className="p-4">{product.category}</td>
+                      <td className="p-4">
+                        {product.discountPrice ? (
+                          <span>{product.discountPrice} <span className="line-through text-gray-400">{product.price}</span> MAD</span>
+                        ) : (
+                          <span>{product.price} MAD</span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          product.stock <= 3 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {product.stock} items left
+                        </span>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button 
+                          type="button"
+                          onClick={() => setProductEditForm(product)}
+                          className="px-3 py-1 bg-luxuryGold hover:bg-darkBrown text-white rounded transition text-[10px] uppercase font-bold tracking-wider">
+                          Edit
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition text-[10px] uppercase font-bold tracking-wider">
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      // SUB-ADMIN VIEW: ORDERS TELEMETRY
+      function renderAdminOrders() {
+        return (
+          <div className="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+            <h3 className="font-serif text-xl text-coffeeBrown">Incoming Luxury Commissions ({orders.length})</h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-darkBrown">
+                <thead className="bg-[#FAF3E7] uppercase font-bold tracking-wider border-b border-luxuryGold/25">
+                  <tr>
+                    <th className="p-4">Client Detail</th>
+                    <th className="p-4">Item Compositions</th>
+                    <th className="p-4">Total Price</th>
+                    <th className="p-4">Status Flag</th>
+                    <th className="p-4 text-right">Fulfillment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {orders.map(order => (
+                    <tr key={order.id} className="hover:bg-[#FAF3E7]/50 transition">
+                      <td className="p-4">
+                        <p className="font-bold text-sm text-coffeeBrown">{order.customerName}</p>
+                        <p className="text-[10px] text-gray-500">{order.phone} — {order.address}</p>
+                      </td>
+                      <td className="p-4 space-y-1">
+                        {order.items?.map((item, i) => (
+                          <p key={i} className="text-[11px] text-gray-600">
+                            • {item.name} <strong className="font-semibold text-darkBrown">x{item.quantity}</strong>
+                          </p>
+                        ))}
+                      </td>
+                      <td className="p-4 font-serif font-bold text-darkBrown">{order.total} MAD</td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                          order.status === 'pending' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {order.status || 'pending'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        {order.status === 'pending' ? (
+                          <button 
+                            type="button"
+                            onClick={() => handleUpdateOrderStatus(order.id, 'processed')}
+                            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] uppercase font-bold tracking-widest rounded-lg transition">
+                            Fulfill Order
+                          </button>
+                        ) : (
+                          <button 
+                            type="button"
+                            onClick={() => handleUpdateOrderStatus(order.id, 'pending')}
+                            className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] uppercase font-bold tracking-widest rounded-lg transition">
+                            Set Pending
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      // SUB-ADMIN VIEW: REVIEWS MODERATION
+      function renderAdminReviews() {
+        return (
+          <div className="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+            <h3 className="font-serif text-xl text-coffeeBrown">Live Reviews & Sentiments ({reviews.length})</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {reviews.map(review => {
+                const productObj = products.find(p => p.id === review.productId);
+                return (
+                  <div key={review.id} className="p-4 bg-[#FAF3E7] rounded-2xl border border-luxuryGold/20 flex flex-col justify-between gap-4">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-serif text-md text-coffeeBrown">{review.customerName}</h4>
+                          {productObj && <p className="text-[10px] text-luxuryGold font-medium">on product: {productObj.name}</p>}
+                        </div>
+                        <span className="text-xs text-amber-500">{"★".repeat(review.rating || 5)}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2 font-light leading-relaxed">"{review.comment}"</p>
+                    </div>
+
+                    <div className="text-right">
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          if (confirm("Delete review permanently?")) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reviews', review.id));
+                            showToast("Review deleted gracefully.");
+                          }
+                        }}
+                        className="text-[10px] uppercase font-bold text-red-600 hover:underline">
+                        Remove Review
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+    }
+
+    // Render into root element
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
