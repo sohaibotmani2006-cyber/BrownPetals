@@ -908,9 +908,9 @@
         `;
       }
 
-      let lookbookGrid = this.lookbook.map(item => `
+      let lookbookGrid = this.lookbook.sort((a,b) => (a.order || 0) - (b.order || 0)).map(item => `
         <a href="${item.postURL}" target="_blank" rel="noopener noreferrer" class="h-64 rounded-2xl overflow-hidden shadow-md group relative block">
-          <img src="${item.imageURL || fallbackImage}" alt="Instagram lookbook" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-premium">
+          <img src="${item.imageURL || fallbackImage}" alt="Instagram lookbook" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-premium" onerror="this.src='${fallbackImage}'">
           <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
             ${getIconSvg('instagram', 'text-white w-8 h-8')}
           </div>
@@ -1323,7 +1323,7 @@
 
           <!-- Dynamic Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "products", "orders", "reviews", "delivery", "categories", "telegram-settings"].map(tab => `
+            ${["dashboard", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-white shadow-md' : 'text-coffeeBrown hover:bg-[#F5E6D3]/40'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -1371,6 +1371,8 @@
         this.renderAdminDelivery(container);
       } else if (this.adminView === "categories") {
         this.renderAdminCategories(container);
+      } else if (this.adminView === "lookbook") {
+        this.renderAdminLookbook(container);
       } else if (this.adminView === "telegram-settings") {
         this.renderAdminTelegramSettings(container);
       }
@@ -1936,6 +1938,122 @@
           triggerConfirm("Delete Category", "Remove from database?", async () => {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', id));
             showToast("Category deleted.");
+          });
+        };
+      });
+    };
+
+    store.renderAdminLookbook = function(container) {
+      container.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="flex justify-between items-center border-b pb-4">
+            <h3 class="font-serif text-xl text-coffeeBrown">Our Living Lookbook Management</h3>
+            <button id="add-lookbook-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown text-xs font-bold uppercase rounded-lg transition">+ Add Lookbook Post</button>
+          </div>
+
+          <div id="lookbook-form-mount" class="hidden bg-[#FAF3E7] p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ${this.lookbook.map(item => `
+              <div class="bg-[#FAF3E7]/40 rounded-2xl border border-luxuryGold/15 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                <div class="h-44 overflow-hidden relative">
+                  <img src="${item.imageURL || fallbackImage}" class="w-full h-full object-cover" onerror="this.src='${fallbackImage}'">
+                </div>
+                <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div class="space-y-1">
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Post Details</p>
+                    <a href="${item.postURL}" target="_blank" rel="noopener noreferrer" class="text-xs text-luxuryGold font-medium hover:underline block truncate">${item.postURL || 'No Link Attached'}</a>
+                  </div>
+                  <div class="flex justify-between items-center pt-2 border-t border-luxuryGold/10">
+                    <span class="text-[10px] text-coffeeBrown">Order: <strong>${item.order || 0}</strong></span>
+                    <div class="space-x-2">
+                      <button class="edit-lookbook-btn text-[10px] uppercase font-bold text-luxuryGold hover:text-darkBrown transition" data-id="${item.id}">Edit</button>
+                      <button class="delete-lookbook-btn text-[10px] uppercase font-bold text-red-600 hover:text-red-800 transition" data-id="${item.id}">Delete</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+            ${this.lookbook.length === 0 ? `
+              <p class="col-span-full text-center text-xs text-gray-400 italic py-8">No lookbook posts configured.</p>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      const formMount = document.getElementById("lookbook-form-mount");
+
+      const showLookbookForm = (lookbookItem = null) => {
+        formMount.innerHTML = `
+          <h4 class="font-serif text-md text-coffeeBrown">${lookbookItem ? 'Edit Lookbook Post' : 'Add Lookbook Post'}</h4>
+          <form id="lookbook-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Image URL</label>
+                <input type="url" name="imageURL" required value="${lookbookItem ? lookbookItem.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Instagram Post URL</label>
+                <input type="url" name="postURL" required value="${lookbookItem ? lookbookItem.postURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Display Order</label>
+              <input type="number" name="order" required value="${lookbookItem ? lookbookItem.order : 0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+            </div>
+            <div class="flex gap-3 justify-end">
+              <button type="button" id="lookbook-form-cancel" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold border border-gray-200">Cancel</button>
+              <button type="submit" class="px-6 py-2 bg-darkBrown text-white rounded-lg text-xs uppercase font-bold">Save</button>
+            </div>
+          </form>
+        `;
+        formMount.classList.remove("hidden");
+
+        document.getElementById("lookbook-form-cancel").onclick = () => formMount.classList.add("hidden");
+
+        document.getElementById("lookbook-form").onsubmit = async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const payload = {
+            imageURL: form.imageURL.value,
+            postURL: form.postURL.value,
+            order: Number(form.order.value),
+            updatedAt: new Date()
+          };
+
+          try {
+            const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
+            if (lookbookItem) {
+              await updateDoc(doc(collectionRef, lookbookItem.id), payload);
+              showToast("Lookbook Post Updated.");
+            } else {
+              payload.createdAt = new Date();
+              await addDoc(collectionRef, payload);
+              showToast("Lookbook Post Added.");
+            }
+            formMount.classList.add("hidden");
+          } catch (err) {
+            showToast("Failed to write Lookbook post.", "error");
+          }
+        };
+      };
+
+      document.getElementById("add-lookbook-btn").onclick = () => showLookbookForm();
+
+      document.querySelectorAll(".edit-lookbook-btn").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const item = store.lookbook.find(i => i.id === id);
+          if (item) showLookbookForm(item);
+        };
+      });
+
+      document.querySelectorAll(".delete-lookbook-btn").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          triggerConfirm("Delete Lookbook Post", "Remove this post from the public lookbook?", async () => {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lookbook', id));
+            showToast("Lookbook post deleted.");
           });
         };
       });
