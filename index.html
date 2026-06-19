@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brown Petals — Luxury Flower Shop Morocco</title>
+  <title>SOVANEX — Luxury Watches & Accessories</title>
   
   <!-- DNS Preconnect to reduce load latency -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,18 +17,17 @@
   <!-- Font Families -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@200..800&display=swap" rel="stylesheet">
   
-  <!-- Precompiled Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            luxuryBeige: '#F5E6D3',
-            softBeige: '#FAF3E7',
-            coffeeBrown: '#6F4E37',
-            luxuryGold: '#C8A96A',
-            darkBrown: '#3D2A1C',
+            luxuryBeige: '#141414', // Obsidian charcoal for cards
+            softBeige: '#0A0A0A',   // Absolute deep black for background
+            coffeeBrown: '#FFFFFF',  // White for readable text
+            luxuryGold: 'var(--accent-color)',   // Dynamically shifts (Gold, Pink, or Blue)
+            darkBrown: '#000000',    // Pure black
           },
           fontFamily: {
             serif: ['"Playfair Display"', 'serif'],
@@ -51,23 +50,45 @@
   </script>
 
   <style>
+    :root {
+      --accent-color: #D4AF37; /* Default Luxury Gold */
+      --accent-glow: rgba(212, 175, 55, 0.15);
+      --accent-hover: #AA821C;
+    }
+    body.theme-girls {
+      --accent-color: #FF66B2; /* Hot Luxury Rose Pink */
+      --accent-glow: rgba(255, 102, 178, 0.15);
+      --accent-hover: #E0529C;
+    }
+    body.theme-boys {
+      --accent-color: #1E90FF; /* High-end Cobalt Blue */
+      --accent-glow: rgba(30, 144, 255, 0.15);
+      --accent-hover: #1573D4;
+    }
     body {
-      background-color: #FAF3E7;
-      color: #3D2A1C;
+      background-color: #0A0A0A;
+      color: #E5E5E5;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
     .luxury-gradient {
-      background: linear-gradient(135deg, #FAF3E7 0%, #F5E6D3 100%);
+      background: linear-gradient(135deg, #0A0A0A 0%, #141414 100%);
+    }
+    .pink-luxury-gradient {
+      background: linear-gradient(135deg, #121212 0%, #181818 50%, #FF66B2 100%);
+    }
+    .blue-luxury-gradient {
+      background: linear-gradient(135deg, #121212 0%, #0A0A0A 50%, #1E90FF 100%);
     }
     .gold-gradient {
-      background: linear-gradient(135deg, #C8A96A 0%, #A8894A 100%);
+      background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
     }
     .dark-gradient {
-      background: linear-gradient(135deg, #3D2A1C 0%, #6F4E37 100%);
+      background: linear-gradient(135deg, #141414 0%, #000000 100%);
     }
     .glassmorphism {
-      background: rgba(255, 255, 255, 0.7);
+      background: rgba(10, 10, 10, 0.85);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(200, 169, 106, 0.2);
+      border: 1px solid rgba(212, 175, 55, 0.2);
     }
     .transition-premium {
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -76,10 +97,10 @@
       width: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #FAF3E7;
+      background: #0A0A0A;
     }
     ::-webkit-scrollbar-thumb {
-      background: #C8A96A;
+      background: var(--accent-color);
       border-radius: 3px;
     }
     .hide-scrollbar::-webkit-scrollbar {
@@ -94,18 +115,18 @@
 <body class="font-sans antialiased overflow-x-hidden">
 
   <!-- INSTANT LUXURY PRELOADER -->
-  <div id="app-preloader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #FAF3E7; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease-out, visibility 0.4s ease-out; font-family: 'Playfair Display', serif;">
-    <div style="font-size: 28px; letter-spacing: 0.3em; color: #3D2A1C; margin-bottom: 24px; font-weight: 400; text-align: center;">
-      BROWN <span style="color: #C8A96A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 300; letter-spacing: 0.1em; display: inline-block; margin-left: 4px;">PETALS</span>
+  <div id="app-preloader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0A0A0A; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease-out, visibility 0.4s ease-out; font-family: 'Playfair Display', serif;">
+    <div style="font-size: 32px; letter-spacing: 0.3em; color: #FFFFFF; margin-bottom: 24px; font-weight: 700; text-align: center;">
+      SOV<span style="color: var(--accent-color); font-family: 'Plus Jakarta Sans', sans-serif;">ANEX</span>
     </div>
-    <div style="width: 32px; height: 32px; border: 1.5px solid rgba(200, 169, 106, 0.15); border-top: 1.5px solid #C8A96A; border-radius: 50%; animation: preloader-spin 0.9s linear infinite;"></div>
-    <div style="margin-top: 20px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; color: #6F4E37; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 400;">
-      Atelier Compositions Loading...
+    <div style="width: 32px; height: 32px; border: 1.5px solid var(--accent-glow); border-top: 1.5px solid var(--accent-color); border-radius: 50%; animation: preloader-spin 0.9s linear infinite;"></div>
+    <div style="margin-top: 20px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; color: var(--accent-color); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 400;">
+      Loading Atelier Collections...
     </div>
   </div>
 
   <!-- Main Application Wrapper -->
-  <div id="app-wrapper" class="min-h-screen flex flex-col justify-between text-darkBrown selection:bg-luxuryGold selection:text-white">
+  <div id="app-wrapper" class="min-h-screen flex flex-col justify-between text-white selection:bg-luxuryGold selection:text-black">
     
     <!-- Application Header Mount -->
     <div id="app-header"></div>
@@ -114,7 +135,7 @@
     <main id="app-content" class="flex-grow"></main>
 
     <!-- Application Footer Mount -->
-    <footer id="app-footer" class="bg-darkBrown text-[#FAF3E7] pt-16 pb-8 border-t border-luxuryGold/30"></footer>
+    <footer id="app-footer" class="bg-black text-[#FAF3E7] pt-16 pb-8 border-t border-luxuryGold/30"></footer>
 
   </div>
 
@@ -124,13 +145,16 @@
     <div id="cart-drawer-overlay" class="hidden fixed inset-0 z-50 overflow-hidden"></div>
     
     <!-- Lightbox Modal Container -->
-    <div id="lightbox-container" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"></div>
+    <div id="lightbox-container" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md"></div>
     
     <!-- Product Detail Modal Container -->
     <div id="product-detail-container" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"></div>
     
     <!-- Custom Confirmation Modal Container -->
     <div id="confirm-modal-container" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"></div>
+
+    <!-- Firebase Diagnostic Popup Helper -->
+    <div id="diagnostic-modal-container" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4"></div>
 
     <!-- Floating Global Actions -->
     <div id="floating-actions"></div>
@@ -142,9 +166,12 @@
   <script type="module">
     import { initializeApp } from "firebase/app";
     import { getFirestore, collection, doc, setDoc, addDoc, getDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment } from "firebase/firestore";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "firebase/auth";
 
-    // Production Firebase configuration
+    // Global application namespace
+    const appId = "sovanex";
+    
+    // Explicit Firebase credentials
     const firebaseConfig = {
       apiKey: "AIzaSyB6hjHQ8qpp4yymMTtp1wYlQaV1dWlVeBs",
       authDomain: "brown-petals.firebaseapp.com",
@@ -159,19 +186,17 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const appId = "brown-petals";
-    const fallbackImage = "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&q=80&w=800";
-    const WHATSAPP_LINK = "https://wa.me/212777467304";
+    const fallbackImage = "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=800";
 
-    // Unified Reactive Application Store
     const store = {
       user: null,
       isAdmin: false,
-      adminView: "dashboard", // dashboard, products, orders, reviews, delivery, categories
-      currentPage: "home", // home, shop, contact, admin
+      adminView: "dashboard", 
+      currentPage: "home", 
       cartOpen: false,
       searchQuery: "",
-      selectedCategory: "All",
+      selectedGenderSection: "All", // "All", "GIRLS STORE", "MAN STORE"
+      selectedCategory: "All", // "All", "Watches", "Accessories"
       products: [],
       orders: [],
       reviews: [],
@@ -182,8 +207,18 @@
       loadingProducts: true,
       loadingCategories: true,
       checkoutLoading: false,
+
+      // Admin settings dynamically customized
+      settings: {
+        logoURL: "",
+        websiteDescription: "An authentic luxury destination for high-end watches and premium handcrafted accessories designed to royal standards.",
+        tagline: "The Sovereign Atelier of Royal Watches & Accoutrements",
+        instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+        facebookURL: "https://facebook.com",
+        whatsappHotline: "+212 777467304",
+        emailCoordinate: "brownpetals24@gmail.com"
+      },
       
-      // Temporary state to preserve inputs during cart re-renders
       checkoutFormValues: {
         customerName: "",
         phone: "",
@@ -191,15 +226,13 @@
         address: ""
       },
       
-      // Telegram Bot Settings Cache
       telegramSettings: {
         botToken: "",
         chatId: "",
         botEnabled: true,
-        template: "🌸 *New Order Received!* 🌸\n\n*Order ID:* {orderId}\n*Customer Name:* {name}\n*Phone:* {phone}\n*City:* {city}\n*Address:* {address}\n\n*Items Purchased:*\n{products}\n\n*Subtotal:* {subtotal} MAD\n*Delivery Fee:* {delivery} MAD\n*Total Amount:* {total} MAD\n\n_Thank you!_"
+        template: "🌸 *New Order Received (SOVANEX)!* 🌸\n\n*Order ID:* {orderId}\n*Customer Name:* {name}\n*Phone:* {phone}\n*City:* {city}\n*Address:* {address}\n\n*Items Purchased:*\n{products}\n\n*Subtotal:* {subtotal} MAD\n*Delivery Fee:* {delivery} MAD\n*Total Amount:* {total} MAD\n\n_Thank you for choosing SOVANEX!_"
       },
 
-      // Navigation Actions
       setPage(page) {
         this.currentPage = page;
         if (page === "admin" && this.isAdmin) {
@@ -215,7 +248,28 @@
       }
     };
 
-    // SVG Icon Directory Helper
+    // Helper to normalize gender strings for seamless Firestore backward-compatibility
+    const getNormalizedGender = (gender) => {
+      if (!gender) return "All";
+      const g = gender.toUpperCase().trim();
+      if (g === "LES FILLES" || g === "GIRLS STORE") return "GIRLS STORE";
+      if (g === "LES HOMMES" || g === "BOYS STORE" || g === "MAN STORE" || g === "MAN" || g === "BOY") return "MAN STORE";
+      return "All";
+    };
+
+    // Dynamic theme controller mapped directly to CSS classes on HTML document body
+    store.updateTheme = function() {
+      const body = document.body;
+      body.classList.remove('theme-girls', 'theme-boys');
+      
+      // Theme transitions solely within store selections
+      if (this.selectedGenderSection === "GIRLS STORE") {
+        body.classList.add('theme-girls');
+      } else if (this.selectedGenderSection === "MAN STORE") {
+        body.classList.add('theme-boys');
+      }
+    };
+
     const getIconSvg = (name, customClass = "w-5 h-5") => {
       const paths = {
         search: `<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />`,
@@ -237,35 +291,37 @@
         banknote: `<g><rect x="2" y="6" width="20" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><circle cx="12" cy="12" r="2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M6 12h.01M18 12h.01" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`,
         "shopping-cart": `<g><circle cx="9" cy="21" r="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><circle cx="20" cy="21" r="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`,
         clock: `<g><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`,
-        flower: `<g><circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M12 5a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M12 11a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M5 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M11 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`
+        flower: `<g><circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M12 5a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M12 11a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M5 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M11 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`,
+        female: `<g><circle cx="12" cy="9" r="4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M12 13v8M9 17h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></g>`,
+        male: `<g><circle cx="10" cy="14" r="4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M18 6l-4.5 4.5M14 6h4v4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></g>`
       };
       return `<svg class="${customClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${paths[name] || ''}</svg>`;
     };
 
     store.createSkeletonCardMarkup = function() {
       return `
-        <div class="animate-pulse bg-white rounded-3xl overflow-hidden border border-luxuryGold/10 shadow-md p-6 space-y-4">
-          <div class="h-80 bg-[#F5E6D3]/30 rounded-2xl"></div>
+        <div class="animate-pulse bg-[#141414] rounded-3xl overflow-hidden border border-luxuryGold/10 shadow-md p-6 space-y-4">
+          <div class="h-80 bg-luxuryGold/5 rounded-2xl"></div>
           <div class="space-y-2">
-            <div class="h-3 bg-luxuryGold/20 rounded w-1/4 animate-pulse"></div>
-            <div class="h-5 bg-coffeeBrown/15 rounded w-3/4 animate-pulse"></div>
-            <div class="h-3 bg-gray-200/50 rounded w-1/2 animate-pulse"></div>
+            <div class="h-3 bg-luxuryGold/20 rounded w-1/4"></div>
+            <div class="h-5 bg-white/10 rounded w-3/4"></div>
+            <div class="h-3 bg-white/5 rounded w-1/2"></div>
           </div>
           <div class="grid grid-cols-2 gap-2 pt-2">
-            <div class="h-8 bg-luxuryBeige/40 rounded-lg animate-pulse"></div>
-            <div class="h-8 bg-coffeeBrown/10 rounded-lg animate-pulse"></div>
+            <div class="h-8 bg-luxuryGold/10 rounded-lg"></div>
+            <div class="h-8 bg-white/5 rounded-lg"></div>
           </div>
         </div>
       `;
     };
 
-    // Feedback and Utility Systems
     const showToast = (message, type = "success") => {
       const container = document.getElementById("toast-center");
+      if (!container) return;
       const id = "toast-" + Date.now();
       const markup = `
         <div id="${id}" class="fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl transition-premium border ${
-          type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-[#FAF3E7] border-luxuryGold text-darkBrown'
+          type === 'error' ? 'bg-red-950/90 border-red-800 text-red-200' : 'bg-[#141414]/95 border-luxuryGold text-white'
         }">
           <div class="w-2.5 h-2.5 rounded-full bg-luxuryGold animate-ping"></div>
           <span class="font-medium text-sm tracking-wide">${message}</span>
@@ -278,17 +334,52 @@
       }, 3500);
     };
 
-    // Custom Interactive Confirmation Dialog (Replaces confirm() safely)
+    const showFirebaseDiagnosticModal = (title, reason) => {
+      const modal = document.getElementById("diagnostic-modal-container");
+      if (!modal) return;
+      modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
+        <div class="relative bg-[#141414] p-8 rounded-3xl max-w-lg w-full border-2 border-luxuryGold/50 shadow-2xl z-20 space-y-6 text-left">
+          <div class="flex items-center gap-3 border-b border-luxuryGold/20 pb-3">
+            <div class="w-8 h-8 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">⚠️</div>
+            <h3 class="font-serif text-xl text-luxuryGold font-bold">${title}</h3>
+          </div>
+          
+          <div class="space-y-4 text-xs text-gray-300 leading-relaxed">
+            <p class="font-semibold text-red-400">Diagnosis: <span class="font-light text-gray-300">${reason}</span></p>
+            
+            <div class="bg-black/40 p-4 rounded-xl space-y-3 border border-white/5">
+              <p class="font-bold uppercase tracking-wider text-luxuryGold text-[10px]">How to configure Firebase Firestore:</p>
+              <ol class="list-decimal list-inside space-y-2 text-gray-400">
+                <li>Go to your <a href="https://console.firebase.google.com/" target="_blank" class="text-luxuryGold underline font-semibold">Firebase Console</a>.</li>
+                <li>Click <strong>Firestore Database</strong> and ensure the database is actually created.</li>
+                <li>Under Firestore <strong>Rules</strong>, make sure they allow read/write access.</li>
+                <li>Under <strong>Authentication ➔ Sign-in method</strong>, make sure the <strong>Anonymous</strong> sign-in provider is enabled.</li>
+                <li><strong>Where to find the data:</strong> Refresh your Firestore. Your records are located nested under: <br><span class="text-luxuryGold font-mono">artifacts ➔ sovanex ➔ public ➔ data ➔ products / orders</span>.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button id="diagnostic-close-btn" class="px-5 py-2.5 bg-luxuryGold text-black rounded-xl text-xs uppercase font-extrabold tracking-wider hover:bg-luxuryGold/80 transition">Got It</button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove("hidden");
+      document.getElementById("diagnostic-close-btn").onclick = () => modal.classList.add("hidden");
+    };
+
     const triggerConfirm = (title, message, onConfirmCallback) => {
       const modal = document.getElementById("confirm-modal-container");
+      if (!modal) return;
       modal.innerHTML = `
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
-        <div class="relative bg-[#FAF3E7] p-6 rounded-2xl max-w-sm w-full border border-luxuryGold/30 shadow-2xl z-10 text-center space-y-4">
-          <h3 class="font-serif text-lg text-coffeeBrown font-bold">${title}</h3>
-          <p class="text-xs text-gray-500 font-light leading-relaxed">${message}</p>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-xs"></div>
+        <div class="relative bg-[#141414] p-6 rounded-2xl max-w-sm w-full border border-luxuryGold/30 shadow-2xl z-10 text-center space-y-4">
+          <h3 class="font-serif text-lg text-luxuryGold font-bold">${title}</h3>
+          <p class="text-xs text-gray-400 font-light leading-relaxed">${message}</p>
           <div class="flex gap-3 justify-center pt-2">
-            <button id="confirm-cancel-btn" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold tracking-wider border border-gray-200 hover:bg-gray-50 transition">Cancel</button>
-            <button id="confirm-submit-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg text-xs uppercase font-bold tracking-wider hover:bg-red-700 transition shadow-md">Confirm</button>
+            <button id="confirm-cancel-btn" class="px-4 py-2 bg-black/40 text-gray-400 rounded-lg text-xs uppercase font-bold tracking-wider border border-white/10 hover:bg-white/5 transition">Cancel</button>
+            <button id="confirm-submit-btn" class="px-4 py-2 bg-red-700 text-white rounded-lg text-xs uppercase font-bold tracking-wider hover:bg-red-800 transition shadow-md">Confirm</button>
           </div>
         </div>
       `;
@@ -301,29 +392,123 @@
       };
     };
 
-    store.initPublicSubscriptions = function() {
+    store.initPublicSubscriptions = function(forceBypass = false) {
       if (this.activeSubscriptions.public) return;
+      if (!auth.currentUser && !forceBypass) return;
       this.activeSubscriptions.public = true;
 
-      // Products Feed
+      // Dynamic general setting subscription
+      const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+      onSnapshot(settingsDocRef, (snap) => {
+        if (snap.exists()) {
+          store.settings = { ...store.settings, ...snap.data() };
+          store.updateDOM();
+        } else {
+          // Setup default values on Firestore so collection is visible
+          setDoc(settingsDocRef, store.settings).catch(e => console.error("Initial write bypassed:", e));
+        }
+      }, (err) => {
+        console.warn("Settings fetch bypassed:", err);
+      });
+
+      // Products Feed Sub
       const prodQuery = collection(db, 'artifacts', appId, 'public', 'data', 'products');
       onSnapshot(prodQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         store.products = list;
+
+        // Seeding premium watches and accessories if DB is empty
+        if (list.length === 0) {
+          const initialProducts = [
+            {
+              name: "Rose Empress Gold Chrono",
+              category: "Watches",
+              gender: "GIRLS STORE",
+              price: 1200,
+              discountPrice: 950,
+              imageURL: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&q=80&w=600",
+              description: "An elegant, luxurious diamond-embellished rose gold watch designed specifically for her sophisticated taste.",
+              stock: 8,
+              rating: 5.0,
+              reviewsCount: 18,
+              isPromotion: true,
+              isBestSeller: true,
+              limitedStock: true,
+              createdAt: new Date()
+            },
+            {
+              name: "Oceanic Imperial Nautilus",
+              category: "Watches",
+              gender: "MAN STORE",
+              price: 1850,
+              discountPrice: 1500,
+              imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600",
+              description: "A gorgeous deep royal blue marine dial luxury automatic watch. Perfectly robust and elegant.",
+              stock: 5,
+              rating: 4.9,
+              reviewsCount: 24,
+              isPromotion: false,
+              isBestSeller: true,
+              limitedStock: true,
+              createdAt: new Date()
+            },
+            {
+              name: "Gilded Atlas Queen Bracelet",
+              category: "Accessories",
+              gender: "GIRLS STORE",
+              price: 450,
+              discountPrice: null,
+              imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600",
+              description: "Sophisticated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
+              stock: 15,
+              rating: 4.8,
+              reviewsCount: 9,
+              isPromotion: false,
+              isBestSeller: false,
+              limitedStock: false,
+              createdAt: new Date()
+            },
+            {
+              name: "Sovereign Gold Carbon Ring",
+              category: "Accessories",
+              gender: "MAN STORE",
+              price: 550,
+              discountPrice: 380,
+              imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600",
+              description: "A masculine scratch-resistant sapphire-grade tungsten ring with deep obsidian carbon inlay. Absolute royalty.",
+              stock: 12,
+              rating: 5.0,
+              reviewsCount: 14,
+              isPromotion: true,
+              isBestSeller: false,
+              limitedStock: false,
+              createdAt: new Date()
+            }
+          ];
+
+          initialProducts.forEach(async (p) => {
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), p);
+          });
+        }
+
+        store.loadingProducts = false;
+        store.updateDOM();
+      }, (err) => {
+        console.error("Products error:", err);
+        showFirebaseDiagnosticModal("Permission Blocked", `Unable to listen to products. Details: ${err.message}`);
         store.loadingProducts = false;
         store.updateDOM();
       });
 
-      // Categories Config
+      // Categories Config Sub
       const catQuery = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
       onSnapshot(catQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         
-        // Seed initial categories if none exist in the database yet
         if (list.length === 0) {
-          const defaults = ["Mother's Day", "Flowers box", "Special flowers", "Medium bouquet", "Flowers bouquet"];
+          const defaults = ["Watches", "Accessories"];
           defaults.forEach(async (name, index) => {
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'categories'), {
               name,
@@ -337,59 +522,124 @@
         store.categories = list.sort((a,b) => (a.order || 0) - (b.order || 0));
         store.loadingCategories = false;
         store.updateDOM();
+      }, (err) => {
+        console.error("Categories error:", err);
+        store.loadingCategories = false;
+        store.updateDOM();
       });
 
-      // Lookbook Grid
+      // Lookbook Grid Sub
       const lookbookQuery = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
       onSnapshot(lookbookQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         store.lookbook = list;
+        
+        if (list.length === 0) {
+          const initialLookbook = [
+            { imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600", postURL: "https://instagram.com", order: 1 },
+            { imageURL: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&q=80&w=600", postURL: "https://instagram.com", order: 2 },
+            { imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600", postURL: "https://instagram.com", order: 3 },
+            { imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600", postURL: "https://instagram.com", order: 4 }
+          ];
+          initialLookbook.forEach(async (lb) => {
+            await addDoc(lookbookQuery, { ...lb, createdAt: new Date() });
+          });
+        }
         store.updateDOM();
-      });
+      }, (err) => console.warn("Lookbook offline:", err));
 
-      // Load Delivery Cities
+      // Load Delivery Cities Sub
       const citiesQuery = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
       onSnapshot(citiesQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+
+        if (list.length === 0) {
+          const defaults = [
+            { name: "Casablanca", price: 35, isActive: true },
+            { name: "Rabat", price: 20, isActive: true },
+            { name: "Kénitra", price: 30, isActive: true },
+            { name: "Marrakech", price: 45, isActive: true },
+            { name: "Tanger", price: 45, isActive: true },
+            { name: "Fès", price: 40, isActive: true }
+          ];
+          defaults.forEach(async (city) => {
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities'), { ...city, createdAt: new Date() });
+          });
+        }
+
         store.deliveryCities = list.sort((a,b) => a.name.localeCompare(b.name));
         store.updateDOM();
-      });
+      }, (err) => console.warn("Cities error:", err));
 
-      // Telegram configuration settings
+      // Telegram dynamic config Sub
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
       onSnapshot(botConfigDoc, (snap) => {
         if (snap.exists()) {
           store.telegramSettings = { ...store.telegramSettings, ...snap.data() };
+        } else {
+          setDoc(botConfigDoc, store.telegramSettings).catch(e => console.error("Initial telegram configuration write bypassed:", e));
         }
-      });
-    };
+      }, (err) => console.warn("Bot config offline:", err));
 
-    store.initAdminSubscriptions = function() {
-      if (this.activeSubscriptions.admin) return;
-      this.activeSubscriptions.admin = true;
-
-      // Realtime Orders
-      const orderQuery = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-      onSnapshot(orderQuery, (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        store.orders = list.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-        store.updateDOM();
-        if (store.currentPage === "admin" && store.adminView === "dashboard") {
-          store.renderAnalyticsChart();
-        }
-      });
-
-      // Realtime Reviews
+      // Reviews dynamic config Sub
       const revQuery = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
       onSnapshot(revQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         store.reviews = list.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        if (list.length === 0) {
+          const defaultReviews = [
+            { customerName: "Kenza Berrada", customerLocation: "Rabat", rating: 5, comment: "The Rose Empress watch is spectacular. It redefined elegance for my accessories collection.", productId: "general", createdAt: new Date() },
+            { customerName: "Anas Alaoui", customerLocation: "Casablanca", rating: 5, comment: "The automatic chronograph from SOVANEX is purely royal. Authentic weight and quick premium shipping.", productId: "general", createdAt: new Date() }
+          ];
+          defaultReviews.forEach(async (r) => {
+            await addDoc(revQuery, r);
+          });
+        }
         store.updateDOM();
-      });
+      }, (err) => console.error("Reviews load error:", err));
+    };
+
+    store.initAdminSubscriptions = function() {
+      if (this.activeSubscriptions.admin) return;
+      if (!auth.currentUser) return;
+      this.activeSubscriptions.admin = true;
+
+      // Realtime Orders Sub
+      const orderQuery = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+      onSnapshot(orderQuery, (snap) => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        store.orders = list.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        if (list.length === 0) {
+          const sampleOrder = {
+            orderId: "SOV-DEMO101",
+            customerName: "Sohaib Alami",
+            phone: "0677746730",
+            address: "Avenue de la Résistance, Centre Commercial La Perle de la Médina",
+            deliveryCity: "Rabat",
+            status: "pending",
+            items: [
+              { name: "Oceanic Imperial Nautilus", quantity: 1, price: 1500 }
+            ],
+            subtotal: 1500,
+            deliveryFee: 20,
+            total: 1520,
+            paymentMethod: "Telegram Automated",
+            createdAt: new Date()
+          };
+          addDoc(orderQuery, sampleOrder).catch(e => console.error("Initial orders seeding write bypassed:", e));
+        }
+
+        store.updateDOM();
+        if (store.currentPage === "admin" && store.adminView === "dashboard") {
+          store.renderAnalyticsChart();
+        }
+      }, (err) => console.error("Admin orders error:", err));
     };
 
     store.addToCart = function(product) {
@@ -404,7 +654,7 @@
         this.cart.push({ ...product, quantity: 1 });
       }
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
-      showToast(`"${product.name}" selected.`);
+      showToast(`"${product.name}" added to cart.`);
       this.updateDOM();
     };
 
@@ -439,7 +689,6 @@
       return chartLoaderPromise;
     };
 
-    // Dynamic Chart rendering
     store.renderAnalyticsChart = function() {
       const canvas = document.getElementById("analyticsChart");
       if (!canvas) return;
@@ -477,8 +726,8 @@
 
         const ctx = canvas.getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 240);
-        gradient.addColorStop(0, 'rgba(200, 169, 106, 0.45)');
-        gradient.addColorStop(1, 'rgba(250, 243, 231, 0.05)');
+        gradient.addColorStop(0, 'rgba(212, 175, 55, 0.45)');
+        gradient.addColorStop(1, 'rgba(10, 10, 10, 0.05)');
 
         window.analyticsChartInstance = new Chart(ctx, {
           type: 'line',
@@ -487,13 +736,13 @@
             datasets: [{
               label: 'Daily Revenue (MAD)',
               data: dataset,
-              borderColor: '#C8A96A',
+              borderColor: 'var(--accent-color)',
               borderWidth: 3,
               backgroundColor: gradient,
               fill: true,
               tension: 0.4,
-              pointBackgroundColor: '#3D2A1C',
-              pointBorderColor: '#C8A96A',
+              pointBackgroundColor: '#000000',
+              pointBorderColor: 'var(--accent-color)',
               pointRadius: 6,
               pointHoverRadius: 8
             }]
@@ -504,7 +753,7 @@
             plugins: { legend: { display: false } },
             scales: {
               y: { 
-                grid: { color: 'rgba(200, 169, 106, 0.08)' },
+                grid: { color: 'rgba(212, 175, 55, 0.08)' },
                 min: 0,
                 beginAtZero: true
               },
@@ -517,6 +766,7 @@
 
     store.processCheckout = async function(e) {
       e.preventDefault();
+      
       if (this.cart.length === 0) return;
       
       const formEl = e.target;
@@ -526,7 +776,7 @@
       const address = formEl.address.value;
 
       if (!name || !phone || !cityId || !address) {
-        showToast("Please fill all required recipient delivery coordinates.", "error");
+        showToast("Please fill in all required delivery coordinates.", "error");
         return;
       }
 
@@ -539,7 +789,7 @@
         const deliveryFee = cityObj ? cityObj.price : 0;
         const cityName = cityObj ? cityObj.name : "Morocco";
         const total = subtotal + deliveryFee;
-        const orderId = "BP-" + Math.floor(100000 + Math.random() * 900000);
+        const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
 
         const orderItems = this.cart.map(item => ({
           id: item.id,
@@ -563,28 +813,14 @@
           createdAt: new Date()
         };
 
-        // Write directly to standard orders collection in Firestore
         const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
         await addDoc(ordersCol, newOrder);
 
-        // Update live stats
-        const analyticsRef = doc(db, 'artifacts', appId, 'public', 'data', 'analytics', 'live');
-        try {
-          await updateDoc(analyticsRef, {
-            dailyRevenue: increment(total),
-            dailyOrders: increment(1)
-          });
-        } catch(err) {
-          console.warn("Analytics telemetry bypassed.", err);
-        }
-
-        // Build elegant product text list
         let productsMsg = "";
         this.cart.forEach(item => {
           productsMsg += `• *${item.name}* x${item.quantity} (${item.discountPrice || item.price} MAD)\n`;
         });
 
-        // Parse custom message template dynamically
         let msgText = this.telegramSettings.template
           .replace(/{products}/g, productsMsg.trim())
           .replace(/{subtotal}/g, subtotal)
@@ -596,7 +832,6 @@
           .replace(/{phone}/g, phone)
           .replace(/{orderId}/g, orderId);
 
-        // Dispatch Telegram Bot API Call
         if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
           try {
             const telegramUrl = `https://api.telegram.org/bot${this.telegramSettings.botToken}/sendMessage`;
@@ -614,27 +849,30 @@
           }
         }
 
-        // Reset and clean environment state
         this.cart = [];
         localStorage.setItem("bp_cart", JSON.stringify([]));
         this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "" };
         this.cartOpen = false;
         this.checkoutLoading = false;
         
-        // Custom message on confirm
-        triggerConfirm("Order Confirmed", "Your order is confirmed successfully! To ask where the order is, contact us via WhatsApp only.", () => {
+        triggerConfirm("Order Confirmed", "Your order has been registered successfully! To track shipping details, please connect with us on WhatsApp.", () => {
           store.setPage("home");
         });
 
       } catch (err) {
         console.error(err);
         this.checkoutLoading = false;
-        showToast("Fulfillment transaction pipeline failed. Please retry.", "error");
+        showToast("Order checkout pipeline failed. Please try again.", "error");
+        showFirebaseDiagnosticModal(
+          "Checkout Connection Blocked", 
+          `Unable to register order in Firestore. Firebase error details: ${err.message}`
+        );
         this.updateDOM();
       }
     };
 
     store.updateDOM = function() {
+      this.updateTheme(); // Sync theme dynamically based on current selections
       this.renderHeader();
       this.renderMainContent();
       this.renderFooter();
@@ -644,52 +882,52 @@
 
     store.renderHeader = function() {
       const container = document.getElementById("app-header");
+      if (!container) return;
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+
+      const logoMarkup = this.settings.logoURL ? 
+        `<img src="${this.settings.logoURL}" alt="SOVANEX logo" class="h-10 max-w-[180px] object-contain" onerror="this.style.display='none'; document.getElementById('text-logo').classList.remove('hidden')">` : '';
       
       container.innerHTML = `
-        <header class="sticky top-0 z-40 bg-[#FAF3E7]/90 backdrop-blur-md border-b border-luxuryGold/20 shadow-sm">
+        <header class="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-luxuryGold/20 shadow-sm">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <div id="nav-brand" class="flex items-center gap-3 cursor-pointer">
-              <span class="text-3xl font-serif tracking-widest text-coffeeBrown flex items-center gap-1">
-                BROWN <span class="text-luxuryGold font-light font-sans text-xl tracking-normal">PETALS</span>
+              ${logoMarkup}
+              <span id="text-logo" class="text-3xl font-serif tracking-widest text-white flex items-center gap-1 font-bold ${this.settings.logoURL ? 'hidden' : ''}">
+                SOV<span class="text-luxuryGold font-light font-sans text-2xl tracking-normal">ANEX</span>
               </span>
             </div>
             
-            <nav class="hidden md:flex items-center gap-8 text-sm uppercase tracking-widest font-medium">
-              <button id="nav-home" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'home' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}">Home</button>
-              <button id="nav-shop" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'shop' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}">La Boutique</button>
-              <button id="nav-contact" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'contact' ? 'text-luxuryGold underline underline-offset-8' : 'text-coffeeBrown'}">Contact Us</button>
+            <nav class="hidden md:flex items-center gap-8 text-sm uppercase tracking-widest font-semibold">
+              <button id="nav-home" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'home' ? 'text-luxuryGold underline underline-offset-8 font-bold' : 'text-white'}">Home</button>
+              <button id="nav-shop" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'shop' ? 'text-luxuryGold underline underline-offset-8 font-bold' : 'text-white'}">Boutique</button>
+              <button id="nav-contact" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'contact' ? 'text-luxuryGold underline underline-offset-8 font-bold' : 'text-white'} font-medium">Contact Us</button>
             </nav>
 
             <div class="flex items-center gap-4">
               <div class="hidden lg:relative lg:block">
-                <input id="nav-search-input" type="text" placeholder="Search bouquet..." value="${this.searchQuery}" class="pl-9 pr-4 py-1.5 text-xs rounded-full border border-luxuryGold/30 bg-white/50 focus:outline-none focus:border-luxuryGold transition-premium w-44">
-                <div class="absolute left-3 top-2.5 text-coffeeBrown/60">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
+                <input id="nav-search-input" type="text" placeholder="Search..." value="${this.searchQuery}" class="pl-9 pr-4 py-1.5 text-xs rounded-full border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
+                <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
               </div>
 
-              <!-- Secure Dashboard Portal Lock icon -->
-              <button id="nav-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/40" title="Admin Workspace">
-                ${getIconSvg('lock', `w-5.5 h-5.5 ${this.isAdmin ? 'text-luxuryGold' : 'text-coffeeBrown'}`)}
+              <button id="nav-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/5" title="Admin Workspace">
+                ${getIconSvg('lock', `w-5.5 h-5.5 ${this.isAdmin ? 'text-luxuryGold' : 'text-white'}`)}
               </button>
 
-              <!-- Luxury Mini Cart Bubble -->
-              <button id="cart-drawer-trigger" class="relative flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#F5E6D3]/80 hover:bg-luxuryGold border-2 border-luxuryGold rounded-full shadow-md hover:shadow-lg transition-premium transform hover:scale-105 text-coffeeBrown group">
-                ${getIconSvg('shopping-bag', 'w-4.5 h-4.5 group-hover:text-white transition-premium')}
-                <span class="hidden sm:inline text-xs font-serif uppercase tracking-widest font-bold group-hover:text-white transition-premium">Cart</span>
-                <span class="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs transition-premium ${
-                  cartCount > 0 ? 'bg-darkBrown text-white animate-pulse group-hover:bg-white group-hover:text-darkBrown' : 'bg-coffeeBrown/10 text-coffeeBrown/60 group-hover:bg-white/20 group-hover:text-white'
-                }">${cartCount}</span>
+              <button id="cart-drawer-trigger" class="relative flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-luxuryBeige hover:bg-luxuryGold border-2 border-luxuryGold rounded-full shadow-md hover:shadow-lg transition-premium transform hover:scale-105 text-white hover:text-black group">
+                ${getIconSvg('shopping-bag', 'w-4.5 h-4.5 group-hover:text-black transition-premium')}
+                <span class="hidden sm:inline text-xs font-serif uppercase tracking-widest font-bold group-hover:text-black transition-premium">Cart</span>
+                <span class="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs transition-premium bg-[#141414] text-luxuryGold group-hover:bg-black group-hover:text-luxuryGold">${cartCount}</span>
               </button>
 
-              <button id="mobile-menu-trigger" class="md:hidden p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/40">
-                ${getIconSvg('menu', 'w-6 h-6 text-coffeeBrown')}
+              <button id="mobile-menu-trigger" class="md:hidden p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/5">
+                ${getIconSvg('menu', 'w-6 h-6 text-white')}
               </button>
             </div>
           </div>
         </header>
       `;
 
-      // Set Header Nav Event Listeners
       document.getElementById("nav-brand").onclick = () => { store.setPage("home"); };
       document.getElementById("nav-home").onclick = () => { store.setPage("home"); };
       document.getElementById("nav-shop").onclick = () => { store.setPage("shop"); };
@@ -722,7 +960,6 @@
       };
     };
 
-    // Dynamic Content Router
     store.renderMainContent = function() {
       if (this.currentPage === "home") {
         this.renderHomePage();
@@ -735,70 +972,70 @@
       }
     };
 
-    // Contact Us View Renderer
     store.renderContactPage = function() {
       const container = document.getElementById("app-content");
+      if (!container) return;
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
           <div class="text-center space-y-3">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Seamless Service</span>
-            <h1 class="text-4xl md:text-5xl font-serif text-darkBrown">Contact Us</h1>
+            <h1 class="text-4xl md:text-5xl font-serif text-white">Contact Us</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
-            <p class="text-sm text-gray-500 max-w-xl mx-auto font-light leading-relaxed">
-              Connect directly with our master florists, inquire about shipping parameters, or discuss customized decorations.
+            <p class="text-sm text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
+              Connect directly with our master atelier team, inquire about shipping parameters, or discuss customized engravings.
             </p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
             <!-- Contact Form -->
-            <div class="bg-white p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6">
-              <h3 class="font-serif text-xl text-coffeeBrown">Send us a Private Note</h3>
+            <div class="bg-luxuryBeige p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6">
+              <h3 class="font-serif text-xl text-white">Send us a Private Note</h3>
               <form id="contact-page-form" class="space-y-4">
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-coffeeBrown mb-1 font-semibold">Your Name</label>
-                  <input type="text" name="name" required placeholder="e.g. Kenza" class="w-full bg-[#FAF3E7]/30 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-darkBrown focus:outline-none focus:border-luxuryGold">
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Name</label>
+                  <input type="text" name="name" required placeholder="Your Name" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold">
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-coffeeBrown mb-1 font-semibold">Email Address</label>
-                  <input type="email" name="email" required placeholder="e.g. kenza@example.com" class="w-full bg-[#FAF3E7]/30 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-darkBrown focus:outline-none focus:border-luxuryGold">
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Email Address</label>
+                  <input type="email" name="email" required placeholder="Your Email Address" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold">
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-coffeeBrown mb-1 font-semibold">Message</label>
-                  <textarea name="message" required placeholder="Describe your custom arrangement requests..." class="w-full bg-[#FAF3E7]/30 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-darkBrown focus:outline-none focus:border-luxuryGold h-32 resize-none"></textarea>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Message</label>
+                  <textarea name="message" required placeholder="Describe your custom product requests..." class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold h-32 resize-none"></textarea>
                 </div>
-                <button type="submit" class="w-full py-3.5 bg-darkBrown hover:bg-coffeeBrown text-white font-extrabold uppercase tracking-widest text-xs rounded-xl transition shadow-md">
-                  Send Note
+                <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black font-extrabold uppercase tracking-widest text-xs rounded-xl transition shadow-md">
+                  Send Message
                 </button>
               </form>
             </div>
 
             <!-- Atelier details -->
             <div class="space-y-8">
-              <div class="bg-white/50 p-8 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-6">
-                <h3 class="font-serif text-xl text-coffeeBrown">Our Coordinates</h3>
+              <div class="bg-luxuryBeige/50 p-8 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-6">
+                <h3 class="font-serif text-xl text-white">Our Coordinates</h3>
                 
                 <div class="space-y-4">
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('gift', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-coffeeBrown">Atelier Address</h4>
-                      <p class="text-xs text-gray-500 font-light mt-1">avenue la résistance Centre commercial la perle de la medina, Rabat, Morocco, 10040 🇲🇦</p>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Atelier Address</h4>
+                      <p class="text-xs text-gray-400 font-light mt-1">Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040</p>
                     </div>
                   </div>
 
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('clock', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-coffeeBrown">Operating Hours</h4>
-                      <p class="text-xs text-gray-500 font-light mt-1">Open Daily: 9:00 AM — 10:00 PM</p>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Operating Hours</h4>
+                      <p class="text-xs text-gray-400 font-light mt-1">Open Daily: 9:00 AM — 10:00 PM</p>
                     </div>
                   </div>
 
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('phone', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-coffeeBrown">WhatsApp Hotline</h4>
-                      <p class="text-xs text-gray-500 font-light mt-1">+212 777467304</p>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Hotline</h4>
+                      <p class="text-xs text-gray-400 font-light mt-1">${this.settings.whatsappHotline || '+212 777467304'}</p>
                     </div>
                   </div>
 
@@ -810,39 +1047,30 @@
                       </svg>
                     </div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-coffeeBrown">Email Coordinates</h4>
-                      <a href="mailto:brownpetals24@gmail.com" class="text-xs text-gray-500 font-light mt-1 block hover:text-luxuryGold transition-premium underline underline-offset-4">brownpetals24@gmail.com</a>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Email Coordinates</h4>
+                      <a href="mailto:${this.settings.emailCoordinate || 'brownpetals24@gmail.com'}" class="text-xs text-gray-400 font-light mt-1 block hover:text-luxuryGold transition-premium underline underline-offset-4">${this.settings.emailCoordinate || 'brownpetals24@gmail.com'}</a>
                     </div>
                   </div>
 
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('instagram', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-coffeeBrown">Instagram Workspace</h4>
-                      <a href="https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-500 font-light mt-1 block hover:text-luxuryGold transition-premium underline underline-offset-4">@brownpetals.ma</a>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Instagram Profile</h4>
+                      <a href="${this.settings.instagramURL || '#'}" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 font-light mt-1 block hover:text-luxuryGold transition-premium underline underline-offset-4">SOVANEX Official</a>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <!-- Extra Note about deliveries -->
-              <div class="p-6 bg-[#F5E6D3]/40 border border-luxuryGold/20 rounded-2xl">
-                <p class="text-xs text-coffeeBrown font-medium">✨ White-Glove Moroccan Delivery</p>
-                <p class="text-[11px] text-gray-500 font-light mt-2 leading-relaxed">
-                  Our customized cooling shipping transport ensures maximum freshness of imported Dutch stems to Casablanca, Rabat, Marrakech, Kenitra, and all major cities.
-                </p>
               </div>
             </div>
           </div>
         </div>
       `;
 
-      // Bind local form submission
       const formEl = document.getElementById("contact-page-form");
       if (formEl) {
         formEl.onsubmit = (e) => {
           e.preventDefault();
-          showToast("Thank you! Your private inquiry has been sent to our master florists.");
+          showToast("Thank you! Your private inquiry has been sent to our curators.");
           formEl.reset();
         };
       }
@@ -850,6 +1078,7 @@
 
     store.renderHomePage = function() {
       const container = document.getElementById("app-content");
+      if (!container) return;
       
       let promoItems = this.products.filter(p => p.isPromotion).slice(0, 3);
       let promoGrid = "";
@@ -870,43 +1099,22 @@
       let reviewsMarkup = this.reviews.slice(0, 6).map(r => {
         const productObj = this.products.find(p => p.id === r.productId);
         return `
-          <div class="bg-darkBrown/40 p-6 rounded-2xl border border-luxuryGold/20 flex flex-col justify-between space-y-4 hover:border-luxuryGold/55 transition-premium">
+          <div class="bg-black/80 p-6 rounded-2xl border border-luxuryGold/20 flex flex-col justify-between space-y-4 hover:border-luxuryGold/55 transition-premium">
             <div class="space-y-2">
               <div class="flex justify-between items-center">
                 <span class="font-serif text-md font-semibold text-luxuryGold">${r.customerName}</span>
                 <span class="text-xs text-amber-400">${"★".repeat(r.rating || 5)}</span>
               </div>
-              ${productObj ? `<p class="text-[11px] text-luxuryBeige/70">Bouquet: <strong class="font-semibold text-luxuryGold">${productObj.name}</strong></p>` : ''}
-              <p class="text-xs md:text-sm font-light text-softBeige/80 italic">"${r.comment}"</p>
+              ${productObj ? `<p class="text-[11px] text-gray-400">Item: <strong class="font-semibold text-luxuryGold">${productObj.name}</strong></p>` : ''}
+              <p class="text-xs md:text-sm font-light text-white/85 italic">"${r.comment}"</p>
             </div>
-            <div class="flex justify-between items-center pt-2 border-t border-white/5 text-[10px] text-softBeige/40 uppercase tracking-wider">
+            <div class="flex justify-between items-center pt-2 border-t border-white/5 text-[10px] text-luxuryGold uppercase tracking-wider">
               <span>${r.customerLocation || "Morocco"}</span>
               <span>Verified Buyer</span>
             </div>
           </div>
         `;
       }).join('');
-
-      if (!reviewsMarkup) {
-        reviewsMarkup = `
-          <div class="bg-darkBrown/40 p-6 rounded-2xl border border-luxuryGold/20 space-y-4">
-            <div class="flex justify-between items-center">
-              <span class="font-serif text-md font-semibold text-luxuryGold">Lalla Kenza</span>
-              <span class="text-xs text-amber-400">⭐⭐⭐⭐⭐</span>
-            </div>
-            <p class="text-xs text-softBeige/80 italic">"The Royal Majorelle arrangement was spectacular. It redefined elegance in our Casablanca reception hall. Prompt and gorgeous."</p>
-            <p class="text-[10px] text-softBeige/40 tracking-wider">Rabat, Morocco</p>
-          </div>
-          <div class="bg-darkBrown/40 p-6 rounded-2xl border border-luxuryGold/20 space-y-4">
-            <div class="flex justify-between items-center">
-              <span class="font-serif text-md font-semibold text-luxuryGold">Amine Berrada</span>
-              <span class="text-xs text-amber-400">⭐⭐⭐⭐⭐</span>
-            </div>
-            <p class="text-xs text-softBeige/80 italic">"Imperial Sahara Gold Box is pure art. The golden wax seal card was the perfect luxury detail for our anniversary."</p>
-            <p class="text-[10px] text-softBeige/40 tracking-wider">Casablanca, Morocco</p>
-          </div>
-        `;
-      }
 
       let lookbookGrid = this.lookbook.sort((a,b) => (a.order || 0) - (b.order || 0)).map(item => `
         <a href="${item.postURL}" target="_blank" rel="noopener noreferrer" class="h-64 rounded-2xl overflow-hidden shadow-md group relative block">
@@ -917,55 +1125,140 @@
         </a>
       `).join('');
 
+      let reviewFormMarkup = '';
+      if (this.homeReviewFormOpen) {
+        reviewFormMarkup = `
+          <div class="max-w-lg mx-auto bg-luxuryBeige p-8 rounded-3xl border border-luxuryGold/35 text-left space-y-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-white/10 pb-3">
+              <h3 class="font-serif text-xl text-luxuryGold">Your Valued Feedback</h3>
+              <button id="close-review-form" class="text-gray-400 hover:text-white transition-premium">✕</button>
+            </div>
+            <form id="home-review-form" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Name</label>
+                  <input type="text" name="customerName" required placeholder="Name" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">City</label>
+                  <input type="text" name="customerLocation" required placeholder="e.g. Rabat" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Product Purchased</label>
+                  <select name="productId" class="w-full bg-[#111] border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
+                    <option value="general" class="text-white">General Experience</option>
+                    ${this.products.map(p => `<option value="${p.id}" class="text-white">${p.name}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Stars</label>
+                  <select name="rating" class="w-full bg-[#111] border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
+                    <option value="5" class="text-white">5 Stars</option>
+                    <option value="4" class="text-white">4 Stars</option>
+                    <option value="3" class="text-white">3 Stars</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Note</label>
+                <textarea name="comment" required placeholder="Your message..." class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold h-24 resize-none"></textarea>
+              </div>
+              <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/95 text-black font-extrabold uppercase tracking-widest text-xs rounded-xl transition font-bold">Submit Review</button>
+            </form>
+          </div>
+        `;
+      } else {
+        reviewFormMarkup = `
+          <button id="open-review-form-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-widest rounded-xl transition-premium shadow-xl">Leave a Review</button>
+        `;
+      }
+
       container.innerHTML = `
         <div class="space-y-24">
           <!-- Hero Section -->
           <section class="relative h-[90vh] flex items-center justify-center bg-black overflow-hidden">
             <div class="absolute inset-0">
-              <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=1200" alt="Garland" class="w-full h-full object-cover opacity-60">
-              <div class="absolute inset-0 bg-gradient-to-t from-[#FAF3E7] via-transparent to-black/50"></div>
+              <img src="https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=1200" alt="Sovanex" class="w-full h-full object-cover opacity-50">
+              <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-black/70"></div>
             </div>
 
-            <div class="relative max-w-5xl mx-auto px-4 text-center space-y-8 z-10 text-[#FAF3E7]">
-              <p class="text-xs md:text-sm uppercase tracking-[0.4em] font-semibold text-luxuryGold">The Premium Floral Atelier of Morocco</p>
-              <h1 class="text-5xl md:text-8xl font-serif tracking-tight leading-none text-white drop-shadow-xl">
-                Breathtaking Bouquets <br>
-                <span class="italic font-light text-luxuryBeige">Crafted with Royalty</span>
+            <div class="relative max-w-5xl mx-auto px-4 text-center space-y-8 z-10 text-white">
+              <p class="text-xs md:text-sm uppercase tracking-[0.4em] font-semibold text-luxuryGold">${this.settings.tagline}</p>
+              <h1 class="text-5xl md:text-8xl font-serif tracking-tight leading-none text-white drop-shadow-xl font-extrabold">
+                SOVANEX <br>
+                <span class="italic font-light text-luxuryGold">Masterpiece Accoutrements</span>
               </h1>
-              <p class="text-sm md:text-lg max-w-2xl mx-auto text-softBeige/80 font-light leading-relaxed">
-                Brown Petals curate high-end seasonal compositions designed specifically for luxurious moments, exclusive weddings, and romantic grand gestures in Morocco.
+              <p class="text-sm md:text-lg max-w-2xl mx-auto text-gray-300 font-light leading-relaxed">
+                ${this.settings.websiteDescription}
               </p>
               <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-                <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">Discover Private Shop</button>
-                <a href="${WHATSAPP_LINK}" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 border border-luxuryGold/50 text-[#FAF3E7] font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition backdrop-blur-md text-center flex items-center justify-center gap-2">
+                <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">Discover Private Boutique</button>
+                <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-luxuryGold/50 text-white font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition backdrop-blur-md text-center flex items-center justify-center gap-2">
                   Connect With Us
                 </a>
               </div>
             </div>
 
-            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-xs tracking-widest text-[#6F4E37]/70 flex flex-col items-center gap-2 animate-bounce">
-              <span>SCROLL DOWN</span>
+            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center text-xs tracking-widest text-luxuryGold/80 flex flex-col items-center gap-2 animate-bounce">
+              <span>EXPLORE ATELIER</span>
               ${getIconSvg('arrow-down', 'w-4 h-4')}
+            </div>
+          </section>
+
+          <!-- Gender Specific Direct Portals -->
+          <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="text-center">
+              <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Select Your Collection</span>
+              <h2 class="text-3xl font-serif text-white">STORE Collections</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- GIRLS STORE Collection Card -->
+              <div id="portal-driat" class="pink-luxury-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-luxuryGold transform group-hover:scale-110 transition duration-300">
+                  ${getIconSvg('female', 'w-64 h-64')}
+                </div>
+                <div class="space-y-4 max-w-xs relative z-10">
+                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">GIRLS STORE</span>
+                  <h3 class="text-3xl font-serif text-white font-bold">For Her</h3>
+                  <p class="text-xs text-gray-300">Discover majestic watches and delicate luxury bracelets crafted with elegant gold and diamonds.</p>
+                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">GIRLS STORE</button>
+                </div>
+              </div>
+
+              <!-- MAN STORE Collection Card -->
+              <div id="portal-drari" class="blue-luxury-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-luxuryGold transform group-hover:scale-110 transition duration-300">
+                  ${getIconSvg('male', 'w-64 h-64')}
+                </div>
+                <div class="space-y-4 max-w-xs relative z-10">
+                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">MAN STORE</span>
+                  <h3 class="text-3xl font-serif text-white font-bold">For Him</h3>
+                  <p class="text-xs text-gray-300">Explore mechanical chronographs, carbon jewelry, and robust, high-end steel accessories.</p>
+                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">MAN STORE</button>
+                </div>
+              </div>
             </div>
           </section>
 
           <!-- Core Brand Values -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div class="p-8 bg-white/50 rounded-2xl border border-luxuryGold/10 shadow-sm text-center space-y-4 hover:shadow-lg transition">
-                <div class="w-12 h-12 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('gem', 'w-6 h-6')}</div>
-                <h3 class="font-serif text-xl text-coffeeBrown font-semibold">Exquisite Quality Only</h3>
-                <p class="text-xs text-gray-500 font-light leading-relaxed">We select imported premium Dutch stems and authentic Atlas mountain roses for peerless fragrance, color intensity, and lifespan.</p>
+              <div class="p-8 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-sm text-center space-y-4 hover:shadow-lg transition">
+                <div class="w-12 h-12 rounded-full bg-[#111] text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('gem', 'w-6 h-6')}</div>
+                <h3 class="font-serif text-xl text-white font-semibold">Exquisite Watchmaking</h3>
+                <p class="text-xs text-gray-400 font-light leading-relaxed">We select premium-grade automatic movements ensuring high accuracy, pristine sapphire glass reflection, and a luxurious feel.</p>
               </div>
-              <div class="p-8 bg-white/50 rounded-2xl border border-luxuryGold/10 shadow-sm text-center space-y-4 hover:shadow-lg transition">
-                <div class="w-12 h-12 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('truck', 'w-6 h-6')}</div>
-                <h3 class="font-serif text-xl text-coffeeBrown font-semibold">Cooled White-Glove Delivery</h3>
-                <p class="text-xs text-gray-500 font-light leading-relaxed">Delivered on-time using specialized cooling transport vehicles. We protect the freshness of your luxury stems down to the final meter.</p>
+              <div class="p-8 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-sm text-center space-y-4 hover:shadow-lg transition">
+                <div class="w-12 h-12 rounded-full bg-[#111] text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('truck', 'w-6 h-6')}</div>
+                <h3 class="font-serif text-xl text-white font-semibold">Secure Express Shipping</h3>
+                <p class="text-xs text-gray-400 font-light leading-relaxed">Packaged with care and shipped securely to Rabat, Casablanca, Tangier, Marrakech, Kenitra, and all major cities in Morocco.</p>
               </div>
-              <div class="p-8 bg-white/50 rounded-2xl border border-luxuryGold/10 shadow-sm text-center space-y-4 hover:shadow-lg transition">
-                <div class="w-12 h-12 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('gift', 'w-6 h-6')}</div>
-                <h3 class="font-serif text-xl text-coffeeBrown font-semibold">The Custom Royal Wax Seal</h3>
-                <p class="text-xs text-gray-500 font-light leading-relaxed">Every luxury box leaves our atelier with custom card envelopes secured with high-grade golden hot wax seal bearing our official insignia.</p>
+              <div class="p-8 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-sm text-center space-y-4 hover:shadow-lg transition">
+                <div class="w-12 h-12 rounded-full bg-[#111] text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('gift', 'w-6 h-6')}</div>
+                <h3 class="font-serif text-xl text-white font-semibold">Premium Wax-Sealed Certificate</h3>
+                <p class="text-xs text-gray-400 font-light leading-relaxed">Every accessory parcel includes a custom certificate of authenticity, sealed with our official metallic golden hot wax stamp.</p>
               </div>
             </div>
           </section>
@@ -975,86 +1268,43 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
               <div class="text-center space-y-2">
                 <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Sensational Offers</span>
-                <h2 class="text-3xl md:text-4xl font-serif text-darkBrown">Exclusive In-Season Promos</h2>
+                <h2 class="text-3xl md:text-4xl font-serif text-white">Exclusive Premium Promotions</h2>
                 <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                ${promoGrid || `<p class="col-span-full text-center text-xs text-gray-400 italic">No seasonal promotions configured.</p>`}
+                ${promoGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic">No seasonal promotions configured.</p>'}
               </div>
             </div>
           </section>
 
-          <!-- Bestsellers -->
+          <!-- Bestsellers (Most Demanded Works) -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div class="text-center space-y-2">
               <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Our Signatures</span>
-              <h2 class="text-3xl md:text-4xl font-serif text-darkBrown">Most Demanded Works</h2>
+              <h2 class="text-3xl md:text-4xl font-serif text-white">Most Coveted Creations</h2>
               <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              ${bestGrid || `<p class="col-span-full text-center text-xs text-gray-400 italic">No signature works configured.</p>`}
+              ${bestGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic">No signature works configured.</p>'}
             </div>
             <div class="text-center pt-6">
-              <button id="browse-all-btn" class="px-8 py-3.5 bg-darkBrown hover:bg-coffeeBrown text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-premium">Browse All Signature Collections</button>
+              <button id="browse-all-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-premium">Girls & Men Collections</button>
             </div>
           </section>
 
           <!-- Client Reviews -->
-          <section class="bg-coffeeBrown text-white py-20 border-t border-luxuryGold/20 relative overflow-hidden">
+          <section class="bg-black text-white py-20 border-t border-luxuryGold/20 relative overflow-hidden">
             <div class="max-w-5xl mx-auto px-4 text-center space-y-12 relative z-10">
               <div class="space-y-3">
                 <p class="text-xs uppercase tracking-[0.3em] text-luxuryGold font-extrabold">CLIENT REVIEWS</p>
-                <h2 class="text-3xl md:text-5xl font-serif">What Moroccan Royalty & VIPs Say</h2>
+                <h2 class="text-3xl md:text-5xl font-serif">What Moroccan Collectors Say</h2>
                 <div class="w-16 h-0.5 bg-luxuryGold mx-auto"></div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
                 ${reviewsMarkup}
               </div>
               <div class="pt-6">
-                ${this.homeReviewFormOpen ? `
-                  <div class="max-w-lg mx-auto bg-darkBrown/60 p-8 rounded-3xl border border-luxuryGold/35 text-left space-y-6 shadow-2xl">
-                    <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                      <h3 class="font-serif text-xl text-luxuryGold">Your Golden Impression</h3>
-                      <button id="close-review-form" class="text-softBeige/50 hover:text-white transition-premium">✕</button>
-                    </div>
-                    <form id="home-review-form" class="space-y-4">
-                      <div class="grid grid-cols-2 gap-4">
-                        <div>
-                          <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Name</label>
-                          <input type="text" name="customerName" required placeholder="e.g. Kenza" class="w-full bg-black/35 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                        </div>
-                        <div>
-                          <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">City</label>
-                          <input type="text" name="customerLocation" required placeholder="e.g. Casablanca" class="w-full bg-black/35 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                        </div>
-                      </div>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Product Purchased</label>
-                          <select name="productId" class="w-full bg-black/35 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold text-darkBrown">
-                            <option value="general" class="text-darkBrown">General Experience</option>
-                            ${this.products.map(p => `<option value="${p.id}" class="text-darkBrown">${p.name}</option>`).join('')}
-                          </select>
-                        </div>
-                        <div>
-                          <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Stars</label>
-                          <select name="rating" class="w-full bg-black/35 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold text-darkBrown">
-                            <option value="5" class="text-darkBrown">5 Stars</option>
-                            <option value="4" class="text-darkBrown">4 Stars</option>
-                            <option value="3" class="text-darkBrown">3 Stars</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Note</label>
-                        <textarea name="comment" required placeholder="Message..." class="w-full bg-black/35 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold h-24 resize-none"></textarea>
-                      </div>
-                      <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/95 text-darkBrown font-extrabold uppercase tracking-widest text-xs rounded-xl transition">Publish Review</button>
-                    </form>
-                  </div>
-                ` : `
-                  <button id="open-review-form-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown font-bold text-xs uppercase tracking-widest rounded-xl transition-premium shadow-xl">Write A Review</button>
-                `}
+                ${reviewFormMarkup}
               </div>
             </div>
           </section>
@@ -1062,19 +1312,28 @@
           <!-- Lookbook Section -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-16">
             <div class="text-center">
-              <h2 class="text-3xl font-serif text-coffeeBrown">Our Living Lookbook</h2>
-              <p class="text-xs text-luxuryGold tracking-widest uppercase mt-2">Follow our creations @brownpetals.ma</p>
+              <h2 class="text-3xl font-serif text-white">Atelier Lookbook</h2>
+              <p class="text-xs text-luxuryGold tracking-widest uppercase mt-2">Follow our dynamic feed</p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              ${lookbookGrid || `<p class="col-span-full text-center text-xs text-gray-400 italic">No lookbook creations active.</p>`}
+              ${lookbookGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic py-8">No lookbook creations active.</p>'}
             </div>
           </section>
         </div>
       `;
 
-      // Set Home view click listeners
       document.getElementById("hero-cta-shop").onclick = () => { store.setPage("shop"); };
       document.getElementById("browse-all-btn").onclick = () => { store.setPage("shop"); };
+
+      document.getElementById("portal-driat").onclick = () => {
+        store.selectedGenderSection = "GIRLS STORE";
+        store.setPage("shop");
+      };
+
+      document.getElementById("portal-drari").onclick = () => {
+        store.selectedGenderSection = "MAN STORE";
+        store.setPage("shop");
+      };
       
       const formBtn = document.getElementById("open-review-form-btn");
       if (formBtn) {
@@ -1123,22 +1382,32 @@
     };
 
     store.createProductCardMarkup = function(product) {
+      const normalizedGender = getNormalizedGender(product.gender);
+      const isGirls = normalizedGender === "GIRLS STORE";
+      const genderThemeBorder = 'border-luxuryGold/30 hover:border-luxuryGold';
+      const badgeColor = isGirls ? 'bg-luxuryGold/10 text-luxuryGold' : 'bg-white/10 text-white';
+      const btnOutlineColor = 'border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black';
+      const btnSolidColor = 'bg-luxuryGold hover:bg-luxuryGold/90 text-black';
+
       return `
-        <div class="group relative bg-white rounded-3xl overflow-hidden border border-luxuryGold/15 shadow-md hover:shadow-2xl transition-all duration-300">
+        <div class="group relative bg-[#141414] rounded-3xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300">
           <div class="h-80 overflow-hidden relative cursor-pointer card-img-trigger" data-id="${product.id}">
             <img src="${product.imageURL || fallbackImage}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" decoding="async">
-            <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition"></div>
+            <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition"></div>
             
             <div class="absolute top-4 left-4 flex flex-col gap-1.5">
-              ${product.isPromotion ? `<span class="bg-red-600 text-[#FAF3E7] text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Promotion</span>` : ''}
-              ${product.isBestSeller ? `<span class="bg-[#3D2A1C] text-[#FAF3E7] text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Bestseller</span>` : ''}
+              ${product.isPromotion ? `<span class="bg-red-700 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Promotion</span>` : ''}
+              ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Bestseller</span>` : ''}
               ${product.limitedStock ? `<span class="bg-amber-600 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Limited</span>` : ''}
+            </div>
+            <div class="absolute bottom-4 right-4">
+              <span class="${badgeColor} text-[10px] uppercase font-bold px-3 py-1.5 rounded-full shadow border border-luxuryGold/20">${normalizedGender}</span>
             </div>
           </div>
 
           <div class="p-6 space-y-4">
             <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
-            <h3 class="font-serif text-lg text-coffeeBrown group-hover:text-luxuryGold transition cursor-pointer card-title-trigger" data-id="${product.id}">${product.name}</h3>
+            <h3 class="font-serif text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-14 overflow-hidden" data-id="${product.id}">${product.name}</h3>
             
             <div class="flex items-center gap-1.5 text-xs">
               <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
@@ -1148,14 +1417,14 @@
             <div class="space-y-3 pt-2">
               <div class="flex items-baseline gap-2">
                 ${product.discountPrice ? `
-                  <span class="text-lg font-bold text-darkBrown">${product.discountPrice} MAD</span>
-                  <span class="text-xs line-through text-gray-400">${product.price} MAD</span>
-                ` : `<span class="text-lg font-bold text-darkBrown">${product.price} MAD</span>`}
+                  <span class="text-lg font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                  <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
+                ` : `<span class="text-lg font-bold text-white">${product.price} MAD</span>`}
               </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <button class="add-to-cart-btn px-2 py-2 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-white text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">Add To Cart</button>
-                <button class="order-now-btn px-2 py-2 bg-darkBrown hover:bg-coffeeBrown text-white text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">Order Now</button>
+                <button class="add-to-cart-btn px-2 py-2 border ${btnOutlineColor} text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">Add To Cart</button>
+                <button class="order-now-btn px-2 py-2 ${btnSolidColor} text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">Order Now</button>
               </div>
             </div>
           </div>
@@ -1197,12 +1466,15 @@
 
     store.renderShopPage = function() {
       const container = document.getElementById("app-content");
+      if (!container) return;
       
       const filtered = this.products.filter(p => {
+        const normalizedGender = getNormalizedGender(p.gender);
+        const matchesGender = this.selectedGenderSection === "All" || normalizedGender === this.selectedGenderSection;
         const matchesCategory = this.selectedCategory === "All" || p.category === this.selectedCategory;
         const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                               p.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        return matchesGender && matchesCategory && matchesSearch;
       });
 
       let productsGrid = "";
@@ -1212,31 +1484,51 @@
         productsGrid = filtered.map(p => this.createProductCardMarkup(p)).join('');
       }
 
+      const genderSelectorTabs = `
+        <div class="grid grid-cols-3 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
+          <button class="gender-section-btn py-3 px-4 text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+            this.selectedGenderSection === "All" ? 'bg-luxuryGold text-black' : 'text-white hover:bg-white/5'
+          }" data-gender="All">All</button>
+          
+          <button class="gender-section-btn py-3 px-4 text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+            this.selectedGenderSection === "GIRLS STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
+          }" data-gender="GIRLS STORE">GIRLS STORE</button>
+          
+          <button class="gender-section-btn py-3 px-4 text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+            this.selectedGenderSection === "MAN STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
+          }" data-gender="MAN STORE">MAN STORE</button>
+        </div>
+      `;
+
       let categoryButtons = `
         <button class="category-filter-btn text-left px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-premium ${
-          this.selectedCategory === "All" ? 'bg-luxuryGold text-white shadow-sm' : 'text-coffeeBrown hover:bg-luxuryBeige/45'
-        }" data-name="All">All Compositions</button>
+          this.selectedCategory === "All" ? 'bg-luxuryGold text-black shadow-sm' : 'text-white hover:bg-white/5'
+        }" data-name="All">All Categories</button>
       `;
 
       categoryButtons += this.categories.filter(c => c.isActive).map(c => `
         <button class="category-filter-btn text-left px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-premium ${
-          this.selectedCategory === c.name ? 'bg-luxuryGold text-white shadow-sm' : 'text-coffeeBrown hover:bg-luxuryBeige/45'
+          this.selectedCategory === c.name ? 'bg-luxuryGold text-black shadow-sm' : 'text-white hover:bg-white/5'
         }" data-name="${c.name}">${c.name}</button>
       `).join('');
 
       container.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div class="text-center space-y-3 mb-12">
-            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Atelier Collections</span>
-            <h1 class="text-4xl font-serif text-darkBrown">La Boutique</h1>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+          <div class="text-center space-y-3">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Catalog</span>
+            <h1 class="text-4xl font-serif text-white">The Boutique</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
+          </div>
+
+          <div class="max-w-xl mx-auto">
+            ${genderSelectorTabs}
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
             <!-- Sidebar Navigation Categories -->
             <div class="lg:col-span-1 space-y-6">
-              <div class="bg-white/60 p-6 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-4">
-                <p class="text-[10px] font-bold text-coffeeBrown uppercase tracking-wider border-b border-luxuryGold/10 pb-2">Filter by Atelier</p>
+              <div class="bg-luxuryBeige p-6 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-4">
+                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider border-b border-luxuryGold/10 pb-2">Atelier Collections</p>
                 <div class="flex flex-col gap-1.5">
                   ${categoryButtons}
                 </div>
@@ -1246,8 +1538,8 @@
             <!-- Products Segment -->
             <div class="lg:col-span-3">
               ${filtered.length === 0 ? `
-                <div class="text-center py-16 bg-white/40 rounded-3xl border border-luxuryGold/10">
-                  <p class="text-sm text-gray-500 italic">No elegant compositions match your criteria currently.</p>
+                <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10">
+                  <p class="text-sm text-gray-400 italic">No products match this selection currently.</p>
                 </div>
               ` : `
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1259,7 +1551,14 @@
         </div>
       `;
 
-      // Bind filter handlers
+      document.querySelectorAll(".gender-section-btn").forEach(btn => {
+        btn.onclick = () => {
+          store.selectedGenderSection = btn.getAttribute("data-gender");
+          store.renderShopPage();
+          store.updateDOM(); // Rerender completely to shift dynamic body theme seamlessly!
+        };
+      });
+
       document.querySelectorAll(".category-filter-btn").forEach(btn => {
         btn.onclick = () => {
           store.selectedCategory = btn.getAttribute("data-name");
@@ -1272,21 +1571,22 @@
 
     store.renderAdminPage = function() {
       const container = document.getElementById("app-content");
+      if (!container) return;
 
       if (!this.isAdmin) {
         container.innerHTML = `
           <div class="max-w-md mx-auto px-4 py-24">
-            <div class="bg-[#FAF3E7] p-8 rounded-3xl border border-luxuryGold/30 shadow-2xl space-y-6 text-center">
-              <div class="w-16 h-16 rounded-full bg-luxuryBeige/50 text-luxuryGold flex items-center justify-center mx-auto">
+            <div class="bg-[#141414] p-8 rounded-3xl border border-luxuryGold/30 shadow-2xl space-y-6 text-center">
+              <div class="w-16 h-16 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center mx-auto">
                 ${getIconSvg('lock', 'w-8 h-8')}
               </div>
               <div class="space-y-1">
-                <h2 class="font-serif text-2xl text-coffeeBrown">Atelier Portal</h2>
+                <h2 class="font-serif text-2xl text-white">Atelier Portal</h2>
                 <p class="text-xs text-gray-400">Enter passcode to access dashboard metrics</p>
               </div>
               <form id="admin-login-form" class="space-y-4">
-                <input type="password" id="admin-passcode-field" required placeholder="Atelier Passcode" class="w-full text-center px-4 py-3 text-sm rounded-xl border border-luxuryGold/20 focus:outline-none focus:border-luxuryGold bg-white font-mono">
-                <button type="submit" class="w-full py-3.5 bg-darkBrown hover:bg-coffeeBrown text-white font-bold uppercase tracking-widest text-xs rounded-xl transition shadow-md">Unlock Workspace</button>
+                <input type="password" id="admin-passcode-field" required placeholder="Atelier Passcode" class="w-full text-center px-4 py-3 text-sm rounded-xl border border-luxuryGold/20 focus:outline-none focus:border-luxuryGold bg-black text-white font-mono">
+                <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold uppercase tracking-widest text-xs rounded-xl transition shadow-md">Unlock Workspace</button>
               </form>
             </div>
           </div>
@@ -1301,7 +1601,7 @@
             showToast("Workspace unlocked successfully.");
             store.renderAdminPage();
           } else {
-            showToast("Invalid administrative credentials.", "error");
+            showToast("Invalid credentials.", "error");
           }
         };
         return;
@@ -1309,23 +1609,23 @@
 
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
-          <div class="bg-[#3D2A1C] text-white p-8 rounded-3xl border border-luxuryGold/40 flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl">
+          <div class="bg-[#141414] text-white p-8 rounded-3xl border border-luxuryGold/40 flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl">
             <div class="space-y-2">
-              <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">VIP Workspace</span>
-              <h1 class="text-3xl font-serif">Royal Command Center</h1>
-              <p class="text-xs text-softBeige/70">Store configurations, order management, and live performance metrics.</p>
+              <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Executive Admin Workspace</span>
+              <h1 class="text-3xl font-serif">SOVANEX Control Suite</h1>
+              <p class="text-xs text-gray-400">Store configurations, order management, logo uploads, social links, and live metrics.</p>
             </div>
             <div class="flex gap-3">
-              <button id="admin-logout-btn" class="px-4 py-2 bg-white/15 hover:bg-white/20 text-[#FAF3E7] text-xs font-bold uppercase tracking-widest rounded-lg border border-luxuryGold/40 transition">Logout</button>
-              <button id="admin-add-product-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown text-xs font-bold uppercase tracking-widest rounded-lg transition">+ Add Bouquet</button>
+              <button id="admin-logout-btn" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-widest rounded-lg border border-luxuryGold/40 transition">Logout</button>
+              <button id="admin-add-product-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase tracking-widest rounded-lg transition">+ Add Product</button>
             </div>
           </div>
 
-          <!-- Dynamic Tab Control Navigation -->
+          <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings"].map(tab => `
+            ${["dashboard", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
-                this.adminView === tab ? 'bg-luxuryGold text-white shadow-md' : 'text-coffeeBrown hover:bg-[#F5E6D3]/40'
+                this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
             `).join('')}
           </div>
@@ -1337,7 +1637,7 @@
 
       document.getElementById("admin-logout-btn").onclick = () => {
         store.isAdmin = false;
-        showToast("Purged credentials.");
+        showToast("Logged out successfully.");
         store.renderAdminPage();
       };
 
@@ -1375,6 +1675,8 @@
         this.renderAdminLookbook(container);
       } else if (this.adminView === "telegram-settings") {
         this.renderAdminTelegramSettings(container);
+      } else if (this.adminView === "general-settings") {
+        this.renderAdminGeneralSettings(container);
       }
     };
 
@@ -1386,43 +1688,43 @@
       container.innerHTML = `
         <div class="space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
-              <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Total Revenue</p>
-              <p class="text-3xl font-serif font-bold text-darkBrown mt-1">${totalRevenue} MAD</p>
+            <div class="bg-[#141414] p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
+              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Total Revenue</p>
+              <p class="text-3xl font-serif font-bold text-white mt-1">${totalRevenue} MAD</p>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
-              <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Pending Orders</p>
-              <p class="text-3xl font-serif font-bold text-darkBrown mt-1">${pendingOrders}</p>
+            <div class="bg-[#141414] p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
+              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Pending Orders</p>
+              <p class="text-3xl font-serif font-bold text-white mt-1">${pendingOrders}</p>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
-              <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Total Orders</p>
-              <p class="text-3xl font-serif font-bold text-darkBrown mt-1">${this.orders.length}</p>
+            <div class="bg-[#141414] p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
+              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Total Orders</p>
+              <p class="text-3xl font-serif font-bold text-white mt-1">${this.orders.length}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-luxuryGold/20 shadow-sm">
+            <div class="lg:col-span-2 bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-sm">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="font-serif text-lg text-coffeeBrown uppercase tracking-wider">Revenue Analytics</h3>
+                <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider">Revenue Analytics</h3>
               </div>
               <div class="h-72 relative w-full">
                 <canvas id="analyticsChart"></canvas>
               </div>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl border border-luxuryGold/20 shadow-sm flex flex-col justify-between">
+            <div class="bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 class="font-serif text-lg text-coffeeBrown uppercase tracking-wider mb-4 border-b border-luxuryGold/10 pb-2">Top Compositions</h3>
+                <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider mb-4 border-b border-luxuryGold/10 pb-2">Top Items</h3>
                 <div class="space-y-4">
                   ${this.products.slice(0, 4).map((p, idx) => `
                     <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3">
                       <span class="text-xs font-bold text-luxuryGold">#${idx+1}</span>
                       <img src="${p.imageURL || fallbackImage}" class="w-10 h-10 object-cover rounded-lg" loading="lazy">
                       <div class="flex-1">
-                        <p class="text-xs font-semibold text-darkBrown line-clamp-1">${p.name}</p>
-                        <p class="text-[10px] text-gray-400">${p.category}</p>
+                        <p class="text-xs font-semibold text-white line-clamp-1">${p.name}</p>
+                        <p class="text-[10px] text-gray-400">${p.category} (${getNormalizedGender(p.gender)})</p>
                       </div>
-                      <span class="text-xs font-serif font-bold text-coffeeBrown">${p.price} MAD</span>
+                      <span class="text-xs font-serif font-bold text-luxuryGold">${p.price} MAD</span>
                     </div>
                   `).join('')}
                 </div>
@@ -1437,36 +1739,40 @@
 
     store.renderAdminProducts = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-darkBrown">
-              <thead class="bg-[#FAF3E7] uppercase font-bold border-b border-luxuryGold/25">
+            <table class="w-full text-left text-xs text-white">
+              <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold">
                 <tr>
-                  <th class="p-4">Composition</th>
+                  <th class="p-4">Masterpiece</th>
+                  <th class="p-4">Collection</th>
                   <th class="p-4">Category</th>
                   <th class="p-4">Price</th>
                   <th class="p-4">Stock</th>
                   <th class="p-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody class="divide-y divide-white/5">
                 ${this.products.map(p => `
-                  <tr class="hover:bg-[#FAF3E7]/50 transition">
+                  <tr class="hover:bg-white/5 transition">
                     <td class="p-4 flex items-center gap-3">
                       <img src="${p.imageURL || fallbackImage}" class="w-12 h-12 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
                       <div>
-                        <p class="font-semibold">${p.name}</p>
+                        <p class="font-semibold text-white">${p.name}</p>
                         <p class="text-[10px] text-gray-400">Rating: ${p.rating} ★</p>
                       </div>
                     </td>
-                    <td class="p-4">${p.category}</td>
-                    <td class="p-4">${p.discountPrice ? `${p.discountPrice} <span class="line-through text-gray-400">${p.price}</span>` : p.price} MAD</td>
                     <td class="p-4">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${p.stock <= 3 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}">${p.stock} remaining</span>
+                      <span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase bg-luxuryGold/10 text-luxuryGold border border-luxuryGold/20">${getNormalizedGender(p.gender)}</span>
+                    </td>
+                    <td class="p-4 text-gray-300">${p.category}</td>
+                    <td class="p-4 font-bold text-luxuryGold">${p.discountPrice ? `${p.discountPrice} <span class="line-through text-gray-500 font-normal">${p.price}</span>` : p.price} MAD</td>
+                    <td class="p-4">
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${p.stock <= 3 ? 'bg-red-950 text-red-300' : 'bg-emerald-950 text-emerald-300'}">${p.stock} remaining</span>
                     </td>
                     <td class="p-4 text-right space-x-2">
-                      <button class="edit-prod-btn px-3 py-1 bg-luxuryGold text-white rounded text-[10px] uppercase font-bold" data-id="${p.id}">Edit</button>
-                      <button class="del-prod-btn px-3 py-1 bg-red-600 text-white rounded text-[10px] uppercase font-bold" data-id="${p.id}">Delete</button>
+                      <button class="edit-prod-btn px-3 py-1 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded text-[10px] uppercase font-bold" data-id="${p.id}">Edit</button>
+                      <button class="del-prod-btn px-3 py-1 bg-red-700 hover:bg-red-850 text-white rounded text-[10px] uppercase font-bold" data-id="${p.id}">Delete</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -1497,19 +1803,23 @@
 
     store.openProductForm = function(product = null) {
       const container = document.getElementById("product-detail-container");
+      if (!container) return;
+      
+      const currentNormalizedGender = product ? getNormalizedGender(product.gender) : "GIRLS STORE";
+
       container.innerHTML = `
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-xs"></div>
-        <form id="product-edit-form" class="relative bg-[#FAF3E7] w-full max-w-lg rounded-3xl p-8 border border-luxuryGold/30 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto">
-          <h3 class="font-serif text-2xl text-coffeeBrown mb-4 border-b border-luxuryGold/20 pb-2">${product ? "Edit Luxury Piece" : "Add New Composition"}</h3>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-xs"></div>
+        <form id="product-edit-form" class="relative bg-[#141414] w-full max-w-lg rounded-3xl p-8 border border-luxuryGold/30 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto">
+          <h3 class="font-serif text-2xl text-luxuryGold mb-4 border-b border-luxuryGold/20 pb-2">${product ? "Edit Luxury Piece" : "Add New Piece"}</h3>
           
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Product Name</label>
-              <input type="text" name="name" required value="${product ? product.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Product Name</label>
+              <input type="text" name="name" required value="${product ? product.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
             <div>
-              <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Category</label>
-              <select name="category" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Category</label>
+              <select name="category" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
                 ${this.categories.map(c => `<option value="${c.name}" ${product && product.category === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
               </select>
             </div>
@@ -1517,37 +1827,45 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Standard Price (MAD)</label>
-              <input type="number" name="price" required value="${product ? product.price : 350}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Gender Segment</label>
+              <select name="gender" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-bold">
+                <option value="GIRLS STORE" ${currentNormalizedGender === "GIRLS STORE" ? "selected" : ""}>GIRLS STORE</option>
+                <option value="MAN STORE" ${currentNormalizedGender === "MAN STORE" ? "selected" : ""}>MAN STORE</option>
+              </select>
             </div>
             <div>
-              <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Discount Price (MAD)</label>
-              <input type="number" name="discountPrice" value="${product && product.discountPrice ? product.discountPrice : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Retail Price (MAD)</label>
+              <input type="number" name="price" required value="${product ? product.price : 350}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
           </div>
 
           <div>
-            <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">High-Res Image URL</label>
-            <input type="url" name="imageURL" required value="${product ? product.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Discount Price (MAD)</label>
+            <input type="number" name="discountPrice" value="${product && product.discountPrice ? product.discountPrice : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
           </div>
 
           <div>
-            <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Composition Description</label>
-            <textarea name="description" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white h-20 resize-none">${product ? product.description : ''}</textarea>
+            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">High-Res Image URL</label>
+            <input type="url" name="imageURL" required value="${product ? product.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Item Description</label>
+            <textarea name="description" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-20 resize-none">${product ? product.description : ''}</textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Stock Quantity</label>
-              <input type="number" name="stock" required value="${product ? product.stock : 10}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Stock Quantity</label>
+              <input type="number" name="stock" required value="${product ? product.stock : 10}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
             <div>
-              <label class="block text-[10px] font-semibold text-coffeeBrown uppercase mb-1">Rating</label>
-              <input type="number" step="0.1" name="rating" required value="${product ? product.rating : 5.0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Rating</label>
+              <input type="number" step="0.1" name="rating" required value="${product ? product.rating : 5.0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
           </div>
 
-          <div class="flex gap-4 p-3 bg-white/40 rounded-xl">
+          <div class="flex gap-4 p-3 bg-black/50 rounded-xl border border-luxuryGold/10">
             <label class="flex items-center gap-2 text-xs">
               <input type="checkbox" name="isPromotion" ${product && product.isPromotion ? 'checked' : ''} class="rounded text-luxuryGold"> Promotion
             </label>
@@ -1560,8 +1878,8 @@
           </div>
 
           <div class="flex gap-3 justify-end pt-4 border-t border-luxuryGold/20">
-            <button type="button" id="form-cancel-btn" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs font-bold uppercase border border-gray-200">Cancel</button>
-            <button type="submit" class="px-6 py-2 bg-darkBrown text-white rounded-lg text-xs font-bold uppercase">Save</button>
+            <button type="button" id="form-cancel-btn" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs font-bold uppercase border border-white/10">Cancel</button>
+            <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs font-bold uppercase">Save</button>
           </div>
         </form>
       `;
@@ -1575,6 +1893,7 @@
         const payload = {
           name: form.name.value,
           category: form.category.value,
+          gender: form.gender.value, // Saves GIRLS STORE or MAN STORE directly
           price: Number(form.price.value),
           discountPrice: form.discountPrice.value ? Number(form.discountPrice.value) : null,
           imageURL: form.imageURL.value,
@@ -1590,12 +1909,12 @@
         try {
           if (product) {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), payload);
-            showToast("Product updated.");
+            showToast("Product updated successfully.");
           } else {
             payload.createdAt = new Date();
             payload.reviewsCount = 0;
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), payload);
-            showToast("New product created.");
+            showToast("New product created successfully.");
           }
           container.classList.add("hidden");
         } catch (err) {
@@ -1606,37 +1925,37 @@
 
     store.renderAdminOrders = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-darkBrown">
-              <thead class="bg-[#FAF3E7] uppercase font-bold border-b border-luxuryGold/25">
+            <table class="w-full text-left text-xs text-white">
+              <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold">
                 <tr>
                   <th class="p-4">Client Detail</th>
                   <th class="p-4">Item Compositions</th>
                   <th class="p-4">Total Price</th>
-                  <th class="p-4">Status Flag</th>
+                  <th class="p-4">Status</th>
                   <th class="p-4 text-right">Fulfillment</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody class="divide-y divide-white/5">
                 ${this.orders.map(o => `
-                  <tr class="hover:bg-[#FAF3E7]/50 transition">
+                  <tr class="hover:bg-white/5 transition">
                     <td class="p-4">
-                      <p class="font-bold text-sm text-coffeeBrown">${o.customerName}</p>
-                      <p class="text-[10px] text-gray-500">${o.phone} — ${o.address} (${o.deliveryCity || 'Morocco'})</p>
+                      <p class="font-bold text-sm text-luxuryGold">${o.customerName}</p>
+                      <p class="text-[10px] text-gray-400 mt-1">${o.phone} — ${o.address} (${o.deliveryCity || 'Morocco'})</p>
                     </td>
                     <td class="p-4">
-                      ${o.items?.map(item => `<p class="text-[11px] text-gray-600">• ${item.name} <strong class="text-darkBrown">x${item.quantity}</strong></p>`).join('')}
+                      ${o.items?.map(item => `<p class="text-[11px] text-gray-300">• ${item.name} <strong class="text-luxuryGold">x${item.quantity}</strong></p>`).join('')}
                     </td>
-                    <td class="p-4 font-serif font-bold text-darkBrown">${o.total} MAD</td>
+                    <td class="p-4 font-serif font-bold text-luxuryGold">${o.total} MAD</td>
                     <td class="p-4">
-                      <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${o.status === 'pending' ? 'bg-red-100 text-red-800' : o.status === 'cancelled' ? 'bg-gray-100 text-gray-400' : 'bg-emerald-100 text-emerald-800'}">${o.status || 'pending'}</span>
+                      <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${o.status === 'pending' ? 'bg-red-950 text-red-300' : o.status === 'cancelled' ? 'bg-white/5 text-gray-500' : 'bg-emerald-950 text-emerald-300'}">${o.status || 'pending'}</span>
                     </td>
                     <td class="p-4 text-right space-x-2">
                       ${o.status === 'pending' ? `
-                        <button class="fulfill-order-btn px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] uppercase font-bold" data-id="${o.id}">Fulfill</button>
-                        <button class="cancel-order-btn px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] uppercase font-bold" data-id="${o.id}">Cancel</button>
-                      ` : `<span class="text-[10px] text-gray-400">Archived</span>`}
+                        <button class="fulfill-order-btn px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] uppercase font-bold" data-id="${o.id}">Fulfill</button>
+                        <button class="cancel-order-btn px-3 py-1 bg-red-700 hover:bg-red-850 text-white rounded text-[10px] uppercase font-bold" data-id="${o.id}">Cancel</button>
+                      ` : `<span class="text-[10px] text-gray-500">Archived</span>`}
                     </td>
                   </tr>
                 `).join('')}
@@ -1650,7 +1969,7 @@
         btn.onclick = async () => {
           const id = btn.getAttribute("data-id");
           await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "processed" });
-          showToast("Order completed!");
+          showToast("Order fulfilled successfully!");
         };
       });
 
@@ -1660,13 +1979,8 @@
           const order = store.orders.find(o => o.id === id);
           if (!order) return;
 
-          triggerConfirm("Cancel Order", "Remove from database telemetry?", async () => {
+          triggerConfirm("Cancel Order", "Remove this order from database tracking?", async () => {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "cancelled" });
-            const analyticsRef = doc(db, 'artifacts', appId, 'public', 'data', 'analytics', 'live');
-            await updateDoc(analyticsRef, {
-              dailyRevenue: increment(-order.total),
-              dailyOrders: increment(-1)
-            });
             showToast("Order cancelled.");
           });
         };
@@ -1675,20 +1989,20 @@
 
     store.renderAdminReviews = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <h3 class="font-serif text-xl text-coffeeBrown">Moderation Grid</h3>
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <h3 class="font-serif text-xl text-luxuryGold">Moderation Grid</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             ${this.reviews.map(r => `
-              <div class="p-5 bg-[#FAF3E7] rounded-2xl border border-luxuryGold/20 flex flex-col justify-between gap-4">
+              <div class="p-5 bg-black/60 rounded-2xl border border-luxuryGold/20 flex flex-col justify-between gap-4">
                 <div>
                   <div class="flex justify-between">
-                    <h4 class="font-serif font-bold text-coffeeBrown">${r.customerName} (${r.customerLocation || 'Morocco'})</h4>
+                    <h4 class="font-serif font-bold text-luxuryGold">${r.customerName} (${r.customerLocation || 'Morocco'})</h4>
                     <span class="text-xs text-amber-500">${"★".repeat(r.rating || 5)}</span>
                   </div>
-                  <p class="text-xs text-gray-600 mt-3 italic">"${r.comment}"</p>
+                  <p class="text-xs text-gray-300 mt-3 italic">"${r.comment}"</p>
                 </div>
                 <div class="text-right">
-                  <button class="delete-review-btn text-[10px] text-red-600 uppercase font-bold" data-id="${r.id}">✕ Delete Feedback</button>
+                  <button class="delete-review-btn text-[10px] text-red-400 uppercase font-bold" data-id="${r.id}">✕ Delete Feedback</button>
                 </div>
               </div>
             `).join('')}
@@ -1699,9 +2013,9 @@
       document.querySelectorAll(".delete-review-btn").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
-          triggerConfirm("Delete Review", "Are you sure you want to delete this client's comments?", async () => {
+          triggerConfirm("Delete Review", "Are you sure you want to delete this client's review?", async () => {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reviews', id));
-            showToast("Review deleted.");
+            showToast("Review deleted successfully.");
           });
         };
       });
@@ -1709,35 +2023,35 @@
 
     store.renderAdminDelivery = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="flex justify-between items-center border-b pb-4">
-            <h3 class="font-serif text-xl text-coffeeBrown">Moroccan Cities Pricing</h3>
-            <button id="add-city-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown text-xs font-bold uppercase rounded-lg transition">+ Add City</button>
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="flex justify-between items-center border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Moroccan Cities Pricing</h3>
+            <button id="add-city-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase rounded-lg transition">+ Add City</button>
           </div>
 
-          <div id="city-form-mount" class="hidden bg-[#FAF3E7] p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
+          <div id="city-form-mount" class="hidden bg-black/60 p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-darkBrown">
-              <thead class="bg-[#FAF3E7] uppercase font-bold border-b border-luxuryGold/25">
+            <table class="w-full text-left text-xs text-white">
+              <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold">
                 <tr>
                   <th class="p-4">City Name</th>
-                  <th class="p-4">Delivery price</th>
+                  <th class="p-4">Delivery Price</th>
                   <th class="p-4">Fulfillment Status</th>
                   <th class="p-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody class="divide-y divide-white/5">
                 ${this.deliveryCities.map(c => `
-                  <tr class="hover:bg-[#FAF3E7]/50 transition">
-                    <td class="p-4 font-semibold">${c.name}</td>
+                  <tr class="hover:bg-white/5 transition">
+                    <td class="p-4 font-semibold text-white">${c.name}</td>
                     <td class="p-4 font-bold text-luxuryGold">${c.price} MAD</td>
                     <td class="p-4">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${c.isActive ? 'Active' : 'Disabled'}</span>
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.isActive ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}">${c.isActive ? 'Active' : 'Disabled'}</span>
                     </td>
                     <td class="p-4 text-right space-x-2">
-                      <button class="edit-city-btn px-3 py-1 bg-luxuryGold text-white rounded text-[10px] uppercase font-bold" data-id="${c.id}">Edit</button>
-                      <button class="delete-city-btn px-3 py-1 bg-red-600 text-white rounded text-[10px] uppercase font-bold" data-id="${c.id}">Delete</button>
+                      <button class="edit-city-btn px-3 py-1 bg-luxuryGold text-black rounded text-[10px] uppercase font-bold" data-id="${c.id}">Edit</button>
+                      <button class="delete-city-btn px-3 py-1 bg-red-700 text-white rounded text-[10px] uppercase font-bold" data-id="${c.id}">Delete</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -1751,25 +2065,25 @@
 
       const showCityForm = (city = null) => {
         formMount.innerHTML = `
-          <h4 class="font-serif text-md text-coffeeBrown">${city ? 'Edit City' : 'Add New City'}</h4>
+          <h4 class="font-serif text-md text-luxuryGold">${city ? 'Edit City' : 'Add New City'}</h4>
           <form id="city-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">City Name</label>
-                <input type="text" name="cityName" required value="${city ? city.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">City Name</label>
+                <input type="text" name="cityName" required value="${city ? city.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Delivery Charge (MAD)</label>
-                <input type="number" name="price" required value="${city ? city.price : 40}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Delivery Charge (MAD)</label>
+                <input type="number" name="price" required value="${city ? city.price : 40}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
             </div>
             <div class="flex items-center gap-2">
               <input type="checkbox" name="isActive" ${!city || city.isActive ? 'checked' : ''} class="rounded text-luxuryGold">
-              <label class="text-xs text-coffeeBrown font-semibold">Active in Checkout</label>
+              <label class="text-xs text-gray-300 font-semibold">Active for Checkout</label>
             </div>
             <div class="flex gap-3 justify-end">
-              <button type="button" id="city-form-cancel" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold border border-gray-200">Cancel</button>
-              <button type="submit" class="px-6 py-2 bg-darkBrown text-white rounded-lg text-xs uppercase font-bold">Save</button>
+              <button type="button" id="city-form-cancel" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Cancel</button>
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save</button>
             </div>
           </form>
         `;
@@ -1791,11 +2105,11 @@
             const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
             if (city) {
               await updateDoc(doc(collectionRef, city.id), payload);
-              showToast("City Updated.");
+              showToast("City updated successfully.");
             } else {
               payload.createdAt = new Date();
               await addDoc(collectionRef, payload);
-              showToast("City Added.");
+              showToast("City added successfully.");
             }
             formMount.classList.add("hidden");
           } catch (err) {
@@ -1819,7 +2133,7 @@
           const id = btn.getAttribute("data-id");
           triggerConfirm("Delete City", "Remove this city from the delivery database?", async () => {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deliveryCities', id));
-            showToast("City deleted.");
+            showToast("City deleted successfully.");
           });
         };
       });
@@ -1827,35 +2141,35 @@
 
     store.renderAdminCategories = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="flex justify-between items-center border-b pb-4">
-            <h3 class="font-serif text-xl text-coffeeBrown">Store Collections / Categories</h3>
-            <button id="add-cat-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown text-xs font-bold uppercase rounded-lg transition">+ Add Category</button>
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="flex justify-between items-center border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Store Collections / Categories</h3>
+            <button id="add-cat-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase rounded-lg transition">+ Add Category</button>
           </div>
 
-          <div id="cat-form-mount" class="hidden bg-[#FAF3E7] p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
+          <div id="cat-form-mount" class="hidden bg-black/60 p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-darkBrown">
-              <thead class="bg-[#FAF3E7] uppercase font-bold border-b border-luxuryGold/25">
+            <table class="w-full text-left text-xs text-white">
+              <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold">
                 <tr>
                   <th class="p-4">Category Name</th>
-                  <th class="p-4">Sorting Order</th>
+                  <th class="p-4">Display Order</th>
                   <th class="p-4">Status</th>
                   <th class="p-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody class="divide-y divide-white/5">
                 ${this.categories.map(c => `
-                  <tr class="hover:bg-[#FAF3E7]/50 transition">
-                    <td class="p-4 font-semibold">${c.name}</td>
+                  <tr class="hover:bg-white/5 transition">
+                    <td class="p-4 font-semibold text-white">${c.name}</td>
                     <td class="p-4 font-bold text-luxuryGold">${c.order || 1}</td>
                     <td class="p-4">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${c.isActive ? 'Active' : 'Disabled'}</span>
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.isActive ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}">${c.isActive ? 'Active' : 'Disabled'}</span>
                     </td>
                     <td class="p-4 text-right space-x-2">
-                      <button class="edit-cat-btn px-3 py-1 bg-luxuryGold text-white rounded text-[10px] uppercase font-bold" data-id="${c.id}">Edit</button>
-                      <button class="delete-cat-btn px-3 py-1 bg-red-600 text-white rounded text-[10px] uppercase font-bold" data-id="${c.id}">Delete</button>
+                      <button class="edit-cat-btn px-3 py-1 bg-luxuryGold text-black rounded text-[10px] uppercase font-bold" data-id="${c.id}">Edit</button>
+                      <button class="delete-cat-btn px-3 py-1 bg-red-700 text-white rounded text-[10px] uppercase font-bold" data-id="${c.id}">Delete</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -1869,25 +2183,25 @@
 
       const showCatForm = (category = null) => {
         formMount.innerHTML = `
-          <h4 class="font-serif text-md text-coffeeBrown">${category ? 'Edit Category' : 'Add Category'}</h4>
+          <h4 class="font-serif text-md text-luxuryGold">${category ? 'Edit Category' : 'Add Category'}</h4>
           <form id="cat-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Name</label>
-                <input type="text" name="catName" required value="${category ? category.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Name</label>
+                <input type="text" name="catName" required value="${category ? category.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Sorting Order</label>
-                <input type="number" name="order" required value="${category ? category.order : 1}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Display Order</label>
+                <input type="number" name="order" required value="${category ? category.order : 1}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
             </div>
             <div class="flex items-center gap-2">
               <input type="checkbox" name="isActive" ${!category || category.isActive ? 'checked' : ''} class="rounded text-luxuryGold">
-              <label class="text-xs text-coffeeBrown font-semibold">Visible</label>
+              <label class="text-xs text-gray-300 font-semibold">Visible</label>
             </div>
             <div class="flex gap-3 justify-end">
-              <button type="button" id="cat-form-cancel" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold border border-gray-200">Cancel</button>
-              <button type="submit" class="px-6 py-2 bg-darkBrown text-white rounded-lg text-xs uppercase font-bold">Save</button>
+              <button type="button" id="cat-form-cancel" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Cancel</button>
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save</button>
             </div>
           </form>
         `;
@@ -1909,11 +2223,11 @@
             const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
             if (category) {
               await updateDoc(doc(collectionRef, category.id), payload);
-              showToast("Category Updated.");
+              showToast("Category updated successfully.");
             } else {
               payload.createdAt = new Date();
               await addDoc(collectionRef, payload);
-              showToast("Category Added.");
+              showToast("Category added successfully.");
             }
             formMount.classList.add("hidden");
           } catch (err) {
@@ -1935,9 +2249,9 @@
       document.querySelectorAll(".delete-cat-btn").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
-          triggerConfirm("Delete Category", "Remove from database?", async () => {
+          triggerConfirm("Delete Category", "Are you sure you want to remove this category?", async () => {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'categories', id));
-            showToast("Category deleted.");
+            showToast("Category deleted successfully.");
           });
         };
       });
@@ -1945,17 +2259,17 @@
 
     store.renderAdminLookbook = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="flex justify-between items-center border-b pb-4">
-            <h3 class="font-serif text-xl text-coffeeBrown">Our Living Lookbook Management</h3>
-            <button id="add-lookbook-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown text-xs font-bold uppercase rounded-lg transition">+ Add Lookbook Post</button>
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="flex justify-between items-center border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Lookbook Management</h3>
+            <button id="add-lookbook-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase rounded-lg transition">+ Add Lookbook Post</button>
           </div>
 
-          <div id="lookbook-form-mount" class="hidden bg-[#FAF3E7] p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
+          <div id="lookbook-form-mount" class="hidden bg-black/60 p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             ${this.lookbook.map(item => `
-              <div class="bg-[#FAF3E7]/40 rounded-2xl border border-luxuryGold/15 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
+              <div class="bg-black/40 rounded-2xl border border-luxuryGold/15 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div class="h-44 overflow-hidden relative">
                   <img src="${item.imageURL || fallbackImage}" class="w-full h-full object-cover" onerror="this.src='${fallbackImage}'">
                 </div>
@@ -1965,10 +2279,10 @@
                     <a href="${item.postURL}" target="_blank" rel="noopener noreferrer" class="text-xs text-luxuryGold font-medium hover:underline block truncate">${item.postURL || 'No Link Attached'}</a>
                   </div>
                   <div class="flex justify-between items-center pt-2 border-t border-luxuryGold/10">
-                    <span class="text-[10px] text-coffeeBrown">Order: <strong>${item.order || 0}</strong></span>
+                    <span class="text-[10px] text-gray-300">Order: <strong>${item.order || 0}</strong></span>
                     <div class="space-x-2">
-                      <button class="edit-lookbook-btn text-[10px] uppercase font-bold text-luxuryGold hover:text-darkBrown transition" data-id="${item.id}">Edit</button>
-                      <button class="delete-lookbook-btn text-[10px] uppercase font-bold text-red-600 hover:text-red-800 transition" data-id="${item.id}">Delete</button>
+                      <button class="edit-lookbook-btn text-[10px] uppercase font-bold text-luxuryGold hover:text-white transition" data-id="${item.id}">Edit</button>
+                      <button class="delete-lookbook-btn text-[10px] uppercase font-bold text-red-500 hover:text-red-700 transition" data-id="${item.id}">Delete</button>
                     </div>
                   </div>
                 </div>
@@ -1985,25 +2299,25 @@
 
       const showLookbookForm = (lookbookItem = null) => {
         formMount.innerHTML = `
-          <h4 class="font-serif text-md text-coffeeBrown">${lookbookItem ? 'Edit Lookbook Post' : 'Add Lookbook Post'}</h4>
+          <h4 class="font-serif text-md text-luxuryGold">${lookbookItem ? 'Edit Lookbook Post' : 'Add Lookbook Post'}</h4>
           <form id="lookbook-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Image URL</label>
-                <input type="url" name="imageURL" required value="${lookbookItem ? lookbookItem.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Image URL</label>
+                <input type="url" name="imageURL" required value="${lookbookItem ? lookbookItem.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Instagram Post URL</label>
-                <input type="url" name="postURL" required value="${lookbookItem ? lookbookItem.postURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Instagram Post URL</label>
+                <input type="url" name="postURL" required value="${lookbookItem ? lookbookItem.postURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
             </div>
             <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-coffeeBrown">Display Order</label>
-              <input type="number" name="order" required value="${lookbookItem ? lookbookItem.order : 0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white">
+              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Display Order</label>
+              <input type="number" name="order" required value="${lookbookItem ? lookbookItem.order : 0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
             </div>
             <div class="flex gap-3 justify-end">
-              <button type="button" id="lookbook-form-cancel" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold border border-gray-200">Cancel</button>
-              <button type="submit" class="px-6 py-2 bg-darkBrown text-white rounded-lg text-xs uppercase font-bold">Save</button>
+              <button type="button" id="lookbook-form-cancel" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Cancel</button>
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save</button>
             </div>
           </form>
         `;
@@ -2025,11 +2339,11 @@
             const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
             if (lookbookItem) {
               await updateDoc(doc(collectionRef, lookbookItem.id), payload);
-              showToast("Lookbook Post Updated.");
+              showToast("Lookbook post updated successfully.");
             } else {
               payload.createdAt = new Date();
               await addDoc(collectionRef, payload);
-              showToast("Lookbook Post Added.");
+              showToast("Lookbook post added successfully.");
             }
             formMount.classList.add("hidden");
           } catch (err) {
@@ -2053,7 +2367,7 @@
           const id = btn.getAttribute("data-id");
           triggerConfirm("Delete Lookbook Post", "Remove this post from the public lookbook?", async () => {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lookbook', id));
-            showToast("Lookbook post deleted.");
+            showToast("Lookbook post deleted successfully.");
           });
         };
       });
@@ -2061,42 +2375,42 @@
 
     store.renderAdminTelegramSettings = function(container) {
       container.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="border-b pb-4">
-            <h3 class="font-serif text-xl text-coffeeBrown">Telegram Bot API Controller</h3>
-            <p class="text-xs text-gray-400">Configure instant Telegram order notifications securely saved in Firestore.</p>
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Telegram Bot API Controller</h3>
+            <p class="text-xs text-gray-400">Configure instant Telegram order notifications securely saved on Firestore.</p>
           </div>
 
           <form id="telegram-settings-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase font-bold text-coffeeBrown mb-1">Telegram Bot Token</label>
-                <input type="password" name="botToken" placeholder="123456789:ABCdefGhIJKlmNoPQRs..." value="${this.telegramSettings.botToken || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white font-mono">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Telegram Bot Token</label>
+                <input type="password" name="botToken" placeholder="123456789:ABCdefGhIJKlmNoPQRs..." value="${this.telegramSettings.botToken || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-mono">
               </div>
               <div>
-                <label class="block text-[10px] uppercase font-bold text-coffeeBrown mb-1">Status Switch</label>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Status Switch</label>
                 <div class="flex items-center gap-3 h-10">
                   <input type="checkbox" id="botEnabledToggle" name="botEnabled" ${this.telegramSettings.botEnabled ? 'checked' : ''} class="rounded text-luxuryGold">
-                  <span class="text-xs font-semibold ${this.telegramSettings.botEnabled ? 'text-emerald-700' : 'text-gray-400'}">${this.telegramSettings.botEnabled ? 'Active / Automated' : 'Silent Mode'}</span>
+                  <span class="text-xs font-semibold ${this.telegramSettings.botEnabled ? 'text-emerald-400' : 'text-gray-400'}">${this.telegramSettings.botEnabled ? 'Active / Automated' : 'Silent Mode'}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <label class="block text-[10px] uppercase font-bold text-coffeeBrown mb-1">Admin Telegram Chat ID</label>
-              <input type="text" name="chatId" placeholder="987654321" value="${this.telegramSettings.chatId || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white font-mono">
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Admin Telegram Chat ID</label>
+              <input type="text" name="chatId" placeholder="987654321" value="${this.telegramSettings.chatId || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-mono">
               <p class="text-[9px] text-gray-400 mt-1">Get your Telegram chat ID from @userinfobot or @RawDataBot.</p>
             </div>
 
             <div>
-              <label class="block text-[10px] uppercase font-bold text-coffeeBrown mb-1">Custom Telegram Markdown Message Template</label>
-              <textarea name="template" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-white h-48 resize-none font-mono">${this.telegramSettings.template}</textarea>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Custom Telegram Markdown Message Template</label>
+              <textarea name="template" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-48 resize-none font-mono">${this.telegramSettings.template}</textarea>
               <p class="text-[9px] text-gray-400 mt-1">Variables: {products}, {subtotal}, {city}, {delivery}, {total}, {name}, {address}, {phone}, {orderId}</p>
             </div>
 
-            <div class="flex gap-3 justify-end border-t pt-4">
-              <button type="button" id="send-test-msg-btn" class="px-4 py-2 bg-white text-gray-500 rounded-lg text-xs uppercase font-bold border border-gray-200">Send Test message</button>
-              <button type="submit" class="px-6 py-2 bg-darkBrown text-white rounded-lg text-xs uppercase font-bold">Save Configuration</button>
+            <div class="flex gap-3 justify-end border-t border-white/10 pt-4">
+              <button type="button" id="send-test-msg-btn" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Send Test Message</button>
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Configuration</button>
             </div>
           </form>
         </div>
@@ -2135,7 +2449,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: chat,
-              text: "🌸 *Brown Petals Bot Online* 🌸\n\nYour Telegram integration has been configured successfully! Telemetry reports are active.",
+              text: "🌸 *SOVANEX Bot Online* 🌸\n\nYour Telegram integration has been configured successfully! Telemetry reports are active.",
               parse_mode: "Markdown"
             })
           });
@@ -2151,8 +2465,87 @@
       };
     };
 
+    store.renderAdminGeneralSettings = function(container) {
+      container.innerHTML = `
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Atelier Brand & Social Preferences</h3>
+            <p class="text-xs text-gray-400">Modify dynamic website parameters, update brand logos, and edit social platforms dynamically.</p>
+          </div>
+
+          <form id="general-settings-form" class="space-y-4">
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Brand Logo Image URL</label>
+              <input type="url" name="logoURL" placeholder="https://..." value="${this.settings.logoURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              <p class="text-[9px] text-gray-400 mt-1">Leave blank to use the high-end default typography logo design.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Brand Tagline</label>
+                <input type="text" name="tagline" placeholder="Sovereign Collection..." value="${this.settings.tagline || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">WhatsApp Hotline</label>
+                <input type="text" name="whatsappHotline" placeholder="+212..." value="${this.settings.whatsappHotline || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Instagram Profile</label>
+                <input type="url" name="instagramURL" placeholder="https://instagram.com/..." value="${this.settings.instagramURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Facebook Link</label>
+                <input type="url" name="facebookURL" placeholder="https://facebook.com/..." value="${this.settings.facebookURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Email Address</label>
+              <input type="email" name="emailCoordinate" placeholder="contact@sovanex.com" value="${this.settings.emailCoordinate || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+            </div>
+
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Website Description Text</label>
+              <textarea name="websiteDescription" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-24 resize-none">${this.settings.websiteDescription}</textarea>
+              <p class="text-[9px] text-gray-400 mt-1">This text is loaded dynamically on the main landing/homepage hero section.</p>
+            </div>
+
+            <div class="flex justify-end border-t border-white/10 pt-4">
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Brand Preferences</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.getElementById("general-settings-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const payload = {
+          logoURL: form.logoURL.value,
+          tagline: form.tagline.value,
+          whatsappHotline: form.whatsappHotline.value,
+          instagramURL: form.instagramURL.value,
+          facebookURL: form.facebookURL.value,
+          emailCoordinate: form.emailCoordinate.value,
+          websiteDescription: form.websiteDescription.value
+        };
+
+        try {
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), payload);
+          showToast("Atelier brand settings saved.");
+          store.updateDOM();
+        } catch (err) {
+          showToast("Failed to write general settings.", "error");
+        }
+      };
+    };
+
     store.renderFooter = function() {
       const container = document.getElementById("app-footer");
+      if (!container) return;
       
       let categoriesMarkup = this.categories.filter(c => c.isActive).map(c => `
         <li><button class="footer-cat-btn hover:text-luxuryGold transition" data-name="${c.name}">${c.name}</button></li>
@@ -2161,42 +2554,42 @@
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div class="space-y-4">
-            <h3 class="text-2xl font-serif tracking-widest text-luxuryGold">BROWN PETALS</h3>
-            <p class="text-sm text-softBeige/70 font-light leading-relaxed">Crafting emotions and luxury experiences through the finest handpicked roses and magnificent floral arrangements across Morocco.</p>
+            <h3 class="text-2xl font-serif tracking-widest text-luxuryGold font-extrabold">SOVANEX</h3>
+            <p class="text-sm text-gray-400 font-light leading-relaxed">Luxury destination for the finest curated handpicked watches and premium accessories designed to royal standards.</p>
           </div>
 
           <div>
-            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Collections</h4>
-            <ul class="space-y-2 text-sm text-softBeige/60 font-light">
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Atelier Collections</h4>
+            <ul class="space-y-2 text-sm text-gray-400 font-light">
               ${categoriesMarkup}
             </ul>
           </div>
 
           <div>
             <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Contact Us</h4>
-            <p class="text-sm text-softBeige/60 font-light leading-relaxed">
-              avenue la résistance Centre commercial la perle de la medina, Rabat, Morocco, 10040 🇲🇦<br>
-              Signature deliveries dynamically adjusted by City in checking out.
+            <p class="text-sm text-gray-400 font-light leading-relaxed">
+              Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040<br>
+              Signature deliveries adjusted instantly by city of checkout.
             </p>
-            <p class="text-xs text-luxuryGold/80 mt-2">Open Daily: 9:00 AM — 10:00 PM</p>
+            <p class="text-xs text-luxuryGold mt-2">Open Daily: 9:00 AM — 10:00 PM</p>
           </div>
 
           <div>
             <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Join The Atelier</h4>
-            <p class="text-sm text-softBeige/60 font-light mb-4">Subscribe to receive private invitations to our luxury seasonal flower releases & VIP masterclasses.</p>
+            <p class="text-sm text-gray-400 font-light mb-4">Subscribe to receive private invitations to our luxury seasonal releases.</p>
             <form id="newsletter-form" class="flex">
-              <input type="email" required placeholder="Your email address" class="px-4 py-2 text-xs w-full bg-white/10 text-[#FAF3E7] border border-luxuryGold/40 focus:outline-none focus:border-luxuryGold rounded-l-lg">
-              <button type="submit" class="bg-luxuryGold hover:bg-luxuryGold/90 text-darkBrown px-4 py-2 text-xs font-bold uppercase rounded-r-lg transition">Join</button>
+              <input type="email" required placeholder="Email address" class="px-4 py-2 text-xs w-full bg-white/5 text-white border border-luxuryGold/40 focus:outline-none focus:border-luxuryGold rounded-l-lg">
+              <button type="submit" class="bg-luxuryGold hover:bg-luxuryGold/90 text-black px-4 py-2 text-xs font-bold uppercase rounded-r-lg transition">Join</button>
             </form>
           </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-softBeige/40 font-light flex flex-col md:flex-row justify-between items-center gap-4">
-          <p>© 2026 Brown Petals Luxury Morocco. All Rights Reserved. Crafted with deep elegance.</p>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-gray-500 font-light flex flex-col md:flex-row justify-between items-center gap-4">
+          <p>© 2026 SOVANEX. All Rights Reserved. Designed with deep elegance.</p>
           <div class="flex gap-6 items-center">
             <a href="#" id="footer-admin-portal" class="hover:text-luxuryGold text-lg transition" title="Secure Workspace Portal">🔒</a>
-            <a href="#" class="hover:text-luxuryGold transition">Terms & Privacy</a>
-            <a href="#" class="hover:text-luxuryGold transition">Delivery Policies</a>
+            <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition">Instagram</a>
+            <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition">Facebook</a>
           </div>
         </div>
       `;
@@ -2210,7 +2603,7 @@
 
       document.getElementById("newsletter-form").onsubmit = (e) => {
         e.preventDefault();
-        showToast("Subscribed successfully! Welcome to Brown Petals VIP.");
+        showToast("Subscribed successfully!");
         e.target.reset();
       };
 
@@ -2222,12 +2615,12 @@
 
     store.renderCartDrawer = function() {
       const container = document.getElementById("cart-drawer-overlay");
+      if (!container) return;
       if (!this.cartOpen) {
         container.classList.add("hidden");
         return;
       }
 
-      // Preserve current user input values from DOM before re-rendering
       const existingName = document.querySelector("input[name='customerName']")?.value;
       const existingPhone = document.querySelector("input[name='phone']")?.value;
       const existingAddress = document.querySelector("textarea[name='address']")?.value;
@@ -2241,88 +2634,87 @@
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
 
-      // Selected delivery city dynamic calculations
       const selectedCityId = this.checkoutFormValues.cityId;
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
       const deliveryFee = cityObj ? cityObj.price : 0;
       const total = subtotal + deliveryFee;
 
       let itemsMarkup = this.cart.map(item => `
-        <div class="flex gap-4 p-3 bg-white/60 rounded-xl border border-luxuryGold/10 hover:border-luxuryGold/35 transition">
+        <div class="flex gap-4 p-3 bg-black/60 rounded-xl border border-luxuryGold/10 hover:border-luxuryGold/35 transition">
           <img src="${item.imageURL || fallbackImage}" class="w-20 h-20 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
           <div class="flex-1 flex flex-col justify-between">
             <div>
-              <h4 class="font-serif text-sm text-darkBrown font-medium line-clamp-1">${item.name}</h4>
+              <h4 class="font-serif text-sm text-white font-medium line-clamp-1">${item.name}</h4>
               <p class="text-xs text-luxuryGold font-semibold mt-0.5">${item.discountPrice || item.price} MAD</p>
             </div>
             <div class="flex justify-between items-center mt-2">
-              <div class="flex items-center border border-luxuryGold/30 rounded-lg overflow-hidden bg-white">
-                <button class="cart-qty-minus px-2.5 py-1 hover:bg-luxuryBeige/50 text-xs font-bold" data-id="${item.id}">-</button>
-                <span class="px-3 text-xs font-semibold">${item.quantity}</span>
-                <button class="cart-qty-plus px-2.5 py-1 hover:bg-luxuryBeige/50 text-xs font-bold" data-id="${item.id}">+</button>
+              <div class="flex items-center border border-luxuryGold/30 rounded-lg overflow-hidden bg-black">
+                <button class="cart-qty-minus px-2.5 py-1 hover:bg-white/5 text-xs font-bold" data-id="${item.id}">-</button>
+                <span class="px-3 text-xs font-semibold text-white">${item.quantity}</span>
+                <button class="cart-qty-plus px-2.5 py-1 hover:bg-white/5 text-xs font-bold" data-id="${item.id}">+</button>
               </div>
-              <button class="cart-remove-item text-xs text-red-500 hover:text-red-700 transition" data-id="${item.id}">Remove</button>
+              <button class="cart-remove-item text-xs text-red-400 hover:text-red-600 transition" data-id="${item.id}">Remove</button>
             </div>
           </div>
         </div>
       `).join('');
 
       container.innerHTML = `
-        <div class="absolute inset-0 bg-black/65 backdrop-blur-xs transition-opacity" id="cart-drawer-backdrop"></div>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-xs transition-opacity" id="cart-drawer-backdrop"></div>
         <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
-          <div class="w-screen max-w-md bg-[#FAF3E7] border-l border-luxuryGold/30 flex flex-col shadow-2xl">
-            <div class="p-6 border-b border-luxuryGold/20 flex justify-between items-center bg-[#F5E6D3]/40">
-              <h2 class="text-xl font-serif text-coffeeBrown flex items-center gap-2">
+          <div class="w-screen max-w-md bg-black border-l border-luxuryGold/30 flex flex-col shadow-2xl text-white">
+            <div class="p-6 border-b border-luxuryGold/20 flex justify-between items-center bg-[#141414]">
+              <h2 class="text-xl font-serif text-luxuryGold flex items-center gap-2">
                 ${getIconSvg('shopping-bag', 'text-luxuryGold w-6 h-6')} Your Selection
               </h2>
-              <button id="cart-drawer-close" class="p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/40">✕</button>
+              <button id="cart-drawer-close" class="p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/5">✕</button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-6 space-y-4">
               ${cartCount === 0 ? `
                 <div class="text-center py-12 space-y-4">
                   <div class="text-luxuryGold/30 animate-spin" style="animation-duration: 8s">${getIconSvg('flower', 'w-16 h-16 mx-auto')}</div>
-                  <p class="font-serif text-lg text-coffeeBrown">Your luxury cart is empty</p>
-                  <button id="cart-drawer-shop-btn" class="mt-4 px-6 py-2 bg-luxuryGold text-white text-xs font-bold uppercase rounded-lg">Browse Boutique</button>
+                  <p class="font-serif text-lg text-luxuryGold">Your cart is empty</p>
+                  <button id="cart-drawer-shop-btn" class="mt-4 px-6 py-2 bg-luxuryGold text-black text-xs font-bold uppercase rounded-lg">Boutique</button>
                 </div>
               ` : itemsMarkup}
             </div>
 
             ${cartCount > 0 ? `
-              <div class="p-6 border-t border-luxuryGold/30 bg-[#F5E6D3]/30 space-y-4">
+              <div class="p-6 border-t border-luxuryGold/30 bg-[#141414] space-y-4">
                 <div class="flex justify-between items-center text-sm font-medium">
-                  <span class="text-coffeeBrown">Subtotal</span>
-                  <span class="text-xl font-serif font-bold text-darkBrown">${subtotal} MAD</span>
+                  <span class="text-gray-300">Subtotal</span>
+                  <span class="text-xl font-serif font-bold text-luxuryGold">${subtotal} MAD</span>
                 </div>
 
                 ${selectedCityId ? `
-                  <div class="flex justify-between items-center text-sm font-medium border-t border-luxuryGold/10 pt-2">
-                    <span class="text-coffeeBrown">Delivery Fee</span>
-                    <span class="font-serif font-bold text-darkBrown">${deliveryFee} MAD</span>
+                  <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
+                    <span class="text-gray-300">Delivery Fee</span>
+                    <span class="font-serif font-bold text-luxuryGold">${deliveryFee} MAD</span>
                   </div>
-                  <div class="flex justify-between items-center text-sm font-bold border-t border-luxuryGold/20 pt-2">
-                    <span class="text-coffeeBrown">Total</span>
-                    <span class="text-xl font-serif font-bold text-darkBrown">${total} MAD</span>
+                  <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
+                    <span class="text-gray-300">Total</span>
+                    <span class="text-xl font-serif font-bold text-luxuryGold">${total} MAD</span>
                   </div>
                 ` : ''}
 
-                <div class="bg-white/70 p-4 rounded-xl border border-luxuryGold/20">
-                  <p class="text-xs font-semibold text-coffeeBrown mb-3 uppercase">Delivery Coordinates</p>
+                <div class="bg-black/40 p-4 rounded-xl border border-luxuryGold/20">
+                  <p class="text-xs font-semibold text-luxuryGold mb-3 uppercase">Shipping Information</p>
                   <form id="checkout-form" class="space-y-3">
-                    <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white">
-                    <input type="tel" name="phone" required placeholder="Phone Number (e.g. 06..." value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white">
+                    <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                    <input type="tel" name="phone" required placeholder="Phone Number (e.g. 06...)" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
                     
-                    <select id="checkout-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white">
+                    <select id="checkout-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
                       <option value="" disabled ${!selectedCityId ? 'selected' : ''}>Select Delivery City</option>
                       ${this.deliveryCities.filter(c => c.isActive).map(c => `
                         <option value="${c.id}" ${selectedCityId === c.id ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
                       `).join('')}
                     </select>
 
-                    <textarea name="address" required placeholder="Delivery Address (e.g. Boulevard Massira, Casablanca)" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
+                    <textarea name="address" required placeholder="Delivery Address" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
                     
-                    <button type="submit" id="checkout-submit-button" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-darkBrown text-white hover:bg-coffeeBrown font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
-                      ${this.checkoutLoading ? "Processing Masterpiece..." : "Order & Confirm Luxury Request"}
+                    <button type="submit" id="checkout-submit-button" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
+                      ${this.checkoutLoading ? "Processing Request..." : "Confirm Luxury Order"}
                       ${getIconSvg('send', 'w-3.5 h-3.5')}
                     </button>
                   </form>
@@ -2333,7 +2725,6 @@
         </div>
       `;
 
-      // Set Drawer Action Listeners
       document.getElementById("cart-drawer-backdrop").onclick = () => { store.cartOpen = false; store.renderCartDrawer(); };
       document.getElementById("cart-drawer-close").onclick = () => { store.cartOpen = false; store.renderCartDrawer(); };
       
@@ -2367,6 +2758,7 @@
 
     store.openProductDetailsModal = function(product) {
       const modal = document.getElementById("product-detail-container");
+      if (!modal) return;
       this.activeImg = product.imageURL;
 
       const renderInsideModal = () => {
@@ -2393,56 +2785,59 @@
         }
 
         modal.innerHTML = `
-          <div class="absolute inset-0 bg-black/75 backdrop-blur-xs" id="product-modal-backdrop"></div>
-          <div class="relative bg-[#FAF3E7] w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row">
-            <button id="product-modal-close" class="absolute top-4 right-4 z-20 p-2 text-white bg-darkBrown/50 rounded-full hover:bg-luxuryGold transition-premium">✕</button>
+          <div class="absolute inset-0 bg-black/85 backdrop-blur-xs" id="product-modal-backdrop"></div>
+          <div class="relative bg-[#141414] w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-fade-in">
+            <button id="product-modal-close" class="absolute top-4 right-4 z-20 p-2 text-white bg-black/60 rounded-full hover:bg-luxuryGold hover:text-black transition-premium">✕</button>
 
             <!-- Image View Container -->
             <div class="md:w-1/2 h-64 md:h-auto relative overflow-hidden group/main cursor-zoom-in" id="zoom-img-btn">
               <img src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-premium transform group-hover/main:scale-105">
-              ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-600 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
-              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/main:opacity-100 transition flex items-center justify-center">
-                <span class="bg-white/90 backdrop-blur-md text-darkBrown text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2">Inspect</span>
+              ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
+              <div class="absolute inset-0 bg-black/35 opacity-0 group-hover/main:opacity-100 transition flex items-center justify-center">
+                <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">Quick View</span>
               </div>
             </div>
 
             <!-- Details Container -->
             <div class="md:w-1/2 p-10 flex flex-col justify-between overflow-y-auto max-h-[85vh] md:max-h-[600px] space-y-6">
               <div class="space-y-4">
-                <span class="text-xs uppercase tracking-widest text-luxuryGold font-extrabold">${product.category}</span>
-                <h2 class="text-3xl font-serif text-coffeeBrown font-bold tracking-tight">${product.name}</h2>
+                <div class="flex justify-between items-center">
+                  <span class="text-xs uppercase tracking-widest text-luxuryGold font-extrabold">${product.category}</span>
+                  <span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold/10 text-luxuryGold border border-luxuryGold/20">${getNormalizedGender(product.gender)}</span>
+                </div>
+                <h2 class="text-3xl font-serif text-white font-bold tracking-tight">${product.name}</h2>
                 
                 <div class="flex items-center gap-1">
                   <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-                  <span class="text-xs text-coffeeBrown font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
+                  <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
                 </div>
 
                 <div class="flex items-baseline gap-3 pt-2">
                   ${product.discountPrice ? `
-                    <span class="text-3xl font-serif font-bold text-darkBrown">${product.discountPrice} MAD</span>
-                    <span class="text-sm line-through text-gray-400">${product.price} MAD</span>
-                  ` : `<span class="text-3xl font-serif font-bold text-darkBrown">${product.price} MAD</span>`}
+                    <span class="text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                    <span class="text-sm line-through text-gray-500">${product.price} MAD</span>
+                  ` : `<span class="text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
                 </div>
 
                 <div class="border-t border-b border-luxuryGold/20 py-4 space-y-2">
-                  <p class="text-xs font-semibold text-coffeeBrown uppercase">Gallery</p>
+                  <p class="text-xs font-semibold text-luxuryGold mb-1 uppercase">Gallery</p>
                   <div class="flex gap-3 overflow-x-auto py-1.5 hide-scrollbar">
                     ${galleryMarkup}
                   </div>
                 </div>
 
-                <p class="text-sm text-gray-600 leading-relaxed font-light">${product.description}</p>
-                <p class="text-xs font-medium text-coffeeBrown">
-                  Stock Status: ${product.limitedStock ? `<span class="text-red-600 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-700 font-bold">In Stock</span>`}
+                <p class="text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
+                <p class="text-xs font-medium text-gray-400">
+                  Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
                 </p>
               </div>
 
-              <div class="space-y-4 pt-4 border-t border-luxuryGold/10">
+              <div class="space-y-4 pt-4 border-t border-white/5">
                 <div class="grid grid-cols-2 gap-3">
-                  <button id="modal-add-to-cart-btn" class="py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-white font-extrabold uppercase tracking-widest text-[11px] rounded-xl transition shadow-xs">Add To Cart</button>
-                  <button id="modal-order-now-btn" class="py-3.5 bg-darkBrown hover:bg-coffeeBrown text-white font-extrabold uppercase tracking-widest text-[11px] rounded-xl transition transform hover:scale-[1.02]">Order Now</button>
+                  <button id="modal-add-to-cart-btn" class="py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black font-extrabold uppercase tracking-widest text-[11px] rounded-xl transition shadow-xs">Add To Cart</button>
+                  <button id="modal-order-now-btn" class="py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[11px] rounded-xl transition transform hover:scale-[1.02]">Order Now</button>
                 </div>
-                <p class="text-[10px] text-center text-gray-400">🚚 Free customized premium card included with every masterpiece.</p>
+                <p class="text-[10px] text-center text-gray-500">🚚 A complimentary custom premium card is included with every masterpiece.</p>
               </div>
             </div>
           </div>
@@ -2468,6 +2863,7 @@
 
         document.getElementById("zoom-img-btn").onclick = () => {
           const lightbox = document.getElementById("lightbox-container");
+          if (!lightbox) return;
           lightbox.innerHTML = `
             <button id="lightbox-close" class="absolute top-6 right-6 z-50 p-3 text-white bg-white/10 hover:bg-white/20 rounded-full transition-premium">✕</button>
             <div class="max-w-4xl w-full h-full max-h-[85vh] flex items-center justify-center p-4">
@@ -2499,26 +2895,27 @@
 
     store.renderFloatingActions = function() {
       const container = document.getElementById("floating-actions");
+      if (!container) return;
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
 
       container.innerHTML = `
         <!-- Floating WhatsApp Help Chat Action -->
-        <a href="${WHATSAPP_LINK}" target="_blank" class="fixed bottom-6 left-6 z-40 bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition hover:scale-110" title="Chat with Support on WhatsApp">
+        <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="fixed bottom-6 left-6 z-40 bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition hover:scale-110" title="Chat with Support on WhatsApp">
           ${getIconSvg('message-circle', 'w-6 h-6')}
         </a>
 
         <!-- Sticky Mobile cart CTA bar -->
         ${cartCount > 0 ? `
-          <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-luxuryGold/30 px-6 py-4 flex items-center justify-between shadow-xl">
+          <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#141414]/95 border-t border-luxuryGold/30 px-6 py-4 flex items-center justify-between shadow-xl">
             <div class="flex items-center gap-2">
               ${getIconSvg('shopping-bag', 'text-luxuryGold w-5 h-5')}
               <div>
-                <p class="text-xs text-gray-500">Your Selection</p>
-                <p class="text-sm font-bold text-darkBrown">${subtotal} MAD</p>
+                <p class="text-xs text-gray-400">Your Selection</p>
+                <p class="text-sm font-bold text-luxuryGold">${subtotal} MAD</p>
               </div>
             </div>
-            <button id="sticky-mobile-checkout-btn" class="bg-luxuryGold text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">Order Now</button>
+            <button id="sticky-mobile-checkout-btn" class="bg-luxuryGold text-black px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">Order Now</button>
           </div>
         ` : ''}
       `;
@@ -2544,26 +2941,70 @@
 
     const preloaderTimeout = setTimeout(hidePreloader, 1200);
 
+    async function initAppSequence() {
+      try {
+        let user = auth.currentUser;
+        if (!user) {
+          const customToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+          if (customToken) {
+            try {
+              const credential = await signInWithCustomToken(auth, customToken);
+              user = credential.user;
+            } catch (tokenError) {
+              console.warn("Firebase Auth: Custom token mismatch. Bypassing to Anonymous Authentication.", tokenError);
+              const credential = await signInAnonymously(auth);
+              user = credential.user;
+            }
+          } else {
+            const credential = await signInAnonymously(auth);
+            user = credential.user;
+          }
+        }
+        
+        if (user) {
+          store.user = user;
+          store.initPublicSubscriptions();
+          if (store.isAdmin) {
+            store.initAdminSubscriptions();
+          }
+        }
+      } catch (error) {
+        console.error("Firebase Auth Failure:", error);
+        
+        if (error.code === 'auth/operation-not-allowed') {
+          showFirebaseDiagnosticModal(
+            "Anonymous Auth Disabled",
+            "SOVANEX cannot identify connection credentials because 'Anonymous Sign-In' is disabled inside your Firebase Console."
+          );
+        } else {
+          showFirebaseDiagnosticModal(
+            "Firebase Initialization Alert",
+            `Authentication returned: "${error.message}". Ensure your Firestore Rules allow connection access.`
+          );
+        }
+
+        // Bypassing Auth guard for direct read
+        store.initPublicSubscriptions(true); 
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       store.updateDOM();
 
-      signInAnonymously(auth)
-        .then(() => {
-          store.initPublicSubscriptions();
-        })
-        .catch(err => {
-          console.warn("Firebase Auth Offline Fallback:", err);
-          store.initPublicSubscriptions();
-        });
+      initAppSequence().then(() => {
+        clearTimeout(preloaderTimeout);
+        hidePreloader();
+      });
 
       onAuthStateChanged(auth, (usr) => {
         if (usr) {
           store.user = usr;
+          store.initPublicSubscriptions();
+          if (store.isAdmin) {
+            store.initAdminSubscriptions();
+          }
         }
       });
-
-      clearTimeout(preloaderTimeout);
-      hidePreloader();
     });
   </script>
 </body>
