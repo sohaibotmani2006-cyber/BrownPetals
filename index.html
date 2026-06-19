@@ -300,8 +300,8 @@
 
     store.createSkeletonCardMarkup = function() {
       return `
-        <div class="animate-pulse bg-[#141414] rounded-3xl overflow-hidden border border-luxuryGold/10 shadow-md p-6 space-y-4">
-          <div class="h-80 bg-luxuryGold/5 rounded-2xl"></div>
+        <div class="animate-pulse bg-[#141414] rounded-3xl overflow-hidden border border-luxuryGold/10 shadow-md p-4 sm:p-6 space-y-4">
+          <div class="h-40 sm:h-56 md:h-80 bg-luxuryGold/5 rounded-2xl"></div>
           <div class="space-y-2">
             <div class="h-3 bg-luxuryGold/20 rounded w-1/4"></div>
             <div class="h-5 bg-white/10 rounded w-3/4"></div>
@@ -941,7 +941,7 @@
           if (store.currentPage !== "shop") {
             store.currentPage = "shop";
             store.updateDOM();
-            const shopSearch = document.getElementById("nav-search-input");
+            const shopSearch = document.getElementById("shop-search-input");
             if (shopSearch) shopSearch.focus();
           } else {
             store.renderShopPage();
@@ -977,6 +977,12 @@
       if (!container) return;
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <button id="contact-back-home" class="flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold">
+              ← Back to Home
+            </button>
+          </div>
+
           <div class="text-center space-y-3">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Seamless Service</span>
             <h1 class="text-4xl md:text-5xl font-serif text-white">Contact Us</h1>
@@ -1065,6 +1071,8 @@
           </div>
         </div>
       `;
+
+      document.getElementById("contact-back-home").onclick = () => { store.setPage("home"); };
 
       const formEl = document.getElementById("contact-page-form");
       if (formEl) {
@@ -1390,42 +1398,43 @@
       const btnSolidColor = 'bg-luxuryGold hover:bg-luxuryGold/90 text-black';
 
       return `
-        <div class="group relative bg-[#141414] rounded-3xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300">
-          <div class="h-80 overflow-hidden relative cursor-pointer card-img-trigger" data-id="${product.id}">
-            <img src="${product.imageURL || fallbackImage}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" decoding="async">
-            <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition"></div>
-            
-            <div class="absolute top-4 left-4 flex flex-col gap-1.5">
-              ${product.isPromotion ? `<span class="bg-red-700 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Promotion</span>` : ''}
-              ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Bestseller</span>` : ''}
-              ${product.limitedStock ? `<span class="bg-amber-600 text-white text-[9px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Limited</span>` : ''}
+        <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+          <div>
+            <div class="h-44 sm:h-64 md:h-80 overflow-hidden relative cursor-pointer card-img-trigger" data-id="${product.id}">
+              <img src="${product.imageURL || fallbackImage}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" decoding="async">
+              <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition"></div>
+              
+              <div class="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1">
+                ${product.isPromotion ? `<span class="bg-red-700 text-white text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">Sale</span>` : ''}
+                ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">Best</span>` : ''}
+              </div>
+              <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4">
+                <span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">${normalizedGender}</span>
+              </div>
             </div>
-            <div class="absolute bottom-4 right-4">
-              <span class="${badgeColor} text-[10px] uppercase font-bold px-3 py-1.5 rounded-full shadow border border-luxuryGold/20">${normalizedGender}</span>
+
+            <div class="p-3 sm:p-6 space-y-1.5 sm:space-y-4">
+              <span class="text-[8px] sm:text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
+              <h3 class="font-serif text-sm sm:text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-10 sm:h-14 overflow-hidden" data-id="${product.id}">${product.name}</h3>
+              
+              <div class="flex items-center gap-1 text-[10px] sm:text-xs">
+                <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
+                <span class="text-gray-400 font-light">(${product.reviewsCount || 12})</span>
+              </div>
             </div>
           </div>
 
-          <div class="p-6 space-y-4">
-            <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
-            <h3 class="font-serif text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-14 overflow-hidden" data-id="${product.id}">${product.name}</h3>
-            
-            <div class="flex items-center gap-1.5 text-xs">
-              <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-              <span class="text-gray-400 font-light">(${product.reviewsCount || 12})</span>
+          <div class="p-3 sm:p-6 pt-0 space-y-2 sm:space-y-3">
+            <div class="flex items-baseline gap-1.5 sm:gap-2">
+              ${product.discountPrice ? `
+                <span class="text-sm sm:text-lg font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                <span class="text-[9px] sm:text-xs line-through text-gray-500">${product.price} MAD</span>
+              ` : `<span class="text-sm sm:text-lg font-bold text-white">${product.price} MAD</span>`}
             </div>
 
-            <div class="space-y-3 pt-2">
-              <div class="flex items-baseline gap-2">
-                ${product.discountPrice ? `
-                  <span class="text-lg font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                  <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
-                ` : `<span class="text-lg font-bold text-white">${product.price} MAD</span>`}
-              </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <button class="add-to-cart-btn px-2 py-2 border ${btnOutlineColor} text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">Add To Cart</button>
-                <button class="order-now-btn px-2 py-2 ${btnSolidColor} text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">Order Now</button>
-              </div>
+            <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
+              <button class="add-to-cart-btn px-1 py-1.5 sm:px-2 sm:py-2 border ${btnOutlineColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">Add</button>
+              <button class="order-now-btn px-1 py-1.5 sm:px-2 sm:py-2 ${btnSolidColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">Buy</button>
             </div>
           </div>
         </div>
@@ -1442,7 +1451,8 @@
       });
 
       document.querySelectorAll(".add-to-cart-btn").forEach(el => {
-        el.onclick = () => {
+        el.onclick = (e) => {
+          e.stopPropagation();
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
           if (prod) store.addToCart(prod);
@@ -1450,7 +1460,8 @@
       });
 
       document.querySelectorAll(".order-now-btn").forEach(el => {
-        el.onclick = () => {
+        el.onclick = (e) => {
+          e.stopPropagation();
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
           if (prod) {
@@ -1486,17 +1497,17 @@
 
       const genderSelectorTabs = `
         <div class="grid grid-cols-3 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
-          <button class="gender-section-btn py-3 px-4 text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "All" ? 'bg-luxuryGold text-black' : 'text-white hover:bg-white/5'
           }" data-gender="All">All</button>
           
-          <button class="gender-section-btn py-3 px-4 text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "GIRLS STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="GIRLS STORE">GIRLS STORE</button>
+          }" data-gender="GIRLS STORE">GIRLS</button>
           
-          <button class="gender-section-btn py-3 px-4 text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "MAN STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="MAN STORE">MAN STORE</button>
+          }" data-gender="MAN STORE">MAN</button>
         </div>
       `;
 
@@ -1513,18 +1524,33 @@
       `).join('');
 
       container.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+          
+          <!-- Back button and Navigation Context -->
+          <div class="flex justify-between items-center mb-4">
+            <button id="shop-back-home" class="flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold">
+              ← Back to Home
+            </button>
+          </div>
+
           <div class="text-center space-y-3">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Catalog</span>
             <h1 class="text-4xl font-serif text-white">The Boutique</h1>
-            <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-2"></div>
           </div>
 
-          <div class="max-w-xl mx-auto">
+          <!-- Dynamic Collection Filtering Tabs -->
+          <div class="max-w-xl mx-auto space-y-4">
             ${genderSelectorTabs}
+            
+            <!-- Dynamic In-Shop Real-Time Search Bar -->
+            <div class="relative w-full">
+              <input id="shop-search-input" type="text" placeholder="Search boutique creations..." value="${this.searchQuery}" class="w-full pl-10 pr-4 py-3 text-xs rounded-xl border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium">
+              <div class="absolute left-3.5 top-3.5 text-luxuryGold">${getIconSvg('search', 'w-4 h-4')}</div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <!-- Sidebar Navigation Categories -->
             <div class="lg:col-span-1 space-y-6">
               <div class="bg-luxuryBeige p-6 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-4">
@@ -1535,14 +1561,14 @@
               </div>
             </div>
 
-            <!-- Products Segment -->
+            <!-- Products Segment Grid (Optimized as double column grid on mobile viewport) -->
             <div class="lg:col-span-3">
               ${filtered.length === 0 ? `
                 <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10">
                   <p class="text-sm text-gray-400 italic">No products match this selection currently.</p>
                 </div>
               ` : `
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
                   ${productsGrid}
                 </div>
               `}
@@ -1550,6 +1576,20 @@
           </div>
         </div>
       `;
+
+      document.getElementById("shop-back-home").onclick = () => { store.setPage("home"); };
+
+      // Bind in-shop search input
+      const shopSearch = document.getElementById("shop-search-input");
+      if (shopSearch) {
+        shopSearch.oninput = (e) => {
+          store.searchQuery = e.target.value;
+          // Synchronize with header search state
+          const headerSearch = document.getElementById("nav-search-input");
+          if (headerSearch) headerSearch.value = e.target.value;
+          store.renderShopPage();
+        };
+      }
 
       document.querySelectorAll(".gender-section-btn").forEach(btn => {
         btn.onclick = () => {
@@ -2909,15 +2949,15 @@
 
         <!-- Sticky Mobile cart CTA bar -->
         ${cartCount > 0 ? `
-          <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#141414]/95 border-t border-luxuryGold/30 px-6 py-4 flex items-center justify-between shadow-xl">
+          <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#141414]/95 border-t border-luxuryGold/30 px-6 py-4 flex items-center justify-between shadow-xl animate-fade-in">
             <div class="flex items-center gap-2">
               ${getIconSvg('shopping-bag', 'text-luxuryGold w-5 h-5')}
               <div>
-                <p class="text-xs text-gray-400">Your Selection</p>
-                <p class="text-sm font-bold text-luxuryGold">${subtotal} MAD</p>
+                <p class="text-[10px] text-gray-400">Your Selection</p>
+                <p class="text-xs font-bold text-luxuryGold">${subtotal} MAD</p>
               </div>
             </div>
-            <button id="sticky-mobile-checkout-btn" class="bg-luxuryGold text-black px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">Order Now</button>
+            <button id="sticky-mobile-checkout-btn" class="bg-luxuryGold text-black px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider">Order Now</button>
           </div>
         ` : ''}
       `;
