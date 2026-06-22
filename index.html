@@ -216,7 +216,9 @@
         instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
         facebookURL: "https://facebook.com",
         whatsappHotline: "+212 777467304",
-        emailCoordinate: "brownpetals24@gmail.com"
+        emailCoordinate: "brownpetals24@gmail.com",
+        deliveryTerms: "Chaque pièce d'horlogerie ou accessoire SOVANEX est expédié dans un coffret scellé à la cire d'or. Nos livraisons sont assurées par des transporteurs privés haut de gamme.\n\nLe délai de livraison standard est de 24h à 48h selon votre ville au Maroc (Rabat, Casablanca, Marrakech, Kénitra, Tanger, Fès). La livraison est entièrement sécurisée et assurée à 100% contre la perte ou le vol.",
+        returnPolicy: "Parce que l'excellence ne souffre aucune imperfection, SOVANEX propose un droit d'échange ou de retour sous 14 jours à compter de la réception de votre colis.\n\nL'article doit être retourné dans son état d'origine absolu, inutilisé, et dans son écrin d'origine scellé. Les retours sont simples : contactez notre service client dédié sur WhatsApp et nous planifierons un coursier pour récupérer le colis chez vous."
       },
       
       checkoutFormValues: {
@@ -315,6 +317,89 @@
       `;
     };
 
+    store.renderHeader = function() {
+      const container = document.getElementById("app-header");
+      if (!container) return;
+      const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+      
+      container.innerHTML = `
+        <nav class="glassmorphism bg-[#0A0A0A]/90 text-white border-b border-luxuryGold/20 px-4 sm:px-6 lg:px-8 py-4 transition-premium shadow-lg">
+          <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo / Name -->
+            <div id="nav-brand" class="flex items-center gap-3 cursor-pointer">
+              <span class="font-serif text-2xl tracking-[0.25em] font-extrabold text-white">
+                SOV<span class="text-luxuryGold font-sans font-light tracking-normal">ANEX</span>
+              </span>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center gap-8 text-[11px] uppercase tracking-[0.2em] font-medium">
+              <button id="nav-link-home" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'home' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">Home</button>
+              <button id="nav-link-shop" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'shop' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">The Boutique</button>
+              <button id="nav-link-contact" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'contact' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">Contact</button>
+              <button id="nav-link-policies" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'policies' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">Livraison & Retours</button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-4">
+              <!-- Search Bar -->
+              <div class="relative hidden lg:block">
+                <input id="nav-search-input" type="text" placeholder="Search Atelier..." value="${this.searchQuery}" class="pl-9 pr-4 py-1.5 text-[10px] uppercase tracking-wider rounded-full border border-luxuryGold/30 bg-black/50 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
+                <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
+              </div>
+
+              <!-- Admin Access -->
+              <button id="nav-link-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/5" title="Admin Workspace">
+                ${getIconSvg('lock', 'w-4.5 h-4.5 ' + (this.isAdmin ? 'text-luxuryGold' : 'text-gray-300'))}
+              </button>
+
+              <!-- Cart Button -->
+              <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-luxuryGold/10 hover:bg-luxuryGold border-2 border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group">
+                ${getIconSvg('shopping-bag', 'w-4 h-4')}
+                <span class="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">Cart</span>
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-luxuryGold text-black group-hover:bg-black group-hover:text-luxuryGold transition">
+                  ${cartCount}
+                </span>
+              </button>
+            </div>
+          </div>
+        </nav>
+      `;
+
+      // Binding navbar click events
+      document.getElementById("nav-brand").onclick = () => { this.setPage("home"); };
+      document.getElementById("nav-link-home").onclick = () => { this.setPage("home"); };
+      document.getElementById("nav-link-shop").onclick = () => { this.setPage("shop"); };
+      document.getElementById("nav-link-contact").onclick = () => { this.setPage("contact"); };
+      document.getElementById("nav-link-policies").onclick = () => { this.setPage("policies"); };
+      document.getElementById("nav-link-admin").onclick = () => { this.setPage("admin"); };
+      document.getElementById("nav-cart-btn").onclick = () => {
+        this.cartOpen = true;
+        document.getElementById("cart-drawer-overlay").classList.remove("hidden");
+        this.renderCartDrawer();
+      };
+
+      const searchInput = document.getElementById("nav-search-input");
+      if (searchInput) {
+        searchInput.oninput = (e) => {
+          this.searchQuery = e.target.value;
+          if (this.currentPage !== "shop") {
+            this.currentPage = "shop";
+            this.updateDOM();
+            const newSearch = document.getElementById("nav-search-input");
+            if (newSearch) {
+              newSearch.focus();
+              newSearch.setSelectionRange(newSearch.value.length, newSearch.value.length);
+            }
+          } else {
+            const shopSearch = document.getElementById("shop-search-input");
+            if (shopSearch) shopSearch.value = e.target.value;
+            this.renderShopPage();
+          }
+        };
+      }
+    };
+
     const showToast = (message, type = "success") => {
       const container = document.getElementById("toast-center");
       if (!container) return;
@@ -369,7 +454,6 @@
       document.getElementById("diagnostic-close-btn").onclick = () => modal.classList.add("hidden");
     };
 
-    // Upgraded triggerConfirm helper to support alerts (1 button) or real confirms (2 buttons)
     const triggerConfirm = (title, message, onConfirmCallback, isAlertOnly = false) => {
       const modal = document.getElementById("confirm-modal-container");
       if (!modal) return;
@@ -400,7 +484,7 @@
       if (!auth.currentUser && !forceBypass) return;
       this.activeSubscriptions.public = true;
 
-      // 1. Dynamic general setting subscription (Optimized: One-time fetch for public, Real-time for admin)
+      // 1. Dynamic general setting subscription
       const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
       const handleSettings = (snap) => {
         if (snap.exists()) {
@@ -416,7 +500,7 @@
         getDoc(settingsDocRef).then(handleSettings).catch(err => console.warn("Settings fetch bypassed:", err));
       }
 
-      // 2. Products Feed Sub (Kept real-time for immediate stock/price syncing globally)
+      // 2. Products Feed Sub
       const prodQuery = collection(db, 'artifacts', appId, 'public', 'data', 'products');
       onSnapshot(prodQuery, (snap) => {
         const list = [];
@@ -506,7 +590,7 @@
         store.updateDOM();
       });
 
-      // 3. Categories Config Sub (Optimized)
+      // 3. Categories Config Sub
       const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
       const catQuery = query(catRef, orderBy("order", "asc"));
       const handleCategories = (snap) => {
@@ -531,7 +615,7 @@
       if (store.isAdmin) onSnapshot(catQuery, handleCategories, (err) => console.warn(err));
       else getDocs(catQuery).then(handleCategories).catch(err => console.warn(err));
 
-      // 4. Lookbook Grid Sub (Optimized)
+      // 4. Lookbook Grid Sub
       const lookbookRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
       const lookbookQuery = query(lookbookRef, orderBy("order", "asc"));
       const handleLookbook = (snap) => {
@@ -558,7 +642,7 @@
       if (store.isAdmin) onSnapshot(lookbookQuery, handleLookbook, (err) => console.warn(err));
       else getDocs(lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
 
-      // 5. Load Delivery Cities Sub (Optimized)
+      // 5. Load Delivery Cities Sub
       const citiesRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
       const handleCities = (snap) => {
         const list = [];
@@ -587,7 +671,7 @@
       if (store.isAdmin) onSnapshot(citiesRef, handleCities, (err) => console.warn(err));
       else getDocs(citiesRef).then(handleCities).catch(err => console.warn(err));
 
-      // 6. Telegram dynamic config Sub (Optimized)
+      // 6. Telegram dynamic config Sub
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
       const handleTelegram = (snap) => {
         if (snap.exists()) {
@@ -599,7 +683,7 @@
       if (store.isAdmin) onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err));
       else getDoc(botConfigDoc).then(handleTelegram).catch(err => console.warn(err));
 
-      // 7. Reviews dynamic config Sub (Optimized with memory limits)
+      // 7. Reviews dynamic config Sub
       const revRef = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
       const revQuery = query(revRef, orderBy("createdAt", "desc"), limit(store.isAdmin ? 100 : 20));
       const handleReviews = (snap) => {
@@ -628,7 +712,7 @@
       if (!auth.currentUser) return;
       this.activeSubscriptions.admin = true;
 
-      // Realtime Orders Sub (Optimized with limit to prevent massive payload downloads)
+      // Realtime Orders Sub
       const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
       const orderQuery = query(ordersRef, orderBy("createdAt", "desc"), limit(150));
       
@@ -877,7 +961,7 @@
         this.cartOpen = false;
         this.checkoutLoading = false;
         
-        // Show Order Confirmation modal with a clearly visible select-all Order ID
+        // Show Order Confirmation modal
         triggerConfirm(
           "Selection Confirmée", 
           `<div class="space-y-4">` +
@@ -891,7 +975,7 @@
           () => {
             store.setPage("home");
           },
-          true // Displays only 1 confirm (OK) button instead of Cancel/Confirm
+          true
         );
 
       } catch (err) {
@@ -915,86 +999,6 @@
       this.renderFloatingActions();
     };
 
-    store.renderHeader = function() {
-      const container = document.getElementById("app-header");
-      if (!container) return;
-      const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
-
-      const logoMarkup = this.settings.logoURL ? 
-        `<img src="${this.settings.logoURL}" alt="SOVANEX logo" class="h-10 max-w-[180px] object-contain" onerror="this.style.display='none'; document.getElementById('text-logo').classList.remove('hidden')">` : '';
-      
-      container.innerHTML = `
-        <header class="bg-black/95 backdrop-blur-md border-b border-luxuryGold/20 shadow-sm">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div id="nav-brand" class="flex items-center gap-3 cursor-pointer">
-              ${logoMarkup}
-              <span id="text-logo" class="text-3xl font-serif tracking-widest text-white flex items-center gap-1 font-bold ${this.settings.logoURL ? 'hidden' : ''}">
-                SOV<span class="text-luxuryGold font-light font-sans text-2xl tracking-normal">ANEX</span>
-              </span>
-            </div>
-            
-            <nav class="hidden md:flex items-center gap-8 text-sm uppercase tracking-widest font-semibold">
-              <button id="nav-home" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'home' ? 'text-luxuryGold underline underline-offset-8 font-bold' : 'text-white'}">Home</button>
-              <button id="nav-shop" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'shop' ? 'text-luxuryGold underline underline-offset-8 font-bold' : 'text-white'}">Boutique</button>
-              <button id="nav-contact" class="hover:text-luxuryGold transition-premium ${this.currentPage === 'contact' ? 'text-luxuryGold underline underline-offset-8 font-bold' : 'text-white'} font-medium">Contact Us</button>
-            </nav>
-
-            <div class="flex items-center gap-4">
-              <div class="hidden lg:relative lg:block">
-                <input id="nav-search-input" type="text" placeholder="Search..." value="${this.searchQuery}" class="pl-9 pr-4 py-1.5 text-xs rounded-full border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
-                <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
-              </div>
-
-              <button id="nav-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/5" title="Admin Workspace">
-                ${getIconSvg('lock', `w-5.5 h-5.5 ${this.isAdmin ? 'text-luxuryGold' : 'text-white'}`)}
-              </button>
-
-              <button id="cart-drawer-trigger" class="relative flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-luxuryBeige hover:bg-luxuryGold border-2 border-luxuryGold rounded-full shadow-md hover:shadow-lg transition-premium transform hover:scale-105 text-white hover:text-black group">
-                ${getIconSvg('shopping-bag', 'w-4.5 h-4.5 group-hover:text-black transition-premium')}
-                <span class="hidden sm:inline text-xs font-serif uppercase tracking-widest font-bold group-hover:text-black transition-premium">Cart</span>
-                <span class="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs transition-premium bg-[#141414] text-luxuryGold group-hover:bg-black group-hover:text-luxuryGold">${cartCount}</span>
-              </button>
-
-              <button id="mobile-menu-trigger" class="md:hidden p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/5">
-                ${getIconSvg('menu', 'w-6 h-6 text-white')}
-              </button>
-            </div>
-          </div>
-        </header>
-      `;
-
-      document.getElementById("nav-brand").onclick = () => { store.setPage("home"); };
-      document.getElementById("nav-home").onclick = () => { store.setPage("home"); };
-      document.getElementById("nav-shop").onclick = () => { store.setPage("shop"); };
-      document.getElementById("nav-contact").onclick = () => { store.setPage("contact"); };
-      document.getElementById("nav-admin").onclick = () => { store.setPage("admin"); };
-      
-      const searchIn = document.getElementById("nav-search-input");
-      if (searchIn) {
-        searchIn.oninput = (e) => {
-          store.searchQuery = e.target.value;
-          if (store.currentPage !== "shop") {
-            store.currentPage = "shop";
-            store.updateDOM();
-            const shopSearch = document.getElementById("shop-search-input");
-            if (shopSearch) shopSearch.focus();
-          } else {
-            store.renderShopPage();
-          }
-        };
-      }
-
-      document.getElementById("cart-drawer-trigger").onclick = () => {
-        store.cartOpen = true;
-        document.getElementById("cart-drawer-overlay").classList.remove("hidden");
-        store.renderCartDrawer();
-      };
-
-      document.getElementById("mobile-menu-trigger").onclick = () => {
-        store.setPage(store.currentPage === "shop" ? "home" : "shop");
-      };
-    };
-
     store.renderMainContent = function() {
       if (this.currentPage === "home") {
         this.renderHomePage();
@@ -1002,6 +1006,8 @@
         this.renderShopPage();
       } else if (this.currentPage === "contact") {
         this.renderContactPage();
+      } else if (this.currentPage === "policies") {
+        this.renderPoliciesPage();
       } else if (this.currentPage === "admin") {
         this.renderAdminPage();
       }
@@ -1117,6 +1123,81 @@
           formEl.reset();
         };
       }
+    };
+
+    store.renderPoliciesPage = function() {
+      const container = document.getElementById("app-content");
+      if (!container) return;
+      container.innerHTML = `
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
+          <div class="flex justify-between items-center mb-4">
+            <button id="policies-back-home" class="flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold">
+              ← Back to Home
+            </button>
+          </div>
+
+          <div class="text-center space-y-3">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Atelier Policies</span>
+            <h1 class="text-4xl md:text-5xl font-serif text-white">Livraison & Retours</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
+            <p class="text-xs text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
+              L'excellence de notre service se prolonge bien après votre commande. Découvrez les standards exclusifs que nous appliquons pour chaque expédition et retour.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-stretch mt-12">
+            <!-- Delivery Conditions Card -->
+            <div class="bg-[#141414] p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6 flex flex-col justify-between">
+              <div class="space-y-4">
+                <div class="flex items-center gap-3 border-b border-luxuryGold/10 pb-4">
+                  <div class="w-10 h-10 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">
+                    ${getIconSvg('truck', 'w-5 h-5')}
+                  </div>
+                  <h3 class="font-serif text-xl text-white font-bold">Conditions de Livraison</h3>
+                </div>
+                <div class="text-xs text-gray-300 leading-relaxed font-light whitespace-pre-line">
+                  ${this.settings.deliveryTerms || "Détails de livraison non configurés."}
+                </div>
+              </div>
+              <div class="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] uppercase text-luxuryGold tracking-wider">
+                <span>Expédition Assurée</span>
+                <span>24h - 48h</span>
+              </div>
+            </div>
+
+            <!-- Return Policy Card -->
+            <div class="bg-[#141414] p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6 flex flex-col justify-between">
+              <div class="space-y-4">
+                <div class="flex items-center gap-3 border-b border-luxuryGold/10 pb-4">
+                  <div class="w-10 h-10 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">
+                    ${getIconSvg('gift', 'w-5 h-5')}
+                  </div>
+                  <h3 class="font-serif text-xl text-white font-bold">Politique de Retour</h3>
+                </div>
+                <div class="text-xs text-gray-300 leading-relaxed font-light whitespace-pre-line">
+                  ${this.settings.returnPolicy || "Conditions de retour non configurées."}
+                </div>
+              </div>
+              <div class="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] uppercase text-luxuryGold tracking-wider">
+                <span>Garantie Excellence</span>
+                <span>14 Jours d'Échange</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extra Trust Callout -->
+          <div class="text-center p-8 bg-luxuryBeige/50 rounded-3xl border border-luxuryGold/10 mt-8 space-y-4">
+            <p class="text-xs text-gray-400 font-light leading-relaxed">
+              Besoin d'un ajustement ou d'une personnalisation immédiate avant l'envoi ? Notre hotline de conciergerie est disponible pour vous servir.
+            </p>
+            <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold border-b border-luxuryGold/40 pb-1">
+              Contacter notre service client sur WhatsApp →
+            </a>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("policies-back-home").onclick = () => { store.setPage("home"); };
     };
 
     store.renderHomePage = function() {
@@ -1320,7 +1401,7 @@
             </div>
           </section>
 
-          <!-- Bestsellers (Most Demanded Works) -->
+          <!-- Bestsellers -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div class="text-center space-y-2">
               <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Our Signatures</span>
@@ -1596,7 +1677,7 @@
               </div>
             </div>
 
-            <!-- Products Segment Grid (Optimized as double column grid on mobile viewport) -->
+            <!-- Products Segment Grid -->
             <div class="lg:col-span-3">
               ${filtered.length === 0 ? `
                 <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10">
@@ -2001,7 +2082,7 @@
         const payload = {
           name: form.name.value,
           category: form.category.value,
-          gender: form.gender.value, // Saves GIRLS STORE or MAN STORE directly
+          gender: form.gender.value,
           price: Number(form.price.value),
           discountPrice: form.discountPrice.value ? Number(form.discountPrice.value) : null,
           imageURL: form.imageURL.value,
@@ -2622,6 +2703,19 @@
               <p class="text-[9px] text-gray-400 mt-1">This text is loaded dynamically on the main landing/homepage hero section.</p>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Conditions de Livraison</label>
+                <textarea name="deliveryTerms" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-40 resize-y">${this.settings.deliveryTerms || ''}</textarea>
+                <p class="text-[9px] text-gray-400 mt-1">S'affiche sur la page Livraison & Retours. Expliquez les délais et modes d'expédition de l'Atelier.</p>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Politique de Retour</label>
+                <textarea name="returnPolicy" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-40 resize-y">${this.settings.returnPolicy || ''}</textarea>
+                <p class="text-[9px] text-gray-400 mt-1">S'affiche sur la page Livraison & Retours. Indiquez les conditions d'échange et de retour de l'Atelier.</p>
+              </div>
+            </div>
+
             <div class="flex justify-end border-t border-white/10 pt-4">
               <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Brand Preferences</button>
             </div>
@@ -2639,7 +2733,9 @@
           instagramURL: form.instagramURL.value,
           facebookURL: form.facebookURL.value,
           emailCoordinate: form.emailCoordinate.value,
-          websiteDescription: form.websiteDescription.value
+          websiteDescription: form.websiteDescription.value,
+          deliveryTerms: form.deliveryTerms.value,
+          returnPolicy: form.returnPolicy.value
         };
 
         try {
@@ -2697,8 +2793,9 @@
           <p>© 2026 SOVANEX. All Rights Reserved. Designed with deep elegance.</p>
           <div class="flex gap-6 items-center">
             <a href="#" id="footer-admin-portal" class="hover:text-luxuryGold text-lg transition" title="Secure Workspace Portal">🔒</a>
-            <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition">Instagram</a>
-            <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition">Facebook</a>
+            <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">Livraison & Retours</a>
+            <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Instagram</a>
+            <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Facebook</a>
           </div>
         </div>
       `;
@@ -2720,6 +2817,14 @@
         e.preventDefault();
         store.setPage("admin");
       };
+
+      const policiesLink = document.getElementById("footer-link-policies");
+      if (policiesLink) {
+        policiesLink.onclick = (e) => {
+          e.preventDefault();
+          store.setPage("policies");
+        };
+      }
     };
 
     store.renderCartDrawer = function() {
@@ -2897,10 +3002,10 @@
           <div class="fixed inset-0 bg-black/85 backdrop-blur-xs" id="product-modal-backdrop"></div>
           <div class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-fade-in my-auto h-[82vh] md:h-auto md:max-h-[85vh]">
             
-            <!-- High visibility Close Button (Stays statically floating on mobile & desktop) -->
+            <!-- High visibility Close Button -->
             <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
-            <!-- Image View Container (Locked to top 35% on mobile viewports) -->
+            <!-- Image View Container -->
             <div class="md:w-1/2 h-[35%] sm:h-[40%] md:h-auto relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in" id="zoom-img-btn">
               <img src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-premium transform group-hover/main:scale-105">
               ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
@@ -2909,7 +3014,7 @@
               </div>
             </div>
 
-            <!-- Details Container (Locked to bottom 65% with scroll support on mobile) -->
+            <!-- Details Container -->
             <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-[65%] sm:h-[60%] md:h-auto">
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
@@ -3111,13 +3216,12 @@
         if (usr) {
           store.user = usr;
 
-          // Admin Privileges Guard Pre-Check to optimize data subscriptions pipeline
+          // Admin Privileges Guard Pre-Check
           if (usr.email === "bilalotami@gmail.com") {
             store.isAdmin = true;
           } else {
             store.isAdmin = false;
             if (usr.email && usr.email !== "bilalotami@gmail.com") {
-              // Unrecognized Google user from a cached session is signed out & blocked
               signOut(auth).then(() => {
                 showToast("Unauthorized account. Signed out.", "error");
                 signInAnonymously(auth).catch(console.error);
@@ -3136,7 +3240,6 @@
             }
           }
         } else {
-           // Provide fallback to anonymous viewing when logged out
            signInAnonymously(auth).catch(console.error);
         }
       });
