@@ -368,11 +368,6 @@
                 <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
               </div>
 
-              <!-- Admin Access -->
-              <button id="nav-link-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-xl hover:bg-white/5" title="Admin Workspace">
-                ${getIconSvg('lock', 'w-5 h-5 ' + (this.isAdmin ? 'text-luxuryGold' : 'text-gray-300'))}
-              </button>
-
               <!-- Cart Button -->
               <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group">
                 ${getIconSvg('shopping-bag', 'w-4 h-4')}
@@ -409,7 +404,6 @@
         };
       }
 
-      document.getElementById("nav-link-admin").onclick = () => { this.setPage("admin"); };
       document.getElementById("nav-cart-btn").onclick = () => {
         this.cartOpen = true;
         document.getElementById("cart-drawer-overlay").classList.remove("hidden");
