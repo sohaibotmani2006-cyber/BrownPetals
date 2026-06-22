@@ -141,6 +141,9 @@
 
   <!-- Floating Elements Mount Container -->
   <div id="app-drawers-and-overlays">
+    <!-- Mobile Menu Overlay Container -->
+    <div id="mobile-menu-overlay" class="hidden fixed inset-0 z-50 overflow-hidden"></div>
+
     <!-- Cart Drawer Container -->
     <div id="cart-drawer-overlay" class="hidden fixed inset-0 z-50 overflow-hidden"></div>
     
@@ -194,6 +197,7 @@
       adminView: "dashboard", 
       currentPage: "home", 
       cartOpen: false,
+      mobileMenuOpen: false,
       searchQuery: "",
       selectedGenderSection: "All", // "All", "GIRLS STORE", "MAN STORE"
       selectedCategory: "All", // "All", "Watches", "Accessories"
@@ -323,38 +327,54 @@
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
       
       container.innerHTML = `
-        <nav class="glassmorphism bg-[#0A0A0A]/90 text-white border-b border-luxuryGold/20 px-4 sm:px-6 lg:px-8 py-4 transition-premium shadow-lg">
+        <nav class="glassmorphism bg-[#0A0A0A]/95 text-white border-b border-luxuryGold/30 px-4 sm:px-6 lg:px-8 py-3.5 transition-premium shadow-xl">
           <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <!-- Brand Logo / Name -->
-            <div id="nav-brand" class="flex items-center gap-3 cursor-pointer">
-              <span class="font-serif text-2xl tracking-[0.25em] font-extrabold text-white">
-                SOV<span class="text-luxuryGold font-sans font-light tracking-normal">ANEX</span>
-              </span>
+            
+            <div class="flex items-center gap-3">
+              <!-- Mobile Hamburger Button -->
+              <button id="nav-mobile-menu-btn" class="md:hidden p-2 text-luxuryGold hover:text-white transition duration-200 hover:bg-white/5 rounded-xl mr-1" title="Open Menu">
+                ${getIconSvg('menu', 'w-6 h-6')}
+              </button>
+
+              <!-- Brand Logo / Name -->
+              <div id="nav-brand" class="flex items-center gap-3 cursor-pointer">
+                <span class="font-serif text-xl sm:text-2xl tracking-[0.25em] font-extrabold text-white">
+                  SOV<span class="text-luxuryGold font-sans font-light tracking-normal">ANEX</span>
+                </span>
+              </div>
             </div>
 
-            <!-- Navigation Links -->
-            <div class="hidden md:flex items-center gap-8 text-[11px] uppercase tracking-[0.2em] font-medium">
-              <button id="nav-link-home" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'home' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">Home</button>
-              <button id="nav-link-shop" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'shop' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">The Boutique</button>
-              <button id="nav-link-contact" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'contact' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">Contact</button>
-              <button id="nav-link-policies" class="hover:text-luxuryGold transition-premium font-semibold ${this.currentPage === 'policies' ? 'text-luxuryGold underline underline-offset-8' : 'text-gray-300'}">Livraison & Retours</button>
+            <!-- Navigation Links: Clean, highly-legible premium button pills -->
+            <div class="hidden md:flex items-center gap-3 text-xs uppercase tracking-[0.15em] font-bold">
+              <button id="nav-link-home" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'home' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-250 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+                Home
+              </button>
+              <button id="nav-link-shop" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'shop' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-205 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+                The Boutique
+              </button>
+              <button id="nav-link-contact" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'contact' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-205 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+                Contact
+              </button>
+              <button id="nav-link-policies" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'policies' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-205 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+                Livraison & Retours
+              </button>
             </div>
 
             <!-- Actions -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
               <!-- Search Bar -->
               <div class="relative hidden lg:block">
-                <input id="nav-search-input" type="text" placeholder="Search Atelier..." value="${this.searchQuery}" class="pl-9 pr-4 py-1.5 text-[10px] uppercase tracking-wider rounded-full border border-luxuryGold/30 bg-black/50 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
+                <input id="nav-search-input" type="text" placeholder="Search Atelier..." value="${this.searchQuery}" class="pl-9 pr-4 py-2 text-[10px] uppercase tracking-wider rounded-xl border border-luxuryGold/30 bg-black/50 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
                 <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
               </div>
 
               <!-- Admin Access -->
-              <button id="nav-link-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-full hover:bg-white/5" title="Admin Workspace">
-                ${getIconSvg('lock', 'w-4.5 h-4.5 ' + (this.isAdmin ? 'text-luxuryGold' : 'text-gray-300'))}
+              <button id="nav-link-admin" class="p-2 hover:text-luxuryGold transition-premium rounded-xl hover:bg-white/5" title="Admin Workspace">
+                ${getIconSvg('lock', 'w-5 h-5 ' + (this.isAdmin ? 'text-luxuryGold' : 'text-gray-300'))}
               </button>
 
               <!-- Cart Button -->
-              <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-luxuryGold/10 hover:bg-luxuryGold border-2 border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group">
+              <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group">
                 ${getIconSvg('shopping-bag', 'w-4 h-4')}
                 <span class="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">Cart</span>
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-luxuryGold text-black group-hover:bg-black group-hover:text-luxuryGold transition">
@@ -368,10 +388,27 @@
 
       // Binding navbar click events
       document.getElementById("nav-brand").onclick = () => { this.setPage("home"); };
-      document.getElementById("nav-link-home").onclick = () => { this.setPage("home"); };
-      document.getElementById("nav-link-shop").onclick = () => { this.setPage("shop"); };
-      document.getElementById("nav-link-contact").onclick = () => { this.setPage("contact"); };
-      document.getElementById("nav-link-policies").onclick = () => { this.setPage("policies"); };
+      
+      const homeLink = document.getElementById("nav-link-home");
+      if (homeLink) homeLink.onclick = () => { this.setPage("home"); };
+      
+      const shopLink = document.getElementById("nav-link-shop");
+      if (shopLink) shopLink.onclick = () => { this.setPage("shop"); };
+      
+      const contactLink = document.getElementById("nav-link-contact");
+      if (contactLink) contactLink.onclick = () => { this.setPage("contact"); };
+      
+      const policiesLink = document.getElementById("nav-link-policies");
+      if (policiesLink) policiesLink.onclick = () => { this.setPage("policies"); };
+
+      const mobileMenuBtn = document.getElementById("nav-mobile-menu-btn");
+      if (mobileMenuBtn) {
+        mobileMenuBtn.onclick = () => {
+          this.mobileMenuOpen = true;
+          this.renderMobileMenu();
+        };
+      }
+
       document.getElementById("nav-link-admin").onclick = () => { this.setPage("admin"); };
       document.getElementById("nav-cart-btn").onclick = () => {
         this.cartOpen = true;
@@ -398,6 +435,50 @@
           }
         };
       }
+    };
+
+    store.renderMobileMenu = function() {
+      const container = document.getElementById("mobile-menu-overlay");
+      if (!container) return;
+      if (!this.mobileMenuOpen) {
+        container.classList.add("hidden");
+        return;
+      }
+
+      container.classList.remove("hidden");
+      container.innerHTML = `
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md transition-opacity" id="mobile-menu-backdrop"></div>
+        <div class="absolute inset-y-0 left-0 w-4/5 max-w-sm bg-[#0A0A0A] border-r border-luxuryGold/30 flex flex-col justify-between p-6 text-white space-y-8 z-10 animate-fade-in shadow-2xl">
+          <div class="space-y-8">
+            <div class="flex items-center justify-between border-b border-luxuryGold/10 pb-4">
+              <span class="font-serif text-xl tracking-widest font-extrabold text-white">
+                SOV<span class="text-luxuryGold font-sans font-light">ANEX</span>
+              </span>
+              <button id="mobile-menu-close" class="p-2 text-luxuryGold hover:text-white transition-premium bg-white/5 rounded-xl">✕</button>
+            </div>
+            
+            <div class="flex flex-col gap-3">
+              <button id="mobile-nav-home" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'home' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Home</button>
+              <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">The Boutique</button>
+              <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Contact</button>
+              <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Livraison & Retours</button>
+            </div>
+          </div>
+
+          <div class="pt-6 border-t border-luxuryGold/10 text-center space-y-2">
+            <p class="text-[9px] text-luxuryGold/70 uppercase tracking-widest font-semibold">${this.settings.tagline}</p>
+            <p class="text-[8px] text-gray-500">© 2026 SOVANEX Atelier</p>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("mobile-menu-backdrop").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); };
+      document.getElementById("mobile-menu-close").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); };
+      
+      document.getElementById("mobile-nav-home").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("home"); };
+      document.getElementById("mobile-nav-shop").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("shop"); };
+      document.getElementById("mobile-nav-contact").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("contact"); };
+      document.getElementById("mobile-nav-policies").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("policies"); };
     };
 
     const showToast = (message, type = "success") => {
