@@ -165,7 +165,7 @@
 
   <script type="module">
     import { initializeApp } from "firebase/app";
-    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment } from "firebase/firestore";
+    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment } from "firebase/firestore";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
     // Global application namespace
@@ -400,21 +400,23 @@
       if (!auth.currentUser && !forceBypass) return;
       this.activeSubscriptions.public = true;
 
-      // Dynamic general setting subscription
+      // 1. Dynamic general setting subscription (Optimized: One-time fetch for public, Real-time for admin)
       const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
-      onSnapshot(settingsDocRef, (snap) => {
+      const handleSettings = (snap) => {
         if (snap.exists()) {
           store.settings = { ...store.settings, ...snap.data() };
           store.updateDOM();
-        } else {
-          // Setup default values on Firestore so collection is visible
+        } else if (store.isAdmin) {
           setDoc(settingsDocRef, store.settings).catch(e => console.error("Initial write bypassed:", e));
         }
-      }, (err) => {
-        console.warn("Settings fetch bypassed:", err);
-      });
+      };
+      if (store.isAdmin) {
+        onSnapshot(settingsDocRef, handleSettings, (err) => console.warn("Settings fetch bypassed:", err));
+      } else {
+        getDoc(settingsDocRef).then(handleSettings).catch(err => console.warn("Settings fetch bypassed:", err));
+      }
 
-      // Products Feed Sub
+      // 2. Products Feed Sub (Kept real-time for immediate stock/price syncing globally)
       const prodQuery = collection(db, 'artifacts', appId, 'public', 'data', 'products');
       onSnapshot(prodQuery, (snap) => {
         const list = [];
@@ -504,39 +506,37 @@
         store.updateDOM();
       });
 
-      // Categories Config Sub
-      const catQuery = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
-      onSnapshot(catQuery, (snap) => {
+      // 3. Categories Config Sub (Optimized)
+      const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
+      const catQuery = query(catRef, orderBy("order", "asc"));
+      const handleCategories = (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         
         if (list.length === 0) {
           const defaults = ["Watches", "Accessories"];
           defaults.forEach(async (name, index) => {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'categories'), {
-              name,
-              order: index,
-              isActive: true,
-              createdAt: new Date()
-            });
+            const newCat = { name, order: index, isActive: true, createdAt: new Date() };
+            if (!store.isAdmin) store.categories.push(newCat);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'categories'), newCat);
           });
+          if (!store.isAdmin) store.categories.sort((a,b) => (a.order || 0) - (b.order || 0));
+        } else {
+          store.categories = list;
         }
         
-        store.categories = list.sort((a,b) => (a.order || 0) - (b.order || 0));
         store.loadingCategories = false;
         store.updateDOM();
-      }, (err) => {
-        console.error("Categories error:", err);
-        store.loadingCategories = false;
-        store.updateDOM();
-      });
+      };
+      if (store.isAdmin) onSnapshot(catQuery, handleCategories, (err) => console.warn(err));
+      else getDocs(catQuery).then(handleCategories).catch(err => console.warn(err));
 
-      // Lookbook Grid Sub
-      const lookbookQuery = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
-      onSnapshot(lookbookQuery, (snap) => {
+      // 4. Lookbook Grid Sub (Optimized)
+      const lookbookRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
+      const lookbookQuery = query(lookbookRef, orderBy("order", "asc"));
+      const handleLookbook = (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        store.lookbook = list;
         
         if (list.length === 0) {
           const initialLookbook = [
@@ -546,15 +546,21 @@
             { imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600", postURL: "https://instagram.com", order: 4 }
           ];
           initialLookbook.forEach(async (lb) => {
-            await addDoc(lookbookQuery, { ...lb, createdAt: new Date() });
+            const newLb = { ...lb, createdAt: new Date() };
+            if (!store.isAdmin) store.lookbook.push(newLb);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'lookbook'), newLb);
           });
+        } else {
+          store.lookbook = list;
         }
         store.updateDOM();
-      }, (err) => console.warn("Lookbook offline:", err));
+      };
+      if (store.isAdmin) onSnapshot(lookbookQuery, handleLookbook, (err) => console.warn(err));
+      else getDocs(lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
 
-      // Load Delivery Cities Sub
-      const citiesQuery = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
-      onSnapshot(citiesQuery, (snap) => {
+      // 5. Load Delivery Cities Sub (Optimized)
+      const citiesRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
+      const handleCities = (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
 
@@ -568,30 +574,38 @@
             { name: "Fès", price: 40, isActive: true }
           ];
           defaults.forEach(async (city) => {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities'), { ...city, createdAt: new Date() });
+            const newCity = { ...city, createdAt: new Date() };
+            if (!store.isAdmin) store.deliveryCities.push(newCity);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities'), newCity);
           });
+          if (!store.isAdmin) store.deliveryCities.sort((a,b) => a.name.localeCompare(b.name));
+        } else {
+          store.deliveryCities = list.sort((a,b) => a.name.localeCompare(b.name));
         }
-
-        store.deliveryCities = list.sort((a,b) => a.name.localeCompare(b.name));
         store.updateDOM();
-      }, (err) => console.warn("Cities error:", err));
+      };
+      if (store.isAdmin) onSnapshot(citiesRef, handleCities, (err) => console.warn(err));
+      else getDocs(citiesRef).then(handleCities).catch(err => console.warn(err));
 
-      // Telegram dynamic config Sub
+      // 6. Telegram dynamic config Sub (Optimized)
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
-      onSnapshot(botConfigDoc, (snap) => {
+      const handleTelegram = (snap) => {
         if (snap.exists()) {
           store.telegramSettings = { ...store.telegramSettings, ...snap.data() };
-        } else {
+        } else if (store.isAdmin) {
           setDoc(botConfigDoc, store.telegramSettings).catch(e => console.error("Initial telegram configuration write bypassed:", e));
         }
-      }, (err) => console.warn("Bot config offline:", err));
+      };
+      if (store.isAdmin) onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err));
+      else getDoc(botConfigDoc).then(handleTelegram).catch(err => console.warn(err));
 
-      // Reviews dynamic config Sub
-      const revQuery = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
-      onSnapshot(revQuery, (snap) => {
+      // 7. Reviews dynamic config Sub (Optimized with memory limits)
+      const revRef = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
+      const revQuery = query(revRef, orderBy("createdAt", "desc"), limit(store.isAdmin ? 100 : 20));
+      const handleReviews = (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        store.reviews = list.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        store.reviews = list;
 
         if (list.length === 0) {
           const defaultReviews = [
@@ -599,11 +613,14 @@
             { customerName: "Anas Alaoui", customerLocation: "Casablanca", rating: 5, comment: "The automatic chronograph from SOVANEX is purely royal. Authentic weight and quick premium shipping.", productId: "general", createdAt: new Date() }
           ];
           defaultReviews.forEach(async (r) => {
-            await addDoc(revQuery, r);
+            if (!store.isAdmin) store.reviews.push(r);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'reviews'), r);
           });
         }
         store.updateDOM();
-      }, (err) => console.error("Reviews load error:", err));
+      };
+      if (store.isAdmin) onSnapshot(revQuery, handleReviews, (err) => console.warn(err));
+      else getDocs(revQuery).then(handleReviews).catch(err => console.warn(err));
     };
 
     store.initAdminSubscriptions = function() {
@@ -611,12 +628,14 @@
       if (!auth.currentUser) return;
       this.activeSubscriptions.admin = true;
 
-      // Realtime Orders Sub
-      const orderQuery = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+      // Realtime Orders Sub (Optimized with limit to prevent massive payload downloads)
+      const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+      const orderQuery = query(ordersRef, orderBy("createdAt", "desc"), limit(150));
+      
       onSnapshot(orderQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        store.orders = list.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        store.orders = list;
 
         if (list.length === 0) {
           const sampleOrder = {
@@ -1927,9 +1946,15 @@
             <input type="number" name="discountPrice" value="${product && product.discountPrice ? product.discountPrice : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
           </div>
 
-          <div>
-            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">High-Res Image URL</label>
-            <input type="url" name="imageURL" required value="${product ? product.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">High-Res Image URL</label>
+              <input type="url" name="imageURL" required value="${product ? product.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Gallery Images (Comma-separated)</label>
+              <input type="text" name="galleryImages" placeholder="https://img1.jpg, https://img2.jpg" value="${product && product.galleryImages ? product.galleryImages : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+            </div>
           </div>
 
           <div>
@@ -1980,6 +2005,7 @@
           price: Number(form.price.value),
           discountPrice: form.discountPrice.value ? Number(form.discountPrice.value) : null,
           imageURL: form.imageURL.value,
+          galleryImages: form.galleryImages.value,
           description: form.description.value,
           stock: Number(form.stock.value),
           rating: Number(form.rating.value),
@@ -3084,14 +3110,10 @@
       onAuthStateChanged(auth, (usr) => {
         if (usr) {
           store.user = usr;
-          store.initPublicSubscriptions();
-          
+
+          // Admin Privileges Guard Pre-Check to optimize data subscriptions pipeline
           if (usr.email === "bilalotami@gmail.com") {
             store.isAdmin = true;
-            store.initAdminSubscriptions();
-            if (store.currentPage === "admin") {
-              store.renderAdminPage();
-            }
           } else {
             store.isAdmin = false;
             if (usr.email && usr.email !== "bilalotami@gmail.com") {
@@ -3101,6 +3123,16 @@
                 signInAnonymously(auth).catch(console.error);
                 if (store.currentPage === "admin") store.setPage("home");
               });
+              return;
+            }
+          }
+
+          store.initPublicSubscriptions();
+          
+          if (store.isAdmin) {
+            store.initAdminSubscriptions();
+            if (store.currentPage === "admin") {
+              store.renderAdminPage();
             }
           }
         } else {
