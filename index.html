@@ -221,8 +221,8 @@
         facebookURL: "https://facebook.com",
         whatsappHotline: "+212 777467304",
         emailCoordinate: "brownpetals24@gmail.com",
-        deliveryTerms: "Chaque pièce d'horlogerie ou accessoire SOVANEX est expédié dans un coffret scellé à la cire d'or. Nos livraisons sont assurées par des transporteurs privés haut de gamme.\n\nLe délai de livraison standard est de 24h à 48h selon votre ville au Maroc (Rabat, Casablanca, Marrakech, Kénitra, Tanger, Fès). La livraison est entièrement sécurisée et assurée à 100% contre la perte ou le vol.",
-        returnPolicy: "Parce que l'excellence ne souffre aucune imperfection, SOVANEX propose un droit d'échange ou de retour sous 14 jours à compter de la réception de votre colis.\n\nL'article doit être retourné dans son état d'origine absolu, inutilisé, et dans son écrin d'origine scellé. Les retours sont simples : contactez notre service client dédié sur WhatsApp et nous planifierons un coursier pour récupérer le colis chez vous."
+        deliveryTerms: "Every SOVANEX timepiece or accessory is shipped in a golden wax-sealed luxury casket. Our deliveries are handled by premium private couriers.\n\nStandard delivery time is 24 to 48 hours across major cities in Morocco (Rabat, Casablanca, Marrakech, Kenitra, Tangier, Fes). Delivery is fully secured and 100% insured against loss or damage.",
+        returnPolicy: "Because excellence suffers no imperfection, SOVANEX offers a 14-day exchange or return period from the date of receipt.\n\nThe item must be returned in its absolute original state, unused, and in its original sealed casket. Returns are simple: contact our dedicated customer service on WhatsApp and we will schedule a premium courier to retrieve the package from your doorstep."
       },
       
       checkoutFormValues: {
@@ -321,6 +321,15 @@
       `;
     };
 
+    store.updateDOM = function() {
+      this.updateTheme(); // Sync theme dynamically based on current selections
+      this.renderHeader();
+      this.renderMainContent();
+      this.renderFooter();
+      this.renderCartDrawer();
+      this.renderFloatingActions();
+    };
+
     store.renderHeader = function() {
       const container = document.getElementById("app-header");
       if (!container) return;
@@ -346,17 +355,17 @@
 
             <!-- Navigation Links: Clean, highly-legible premium button pills -->
             <div class="hidden md:flex items-center gap-3 text-xs uppercase tracking-[0.15em] font-bold">
-              <button id="nav-link-home" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'home' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-250 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+              <button id="nav-link-home" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'home' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
                 Home
               </button>
-              <button id="nav-link-shop" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'shop' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-205 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+              <button id="nav-link-shop" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'shop' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
                 The Boutique
               </button>
-              <button id="nav-link-contact" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'contact' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-205 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+              <button id="nav-link-contact" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'contact' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
                 Contact
               </button>
-              <button id="nav-link-policies" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'policies' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-205 hover:bg-white/5 hover:text-white hover:border-white/10'}">
-                Livraison & Retours
+              <button id="nav-link-policies" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'policies' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
+                Shipping & Returns
               </button>
             </div>
 
@@ -369,7 +378,7 @@
               </div>
 
               <!-- Cart Button -->
-              <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group">
+              <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group" title="Open Cart">
                 ${getIconSvg('shopping-bag', 'w-4 h-4')}
                 <span class="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">Cart</span>
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-luxuryGold text-black group-hover:bg-black group-hover:text-luxuryGold transition">
@@ -455,7 +464,7 @@
               <button id="mobile-nav-home" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'home' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Home</button>
               <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">The Boutique</button>
               <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Contact</button>
-              <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Livraison & Retours</button>
+              <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Shipping & Returns</button>
             </div>
           </div>
 
@@ -624,7 +633,7 @@
               price: 450,
               discountPrice: null,
               imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600",
-              description: "Sophisticated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
+              description: "Sophicated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
               stock: 15,
               rating: 4.8,
               reviewsCount: 9,
@@ -813,7 +822,7 @@
             paymentMethod: "Telegram Automated",
             createdAt: new Date()
           };
-          addDoc(orderQuery, sampleOrder).catch(e => console.error("Initial orders seeding write bypassed:", e));
+          addDoc(ordersRef, sampleOrder).catch(e => console.error("Initial orders seeding write bypassed:", e));
         }
 
         store.updateDOM();
@@ -1038,14 +1047,14 @@
         
         // Show Order Confirmation modal
         triggerConfirm(
-          "Selection Confirmée", 
+          "Selection Confirmed", 
           `<div class="space-y-4">` +
-            `<p class="text-xs text-gray-300">Votre commande a été enregistrée avec succès !</p>` +
+            `<p class="text-xs text-gray-300">Your order has been registered successfully!</p>` +
             `<div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">` +
-              `<p class="text-[10px] uppercase tracking-wider text-luxuryGold font-semibold mb-1">Code de Commande (ID)</p>` +
+              `<p class="text-[10px] uppercase tracking-wider text-luxuryGold font-semibold mb-1">Order Code (ID)</p>` +
               `<span class="inline-block bg-black/80 text-luxuryGold font-mono text-base font-bold px-4 py-2 rounded-lg border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">${orderId}</span>` +
             `</div>` +
-            `<p class="text-[11px] text-gray-400">Veuillez copier cet ID et l'envoyer au service client sur WhatsApp pour suivre votre livraison.</p>` +
+            `<p class="text-[11px] text-gray-400">Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.</p>` +
           `</div>`, 
           () => {
             store.setPage("home");
@@ -1063,15 +1072,6 @@
         );
         this.updateDOM();
       }
-    };
-
-    store.updateDOM = function() {
-      this.updateTheme(); // Sync theme dynamically based on current selections
-      this.renderHeader();
-      this.renderMainContent();
-      this.renderFooter();
-      this.renderCartDrawer();
-      this.renderFloatingActions();
     };
 
     store.renderMainContent = function() {
@@ -1093,13 +1093,15 @@
       if (!container) return;
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
-          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <button id="contact-back-home" class="flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold">
+          
+          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE (No full block/background) -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="contact-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
               ← Back to Home
             </button>
           </div>
 
-          <div class="text-center space-y-3">
+          <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Seamless Service</span>
             <h1 class="text-4xl md:text-5xl font-serif text-white">Contact Us</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
@@ -1205,18 +1207,20 @@
       if (!container) return;
       container.innerHTML = `
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
-          <div class="flex justify-between items-center mb-4">
-            <button id="policies-back-home" class="flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold">
+          
+          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE (No full block/background) -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="policies-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
               ← Back to Home
             </button>
           </div>
 
-          <div class="text-center space-y-3">
+          <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Atelier Policies</span>
-            <h1 class="text-4xl md:text-5xl font-serif text-white">Livraison & Retours</h1>
+            <h1 class="text-4xl md:text-5xl font-serif text-white">Shipping & Returns</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
             <p class="text-xs text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
-              L'excellence de notre service se prolonge bien après votre commande. Découvrez les standards exclusifs que nous appliquons pour chaque expédition et retour.
+              Our dedication to excellence continues long after your purchase. Discover the exclusive standards we maintain for every shipment and return.
             </p>
           </div>
 
@@ -1228,14 +1232,14 @@
                   <div class="w-10 h-10 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">
                     ${getIconSvg('truck', 'w-5 h-5')}
                   </div>
-                  <h3 class="font-serif text-xl text-white font-bold">Conditions de Livraison</h3>
+                  <h3 class="font-serif text-xl text-white font-bold">Shipping Conditions</h3>
                 </div>
                 <div class="text-xs text-gray-300 leading-relaxed font-light whitespace-pre-line">
-                  ${this.settings.deliveryTerms || "Détails de livraison non configurés."}
+                  ${this.settings.deliveryTerms || "Delivery terms not configured."}
                 </div>
               </div>
               <div class="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] uppercase text-luxuryGold tracking-wider">
-                <span>Expédition Assurée</span>
+                <span>Insured Shipment</span>
                 <span>24h - 48h</span>
               </div>
             </div>
@@ -1247,15 +1251,15 @@
                   <div class="w-10 h-10 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">
                     ${getIconSvg('gift', 'w-5 h-5')}
                   </div>
-                  <h3 class="font-serif text-xl text-white font-bold">Politique de Retour</h3>
+                  <h3 class="font-serif text-xl text-white font-bold">Return Policy</h3>
                 </div>
                 <div class="text-xs text-gray-300 leading-relaxed font-light whitespace-pre-line">
-                  ${this.settings.returnPolicy || "Conditions de retour non configurées."}
+                  ${this.settings.returnPolicy || "Return policy not configured."}
                 </div>
               </div>
               <div class="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] uppercase text-luxuryGold tracking-wider">
-                <span>Garantie Excellence</span>
-                <span>14 Jours d'Échange</span>
+                <span>Excellence Guaranteed</span>
+                <span>14-Day Exchange</span>
               </div>
             </div>
           </div>
@@ -1263,10 +1267,10 @@
           <!-- Extra Trust Callout -->
           <div class="text-center p-8 bg-luxuryBeige/50 rounded-3xl border border-luxuryGold/10 mt-8 space-y-4">
             <p class="text-xs text-gray-400 font-light leading-relaxed">
-              Besoin d'un ajustement ou d'une personnalisation immédiate avant l'envoi ? Notre hotline de conciergerie est disponible pour vous servir.
+              Need a size adjustment or bespoke engraving before shipment? Our dedicated concierge hotline is available instantly to accommodate your requests.
             </p>
             <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold border-b border-luxuryGold/40 pb-1">
-              Contacter notre service client sur WhatsApp →
+              Contact our customer support on WhatsApp →
             </a>
           </div>
         </div>
@@ -1422,7 +1426,7 @@
                   <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">GIRLS STORE</span>
                   <h3 class="text-3xl font-serif text-white font-bold">For Her</h3>
                   <p class="text-xs text-gray-300">Discover majestic watches and delicate luxury bracelets crafted with elegant gold and diamonds.</p>
-                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">GIRLS STORE</button>
+                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP FOR HER</button>
                 </div>
               </div>
 
@@ -1435,7 +1439,7 @@
                   <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">MAN STORE</span>
                   <h3 class="text-3xl font-serif text-white font-bold">For Him</h3>
                   <p class="text-xs text-gray-300">Explore mechanical chronographs, carbon jewelry, and robust, high-end steel accessories.</p>
-                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">MAN STORE</button>
+                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP FOR HIM</button>
                 </div>
               </div>
             </div>
@@ -1717,14 +1721,14 @@
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
           
-          <!-- Back button and Navigation Context -->
-          <div class="flex justify-between items-center mb-4">
-            <button id="shop-back-home" class="flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold">
+          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE (No full block/background) -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="shop-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
               ← Back to Home
             </button>
           </div>
 
-          <div class="text-center space-y-3">
+          <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Catalog</span>
             <h1 class="text-4xl font-serif text-white">The Boutique</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-2"></div>
@@ -2780,14 +2784,14 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
               <div>
-                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Conditions de Livraison</label>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Shipping Conditions</label>
                 <textarea name="deliveryTerms" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-40 resize-y">${this.settings.deliveryTerms || ''}</textarea>
-                <p class="text-[9px] text-gray-400 mt-1">S'affiche sur la page Livraison & Retours. Expliquez les délais et modes d'expédition de l'Atelier.</p>
+                <p class="text-[9px] text-gray-400 mt-1">Displayed on the Shipping & Returns page. Explain the delivery times and dispatch methods of the Atelier.</p>
               </div>
               <div>
-                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Politique de Retour</label>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Return Policy</label>
                 <textarea name="returnPolicy" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-40 resize-y">${this.settings.returnPolicy || ''}</textarea>
-                <p class="text-[9px] text-gray-400 mt-1">S'affiche sur la page Livraison & Retours. Indiquez les conditions d'échange et de retour de l'Atelier.</p>
+                <p class="text-[9px] text-gray-400 mt-1">Displayed on the Shipping & Returns page. Specify the exchange and return rules of the Atelier.</p>
               </div>
             </div>
 
@@ -2848,7 +2852,7 @@
           <div>
             <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Contact Us</h4>
             <p class="text-sm text-gray-400 font-light leading-relaxed">
-              Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040<br>
+              Avenue de la Resistance, Centre Commercial La Perle de la Medina, Rabat, Morocco, 10040<br>
               Signature deliveries adjusted instantly by city of checkout.
             </p>
             <p class="text-xs text-luxuryGold mt-2">Open Daily: 9:00 AM — 10:00 PM</p>
@@ -2868,7 +2872,7 @@
           <p>© 2026 SOVANEX. All Rights Reserved. Designed with deep elegance.</p>
           <div class="flex gap-6 items-center">
             <a href="#" id="footer-admin-portal" class="hover:text-luxuryGold text-lg transition" title="Secure Workspace Portal">🔒</a>
-            <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">Livraison & Retours</a>
+            <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">Shipping & Returns</a>
             <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Instagram</a>
             <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Facebook</a>
           </div>
@@ -3080,10 +3084,16 @@
             <!-- High visibility Close Button -->
             <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
-            <!-- Image View Container -->
+            <!-- Image View Container (With Tap to Zoom Professional Assist Icon) -->
             <div class="md:w-1/2 h-[35%] sm:h-[40%] md:h-auto relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in" id="zoom-img-btn">
               <img src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-premium transform group-hover/main:scale-105">
               ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
+              
+              <!-- Tap to Zoom Capsule Badge Overlay -->
+              <div class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
+                <span>🔍 Tap to Zoom</span>
+              </div>
+
               <div class="absolute inset-0 bg-black/35 opacity-0 group-hover/main:opacity-100 transition flex items-center justify-center">
                 <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">Quick View</span>
               </div>
