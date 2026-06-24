@@ -3538,7 +3538,7 @@
       if (!container) return;
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="space-y-4">
               <span class="font-serif text-2xl tracking-widest font-extrabold text-white">
                 SOV<span class="text-luxuryGold font-sans font-light">ANEX</span>
@@ -3558,15 +3558,9 @@
               <h4 class="text-xs uppercase font-extrabold text-luxuryGold tracking-widest border-b border-luxuryGold/10 pb-2">Atelier Hours</h4>
               <p class="text-xs text-gray-400 font-light leading-relaxed">Operated Daily from Kenitra & Rabat Workspace:<br><span class="text-luxuryGold font-semibold">9:00 AM — 10:00 PM</span></p>
             </div>
-            <div class="space-y-3">
-              <h4 class="text-xs uppercase font-extrabold text-luxuryGold tracking-widest border-b border-luxuryGold/10 pb-2">Executive Access</h4>
-              <div class="flex flex-col gap-2">
-                <button id="footer-btn-admin" class="text-left text-xs hover:text-luxuryGold text-gray-400 border border-transparent hover:border-luxuryGold/20 rounded-lg px-2 py-1 bg-white/5 transition self-start uppercase font-bold">Admin Portal</button>
-              </div>
-            </div>
           </div>
           <div class="pt-8 border-t border-white/10 text-center text-[11px] text-gray-500 flex flex-col md:flex-row justify-between gap-4">
-            <p>© 2026 SOVANEX Atelier. All rights reserved.</p>
+            <p>© 2026 SOVANEX Atelier. All rights reserved. <span id="footer-btn-admin" class="cursor-pointer text-[9px] opacity-15 hover:opacity-100 transition duration-300 ml-1 select-none">⚜️</span></p>
             <div class="flex gap-4 justify-center text-luxuryGold font-semibold">
               <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:underline">Instagram</a>
               <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="hover:underline">WhatsApp</a>
