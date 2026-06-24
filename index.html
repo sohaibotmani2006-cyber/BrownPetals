@@ -2257,7 +2257,7 @@
             <div class="bg-black/80 p-4 rounded-2xl border border-white/5 space-y-2 text-[10px] text-gray-400">
               <p class="font-bold text-luxuryGold uppercase tracking-wider">Formula Explanations:</p>
               <ul class="list-disc list-inside space-y-1 text-gray-400 font-light">
-                <li><strong class="text-gray-300">Logistics standard:</strong> 40 MAD delivered, 13 MAD returned.</li>
+                <li><strong class="text-gray-300">Logistics standard:</strong> 0 MAD delivery cost (paid by client), 0 MAD return cost (free returns).</li>
                 <li><strong class="text-gray-300">Formulas:</strong> All calculations dynamically adapt to your custom selling price (AOV) and product cost.</li>
               </ul>
             </div>
@@ -2389,8 +2389,8 @@
         lblAov.textContent = `${aov} MAD`;
         lblPieces.textContent = `${pieces}`;
 
-        const deliveryFee = 40;
-        const returnFee = 13;
+        const deliveryFee = 0; // Fully covered by client
+        const returnFee = 0;   // Free returns
 
         const expectedConfirmed = leads * confirmRate;
         const expectedDelivered = expectedConfirmed * deliveryRate;
