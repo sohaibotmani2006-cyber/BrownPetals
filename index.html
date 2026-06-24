@@ -2099,20 +2099,17 @@
               <div>
                 <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider mb-4 border-b border-luxuryGold/10 pb-2">Top Items</h3>
                 <div class="space-y-4">
-                  ${this.products.slice(0, 4).map((p, idx) => {
-                    const cleanName = p.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
-                    return `
-                      <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3">
-                        <span class="text-xs font-bold text-luxuryGold">#${idx+1}</span>
-                        <img src="${p.imageURL || fallbackImage}" class="w-10 h-10 object-cover rounded-lg" loading="lazy">
-                        <div class="flex-1">
-                          <p class="text-xs font-semibold text-white line-clamp-1">${cleanName}</p>
-                          <p class="text-[10px] text-gray-400">${p.category} (${getNormalizedGender(p.gender)})</p>
-                        </div>
-                        <span class="text-xs font-serif font-bold text-luxuryGold">${p.price} MAD</span>
+                  ${this.products.slice(0, 4).map((p, idx) => `
+                    <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3">
+                      <span class="text-xs font-bold text-luxuryGold">#${idx+1}</span>
+                      <img src="${p.imageURL || fallbackImage}" class="w-10 h-10 object-cover rounded-lg" loading="lazy">
+                      <div class="flex-1">
+                        <p class="text-xs font-semibold text-white line-clamp-1">${p.name}</p>
+                        <p class="text-[10px] text-gray-400">${p.category} (${getNormalizedGender(p.gender)})</p>
                       </div>
-                    `;
-                  }).join('')}
+                      <span class="text-xs font-serif font-bold text-luxuryGold">${p.price} MAD</span>
+                    </div>
+                  `).join('')}
                 </div>
               </div>
             </div>
@@ -2153,14 +2150,18 @@
             </div>
 
             <!-- Suggested baseline database helper notes -->
-            <div class="grid grid-cols-2 gap-3 bg-black/30 p-3 rounded-xl border border-white/5 text-[10px] text-gray-400">
+            <div class="grid grid-cols-3 gap-3 bg-black/30 p-3 rounded-xl border border-white/5 text-[10px] text-gray-400">
               <div>
-                <span class="block uppercase tracking-wider text-gray-500 font-bold">Suggested AOV (From DB)</span>
+                <span class="block uppercase tracking-wider text-gray-500 font-bold">Lifetime AOV (DB)</span>
                 <strong class="text-white">${lifetimeAOV} MAD</strong>
               </div>
               <div>
                 <span class="block uppercase tracking-wider text-gray-500 font-bold">Avg Pieces/Order (DB)</span>
                 <strong class="text-white">${avgPiecesPerOrder} pcs</strong>
+              </div>
+              <div class="border-l border-luxuryGold/20 pl-2">
+                <span class="block uppercase tracking-wider text-luxuryGold font-bold">Calculated Order AOV</span>
+                <strong id="lbl-calculated-aov" class="text-luxuryGold font-bold">0 MAD</strong>
               </div>
             </div>
 
@@ -2169,11 +2170,11 @@
               
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <label class="font-semibold text-luxuryGold">Selling Price per Order (AOV)</label>
-                  <span id="lbl-aov-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">${lifetimeAOV} MAD</span>
+                  <label class="font-semibold text-luxuryGold">Selling Price per Piece (Unit Price)</label>
+                  <span id="lbl-aov-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">950 MAD</span>
                 </div>
-                <input type="range" id="input-aov-bk" min="100" max="5000" step="10" value="${lifetimeAOV}" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-                <p class="text-[9px] text-gray-500 mt-1">Change this to match your exact selling price for one product or custom basket value.</p>
+                <input type="range" id="input-aov-bk" min="100" max="3000" step="10" value="950" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
+                <p class="text-[9px] text-gray-500 mt-1">Selling price of a single unit. Calculated Order AOV will scale dynamically with pieces.</p>
               </div>
 
               <div>
@@ -2376,9 +2377,10 @@
         const confirmRate = Number(inConfirm.value) / 100;
         const deliveryRate = Number(inDelivery.value) / 100;
         const rawProductCost = Number(inProdCost.value);
-        const aov = Number(inAov.value);
+        const unitPrice = Number(inAov.value);
         const pieces = Number(inPieces.value);
 
+        const calculatedAOV = unitPrice * pieces;
         const productCostPerOrder = rawProductCost * pieces;
 
         lblLeads.textContent = leads.toLocaleString('en-US');
@@ -2386,8 +2388,13 @@
         lblConfirm.textContent = `${inConfirm.value}%`;
         lblDelivery.textContent = `${inDelivery.value}%`;
         lblProdCost.textContent = `${rawProductCost} MAD`;
-        lblAov.textContent = `${aov} MAD`;
+        lblAov.textContent = `${unitPrice} MAD`;
         lblPieces.textContent = `${pieces}`;
+
+        const calcAovEl = document.getElementById("lbl-calculated-aov");
+        if (calcAovEl) {
+          calcAovEl.textContent = `${Math.round(calculatedAOV)} MAD`;
+        }
 
         const deliveryFee = 0; // Fully covered by client
         const returnFee = 0;   // Free returns
@@ -2397,7 +2404,7 @@
         const expectedReturned = expectedConfirmed * (1 - deliveryRate);
 
         const scAdCost = leads * cpl;
-        const scRevenue = expectedDelivered * aov;
+        const scRevenue = expectedDelivered * calculatedAOV;
         const scProductCost = expectedConfirmed * productCostPerOrder;
         const scDeliveryCost = expectedDelivered * deliveryFee;
         const scReturnCost = expectedReturned * returnFee;
@@ -2423,15 +2430,15 @@
         outScDeliveredQty.textContent = Math.round(expectedDelivered).toLocaleString('en-US');
         outScReturnedQty.textContent = Math.round(expectedReturned).toLocaleString('en-US');
 
-        const bkCpl = confirmRate * (deliveryRate * (aov - deliveryFee + returnFee) - productCostPerOrder - returnFee);
+        const bkCpl = confirmRate * (deliveryRate * (calculatedAOV - deliveryFee + returnFee) - productCostPerOrder - returnFee);
         outBkCpl.textContent = bkCpl > 0 ? `${bkCpl.toFixed(1)} MAD` : "Infeasible";
 
         const numDr = (cpl / confirmRate) + productCostPerOrder + returnFee;
-        const denDr = aov - deliveryFee + returnFee;
+        const denDr = calculatedAOV - deliveryFee + returnFee;
         const bkDelivery = denDr > 0 ? (numDr / denDr) * 100 : 0;
         outBkDelivery.textContent = (bkDelivery > 0 && bkDelivery <= 100) ? `${bkDelivery.toFixed(1)}%` : "Infeasible";
 
-        const denCr = deliveryRate * (aov - deliveryFee + returnFee) - productCostPerOrder - returnFee;
+        const denCr = deliveryRate * (calculatedAOV - deliveryFee + returnFee) - productCostPerOrder - returnFee;
         const bkConfirm = denCr > 0 ? (cpl / denCr) * 100 : 0;
         outBkConfirm.textContent = (bkConfirm > 0 && bkConfirm <= 100) ? `${bkConfirm.toFixed(1)}%` : "Infeasible";
 
