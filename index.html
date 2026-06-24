@@ -245,12 +245,63 @@
       },
 
       setPage(page) {
-        this.currentPage = page;
-        if (page === "admin" && this.isAdmin) {
-          this.initAdminSubscriptions();
+        window.location.hash = '#/' + page;
+      },
+
+      handleRouting() {
+        const hash = window.location.hash;
+        if (!hash || hash === "#" || hash === "#/") {
+          window.location.hash = "#/home";
+          return;
         }
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        this.updateDOM();
+
+        if (hash.startsWith("#/product/")) {
+          const prodId = hash.replace("#/product/", "");
+          if (this.currentPage === "admin") {
+            this.currentPage = "shop";
+          }
+          this.updateDOM();
+          
+          if (this.products.length > 0) {
+            const prod = this.products.find(p => p.id === prodId);
+            if (prod) {
+              this.openProductDetailsModal(prod);
+            }
+          }
+          return;
+        }
+
+        const page = hash.replace("#/", "");
+        const validPages = ["home", "shop", "contact", "policies", "admin"];
+        if (validPages.includes(page)) {
+          this.currentPage = page;
+          if (page === "admin" && this.isAdmin) {
+            this.initAdminSubscriptions();
+          }
+          const modal = document.getElementById("product-detail-container");
+          if (modal) modal.classList.add("hidden");
+
+          window.scrollTo({ top: 0, behavior: 'instant' });
+          this.updateDOM();
+        } else {
+          window.location.hash = "#/home";
+        }
+      },
+
+      copyTextToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; 
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showToast("Sovereign Link Copied to Clipboard!");
+        } catch (err) {
+          console.error('Fallback copy failure', err);
+        }
+        document.body.removeChild(textArea);
       },
 
       activeSubscriptions: {
@@ -659,6 +710,10 @@
 
         store.loadingProducts = false;
         store.updateDOM();
+
+        if (window.location.hash.startsWith("#/product/")) {
+          store.handleRouting();
+        }
       }, (err) => {
         console.error("Products error:", err);
         store.loadingProducts = false;
@@ -821,7 +876,7 @@
       const match = this.cart.find(item => item.id === product.id);
       if (match) {
         if (product.stock && match.quantity >= product.stock) {
-          showToast(`Only ${product.stock} pieces remaining in exclusive stock.`, "error");
+          showToast("Only " + product.stock + " pieces remaining in exclusive stock.", "error");
           return;
         }
         match.quantity += 1;
@@ -829,7 +884,7 @@
         this.cart.push({ ...product, quantity: 1 });
       }
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
-      showToast(`"${product.name}" added to cart.`);
+      showToast('"' + product.name + '" added to cart.');
       this.updateDOM();
     };
 
@@ -847,15 +902,14 @@
 
       try {
         const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        // Retrieve matching client order documents securely without exposing other orders
-        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10))); // Get up to last 10 local orders
+        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10))); // Securely get secure logs
         const snap = await getDocs(q);
         const list = [];
         snap.forEach(doc => {
           list.push({ id: doc.id, ...doc.data() });
         });
 
-        // Sort descending by date
+        // Sort descending
         list.sort((a, b) => {
           const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
           const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
@@ -864,7 +918,7 @@
 
         this.myOrders = list;
       } catch (err) {
-        console.error("Could not fetch user order telemetry:", err);
+        console.error("Could not fetch secure telemetry:", err);
       }
 
       this.loadingMyOrders = false;
@@ -936,7 +990,7 @@
           const d = new Date();
           d.setDate(d.getDate() - i);
           const dateString = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          const dayLabel = `${dayNames[d.getDay()]} (${dateString})`;
+          const dayLabel = dayNames[d.getDay()] + " (" + dateString + ")";
           labels.push(dayLabel);
           dailySales[dateString] = 0;
         }
@@ -1049,14 +1103,14 @@
         const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
         await addDoc(ordersCol, newOrder);
 
-        // --- NEW: Save placed Order ID locally for personalized History Tracking ---
+        // Save placed Order ID locally for personalized History Tracking
         const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
         localHistory.push(orderId);
         localStorage.setItem("sovanex_order_history", JSON.stringify(localHistory));
 
         let productsMsg = "";
         this.cart.forEach(item => {
-          productsMsg += `• *${item.name}* x${item.quantity} (${item.discountPrice || item.price} MAD)\n`;
+          productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
         });
 
         let msgText = this.telegramSettings.template
@@ -1072,7 +1126,7 @@
 
         if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
           try {
-            const telegramUrl = `https://api.telegram.org/bot${this.telegramSettings.botToken}/sendMessage`;
+            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
             await fetch(telegramUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1143,15 +1197,15 @@
 
         triggerConfirm(
           "Selection Confirmed", 
-          `<div class="space-y-4 text-center">` +
-            `<p class="text-xs text-gray-300">Your order has been registered successfully!</p>` +
-            `<div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20 max-w-xs mx-auto">` +
-              `<p class="text-[10px] uppercase tracking-wider text-luxuryGold font-semibold mb-1">Order Code (ID)</p>` +
-              `<span class="inline-block bg-black/80 text-luxuryGold font-mono text-base font-bold px-4 py-2 rounded-lg border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">${orderId}</span>` +
-            `</div>` +
-            `<p class="text-[11px] text-gray-400 max-w-sm mx-auto">Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.</p>` +
+          '<div class="space-y-4 text-center">' +
+            '<p class="text-xs text-gray-300">Your order has been registered successfully!</p>' +
+            '<div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20 max-w-xs mx-auto">' +
+              '<p class="text-[10px] uppercase tracking-wider text-luxuryGold font-semibold mb-1">Order Code (ID)</p>' +
+              '<span class="inline-block bg-black/80 text-luxuryGold font-mono text-base font-bold px-4 py-2 rounded-lg border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">' + orderId + '</span>' +
+            '</div>' +
+            '<p class="text-[11px] text-gray-400 max-w-sm mx-auto">Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.</p>' +
             recommendationsMarkup +
-          `</div>`, 
+          '</div>', 
           () => {
             store.setPage("home");
           },
@@ -1724,7 +1778,6 @@
       const btnOutlineColor = 'border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black';
       const btnSolidColor = 'bg-luxuryGold hover:bg-luxuryGold/90 text-black';
 
-      // Clean the name from parentheses labels like (Les Hommes) or (Les Filles)
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
 
       return `
@@ -1980,7 +2033,7 @@
             }
           } catch (error) {
             console.error("Login failed", error);
-            showToast(`Google Sign-In failed: ${error.message}`, "error");
+            showToast("Google Sign-In failed: " + error.message, "error");
           }
         };
         return;
@@ -2385,16 +2438,16 @@
         const productCostPerOrder = rawProductCost * pieces; // COGS = Cost per piece * average pieces per order
 
         lblLeads.textContent = leads.toLocaleString('en-US');
-        lblCpl.textContent = `${cpl} MAD`;
-        lblConfirm.textContent = `${inConfirm.value}%`;
-        lblDelivery.textContent = `${inDelivery.value}%`;
-        lblProdCost.textContent = `${rawProductCost} MAD`;
-        lblAov.textContent = `${unitPrice} MAD`;
-        lblPieces.textContent = `${pieces}`;
+        lblCpl.textContent = cpl + " MAD";
+        lblConfirm.textContent = inConfirm.value + "%";
+        lblDelivery.textContent = inDelivery.value + "%";
+        lblProdCost.textContent = rawProductCost + " MAD";
+        lblAov.textContent = unitPrice + " MAD";
+        lblPieces.textContent = pieces;
 
         const calcAovEl = document.getElementById("lbl-calculated-aov");
         if (calcAovEl) {
-          calcAovEl.textContent = `${Math.round(calculatedAOV)} MAD`;
+          calcAovEl.textContent = Math.round(calculatedAOV) + " MAD";
         }
 
         const deliveryFee = 0; // Fully covered by client
@@ -2416,17 +2469,17 @@
         const scNetProfit = scRevenue - scTotalCosts;
         const scMargin = scRevenue > 0 ? (scNetProfit / scRevenue) * 100 : 0;
 
-        outScRevenue.textContent = `${Math.round(scRevenue).toLocaleString('en-US')} MAD`;
-        outScAdcost.textContent = `${Math.round(scAdCost).toLocaleString('en-US')} MAD`;
-        outScProdcost.textContent = `${Math.round(scProductCost).toLocaleString('en-US')} MAD`;
-        outScDelcost.textContent = `${Math.round(scDeliveryCost).toLocaleString('en-US')} MAD`;
-        outScRetcost.textContent = `${Math.round(scReturnCost).toLocaleString('en-US')} MAD`;
-        outScTotcost.textContent = `${Math.round(scTotalCosts).toLocaleString('en-US')} MAD`;
+        outScRevenue.textContent = Math.round(scRevenue).toLocaleString('en-US') + " MAD";
+        outScAdcost.textContent = Math.round(scAdCost).toLocaleString('en-US') + " MAD";
+        outScProdcost.textContent = Math.round(scProductCost).toLocaleString('en-US') + " MAD";
+        outScDelcost.textContent = Math.round(scDeliveryCost).toLocaleString('en-US') + " MAD";
+        outScRetcost.textContent = Math.round(scReturnCost).toLocaleString('en-US') + " MAD";
+        outScTotcost.textContent = Math.round(scTotalCosts).toLocaleString('en-US') + " MAD";
         
-        outScNetprofit.textContent = `${Math.round(scNetProfit).toLocaleString('en-US')} MAD`;
+        outScNetprofit.textContent = Math.round(scNetProfit).toLocaleString('en-US') + " MAD";
         outScNetprofit.className = scNetProfit >= 0 ? "text-2xl sm:text-3xl font-serif font-bold text-emerald-400 mt-1" : "text-2xl sm:text-3xl font-serif font-bold text-red-400 mt-1";
         
-        outScMargin.textContent = `${scMargin.toFixed(1)}%`;
+        outScMargin.textContent = scMargin.toFixed(1) + "%";
         outScMargin.className = scMargin >= 0 ? "text-2xl sm:text-3xl font-serif font-bold text-emerald-400 mt-1" : "text-2xl sm:text-3xl font-serif font-bold text-red-400 mt-1";
 
         outScConfirmedQty.textContent = Math.round(expectedConfirmed).toLocaleString('en-US');
@@ -2437,16 +2490,16 @@
         const profitMarginPerOrder = calculatedAOV - productCostPerOrder;
 
         const bkCpl = confirmRate * deliveryRate * profitMarginPerOrder;
-        outBkCpl.textContent = bkCpl > 0 ? `${bkCpl.toFixed(1)} MAD` : "Infeasible";
+        outBkCpl.textContent = bkCpl > 0 ? bkCpl.toFixed(1) + " MAD" : "Infeasible";
 
         const bkDelivery = profitMarginPerOrder > 0 ? (cpl / (confirmRate * profitMarginPerOrder)) * 100 : 0;
-        outBkDelivery.textContent = (bkDelivery > 0 && bkDelivery <= 100) ? `${bkDelivery.toFixed(1)}%` : "Infeasible";
+        outBkDelivery.textContent = (bkDelivery > 0 && bkDelivery <= 100) ? bkDelivery.toFixed(1) + "%" : "Infeasible";
 
         const bkConfirm = profitMarginPerOrder > 0 ? (cpl / (deliveryRate * profitMarginPerOrder)) * 100 : 0;
-        outBkConfirm.textContent = (bkConfirm > 0 && bkConfirm <= 100) ? `${bkConfirm.toFixed(1)}%` : "Infeasible";
+        outBkConfirm.textContent = (bkConfirm > 0 && bkConfirm <= 100) ? bkConfirm.toFixed(1) + "%" : "Infeasible";
 
         const bkAov = (cpl / (confirmRate * deliveryRate)) + productCostPerOrder;
-        outBkAov.textContent = bkAov > 0 ? `${Math.round(bkAov)} MAD` : "Infeasible";
+        outBkAov.textContent = bkAov > 0 ? Math.round(bkAov) + " MAD" : "Infeasible";
       };
 
       [inLeads, inCpl, inConfirm, inDelivery, inProdCost, inAov, inPieces].forEach(el => {
@@ -3173,7 +3226,7 @@
         }
         showToast("Dispatching test payload...");
         try {
-          const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+          const telegramUrl = "https://api.telegram.org/bot" + token + "/sendMessage";
           const response = await fetch(telegramUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3477,7 +3530,7 @@
                 ` : this.myOrders.map(o => {
                   const itemsCount = o.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
                   const orderDateString = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
-                  const waText = encodeURIComponent(`Hello SOVANEX, I would like to track my order code: ${o.orderId}.`);
+                  const waText = encodeURIComponent("Hello SOVANEX, I would like to track my order code: " + o.orderId + ".");
                   
                   return `
                     <div class="p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-lg space-y-3">
@@ -3625,6 +3678,11 @@
       if (!modal) return;
       this.activeImg = product.imageURL;
 
+      const productHash = '#/product/' + product.id;
+      if (window.location.hash !== productHash) {
+        window.location.hash = productHash;
+      }
+
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
 
       const renderInsideModal = () => {
@@ -3681,9 +3739,15 @@
                 </div>
                 <h2 class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
                 
-                <div class="flex items-center gap-1">
-                  <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-                  <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1">
+                    <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
+                    <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
+                  </div>
+                  <button id="modal-share-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    Share Link
+                  </button>
                 </div>
 
                 <div class="flex items-baseline gap-3 pt-1">
@@ -3717,8 +3781,13 @@
           </div>
         `;
 
-        document.getElementById("product-modal-backdrop").onclick = () => modal.classList.add("hidden");
-        document.getElementById("product-modal-close").onclick = () => modal.classList.add("hidden");
+        const closeModal = () => {
+          modal.classList.add("hidden");
+          window.location.hash = '#/' + store.currentPage;
+        };
+
+        document.getElementById("product-modal-backdrop").onclick = closeModal;
+        document.getElementById("product-modal-close").onclick = closeModal;
 
         const mainThumb = document.getElementById("main-thumb-btn");
         if (mainThumb) {
@@ -3748,15 +3817,21 @@
           document.getElementById("lightbox-close").onclick = () => lightbox.classList.add("hidden");
         };
 
+        document.getElementById("modal-share-btn").onclick = (e) => {
+          e.stopPropagation();
+          const shareUrl = window.location.origin + window.location.pathname + '#/product/' + product.id;
+          store.copyTextToClipboard(shareUrl);
+        };
+
         document.getElementById("modal-add-to-cart-btn").onclick = () => {
           store.addToCart(product);
-          modal.classList.add("hidden");
+          closeModal();
         };
 
         document.getElementById("modal-order-now-btn").onclick = () => {
           store.cart = [{ ...product, quantity: 1 }];
           localStorage.setItem("bp_cart", JSON.stringify(store.cart));
-          modal.classList.add("hidden");
+          closeModal();
           store.cartOpen = true;
           document.getElementById("cart-drawer-overlay").classList.remove("hidden");
           store.renderCartDrawer();
@@ -3853,7 +3928,7 @@
         } else {
           showFirebaseDiagnosticModal(
             "Firebase Initialization Alert",
-            `Authentication returned: "${error.message}". Ensure your Firestore Rules allow connection access.`
+            "Authentication returned: " + error.message + ". Ensure your Firestore Rules allow connection access."
           );
         }
 
@@ -3867,6 +3942,12 @@
       initAppSequence().then(() => {
         clearTimeout(preloaderTimeout);
         hidePreloader();
+        
+        store.handleRouting();
+      });
+
+      window.addEventListener("hashchange", () => {
+        store.handleRouting();
       });
 
       onAuthStateChanged(auth, (usr) => {
