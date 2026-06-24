@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOVANEX — Luxury Watches & Accessories</title>
+  <title>SOVANEX — Sovereign Watches & Accoutrements</title>
   
   <!-- DNS Preconnect to reduce load latency -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -168,7 +168,7 @@
 
   <script type="module">
     import { initializeApp } from "firebase/app";
-    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment } from "firebase/firestore";
+    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment, where } from "firebase/firestore";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
     // Global application namespace
@@ -199,7 +199,7 @@
       cartOpen: false,
       mobileMenuOpen: false,
       searchQuery: "",
-      selectedGenderSection: "All", // "All", "GIRLS STORE", "MAN STORE"
+      selectedGenderSection: "All", // "All", "GIRLS STORE", "MEN STORE", "PACKS STORE"
       selectedCategory: "All", // "All", "Watches", "Accessories"
       products: [],
       orders: [],
@@ -211,6 +211,11 @@
       loadingProducts: true,
       loadingCategories: true,
       checkoutLoading: false,
+
+      // Private User Tracking State
+      cartTab: "cart", // "cart" or "history"
+      myOrders: [],
+      loadingMyOrders: false,
 
       // Admin settings dynamically customized
       settings: {
@@ -258,8 +263,9 @@
     const getNormalizedGender = (gender) => {
       if (!gender) return "All";
       const g = gender.toUpperCase().trim();
-      if (g === "LES FILLES" || g === "GIRLS STORE") return "GIRLS STORE";
-      if (g === "LES HOMMES" || g === "BOYS STORE" || g === "MAN STORE" || g === "MAN" || g === "BOY") return "MAN STORE";
+      if (g === "LES FILLES" || g === "GIRLS STORE" || g === "GIRLS") return "GIRLS STORE";
+      if (g === "LES HOMMES" || g === "BOYS STORE" || g === "MAN STORE" || g === "MAN" || g === "BOY" || g === "MEN STORE" || g === "MEN") return "MEN STORE";
+      if (g === "PACKS" || g === "PACKS STORE" || g === "LES PACKS") return "PACKS STORE";
       return "All";
     };
 
@@ -270,12 +276,11 @@
       
       if (this.selectedGenderSection === "GIRLS STORE") {
         body.classList.add('theme-girls');
-      } else if (this.selectedGenderSection === "MAN STORE") {
+      } else if (this.selectedGenderSection === "MEN STORE") {
         body.classList.add('theme-boys');
       }
     };
 
-    // SVG icon bank supporting a responsive UI and dashboard layout
     const getIconSvg = (name, customClass = "w-5 h-5") => {
       const paths = {
         search: `<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />`,
@@ -299,7 +304,8 @@
         clock: `<g><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`,
         flower: `<g><circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M12 5a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M12 11a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M5 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /><path d="M11 12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></g>`,
         female: `<g><circle cx="12" cy="9" r="4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M12 13v8M9 17h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></g>`,
-        male: `<g><circle cx="10" cy="14" r="4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M18 6l-4.5 4.5M14 6h4v4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></g>`
+        male: `<g><circle cx="10" cy="14" r="4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M18 6l-4.5 4.5M14 6h4v4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></g>`,
+        percent: `<g><circle cx="6.5" cy="6.5" r="2.5" stroke-width="2" stroke="currentColor"/><circle cx="17.5" cy="17.5" r="2.5" stroke-width="2" stroke="currentColor"/><line x1="19" y1="5" x2="5" y2="19" stroke-width="2" stroke="currentColor"/></g>`
       };
       return `<svg class="${customClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${paths[name] || ''}</svg>`;
     };
@@ -322,7 +328,7 @@
     };
 
     store.updateDOM = function() {
-      this.updateTheme();
+      this.updateTheme(); // Sync theme dynamically based on current selections
       this.renderHeader();
       this.renderMainContent();
       this.renderFooter();
@@ -359,7 +365,7 @@
                 Home
               </button>
               <button id="nav-link-shop" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'shop' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
-                The Boutique
+                Store
               </button>
               <button id="nav-link-contact" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'contact' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
                 Contact
@@ -462,7 +468,7 @@
             
             <div class="flex flex-col gap-3">
               <button id="mobile-nav-home" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'home' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Home</button>
-              <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">The Boutique</button>
+              <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Store</button>
               <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Contact</button>
               <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Shipping & Returns</button>
             </div>
@@ -516,17 +522,6 @@
           
           <div class="space-y-4 text-xs text-gray-300 leading-relaxed">
             <p class="font-semibold text-red-400">Diagnosis: <span class="font-light text-gray-300">${reason}</span></p>
-            
-            <div class="bg-black/40 p-4 rounded-xl space-y-3 border border-white/5">
-              <p class="font-bold uppercase tracking-wider text-luxuryGold text-[10px]">How to configure Firebase:</p>
-              <ol class="list-decimal list-inside space-y-2 text-gray-400">
-                <li>Go to your <a href="https://console.firebase.google.com/" target="_blank" class="text-luxuryGold underline font-semibold">Firebase Console</a>.</li>
-                <li>In your Project Auth Settings, make sure you whitelist authorized domains.</li>
-                <li>Under Firestore <strong>Rules</strong>, make sure they allow read/write access.</li>
-                <li>Under <strong>Authentication ➔ Sign-in method</strong>, make sure <strong>Google</strong> and <strong>Anonymous</strong> providers are enabled.</li>
-                <li><strong>Where to find the data:</strong> Refresh your Firestore. Your records are located nested under: <br><span class="text-luxuryGold font-mono">artifacts ➔ sovanex ➔ public ➔ data ➔ products / orders</span>.</li>
-              </ol>
-            </div>
           </div>
 
           <div class="flex justify-end pt-2">
@@ -543,7 +538,7 @@
       if (!modal) return;
       modal.innerHTML = `
         <div class="absolute inset-0 bg-black/80 backdrop-blur-xs"></div>
-        <div class="relative bg-[#141414] p-6 rounded-2xl max-w-sm w-full border border-luxuryGold/30 shadow-2xl z-10 text-center space-y-4 animate-fade-in">
+        <div class="relative bg-[#141414] p-6 rounded-2xl max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto w-full border border-luxuryGold/30 shadow-2xl z-10 text-center space-y-4 animate-fade-in">
           <h3 class="font-serif text-lg text-luxuryGold font-bold">${title}</h3>
           <div class="text-xs text-gray-400 font-light leading-relaxed">${message}</div>
           <div class="flex gap-3 justify-center pt-2">
@@ -568,7 +563,6 @@
       if (!auth.currentUser && !forceBypass) return;
       this.activeSubscriptions.public = true;
 
-      // 1. Dynamic general setting subscription
       const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
       const handleSettings = (snap) => {
         if (snap.exists()) {
@@ -584,14 +578,12 @@
         getDoc(settingsDocRef).then(handleSettings).catch(err => console.warn("Settings fetch bypassed:", err));
       }
 
-      // 2. Products Feed Sub
       const prodQuery = collection(db, 'artifacts', appId, 'public', 'data', 'products');
       onSnapshot(prodQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         store.products = list;
 
-        // Seeding premium watches and accessories if DB is empty
         if (list.length === 0) {
           const initialProducts = [
             {
@@ -613,7 +605,7 @@
             {
               name: "Oceanic Imperial Nautilus",
               category: "Watches",
-              gender: "MAN STORE",
+              gender: "MEN STORE",
               price: 1850,
               discountPrice: 1500,
               imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600",
@@ -633,7 +625,7 @@
               price: 450,
               discountPrice: null,
               imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600",
-              description: "Sophicated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
+              description: "Sophisticated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
               stock: 15,
               rating: 4.8,
               reviewsCount: 9,
@@ -645,7 +637,7 @@
             {
               name: "Sovereign Gold Carbon Ring",
               category: "Accessories",
-              gender: "MAN STORE",
+              gender: "MEN STORE",
               price: 550,
               discountPrice: 380,
               imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600",
@@ -669,12 +661,10 @@
         store.updateDOM();
       }, (err) => {
         console.error("Products error:", err);
-        showFirebaseDiagnosticModal("Permission Blocked", `Unable to listen to products. Details: ${err.message}`);
         store.loadingProducts = false;
         store.updateDOM();
       });
 
-      // 3. Categories Config Sub
       const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
       const catQuery = query(catRef, orderBy("order", "asc"));
       const handleCategories = (snap) => {
@@ -699,7 +689,6 @@
       if (store.isAdmin) onSnapshot(catQuery, handleCategories, (err) => console.warn(err));
       else getDocs(catQuery).then(handleCategories).catch(err => console.warn(err));
 
-      // 4. Lookbook Grid Sub
       const lookbookRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
       const lookbookQuery = query(lookbookRef, orderBy("order", "asc"));
       const handleLookbook = (snap) => {
@@ -726,7 +715,6 @@
       if (store.isAdmin) onSnapshot(lookbookQuery, handleLookbook, (err) => console.warn(err));
       else getDocs(lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
 
-      // 5. Load Delivery Cities Sub
       const citiesRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
       const handleCities = (snap) => {
         const list = [];
@@ -755,7 +743,6 @@
       if (store.isAdmin) onSnapshot(citiesRef, handleCities, (err) => console.warn(err));
       else getDocs(citiesRef).then(handleCities).catch(err => console.warn(err));
 
-      // 6. Telegram dynamic config Sub
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
       const handleTelegram = (snap) => {
         if (snap.exists()) {
@@ -767,7 +754,6 @@
       if (store.isAdmin) onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err));
       else getDoc(botConfigDoc).then(handleTelegram).catch(err => console.warn(err));
 
-      // 7. Reviews dynamic config Sub
       const revRef = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
       const revQuery = query(revRef, orderBy("createdAt", "desc"), limit(store.isAdmin ? 100 : 20));
       const handleReviews = (snap) => {
@@ -796,7 +782,6 @@
       if (!auth.currentUser) return;
       this.activeSubscriptions.admin = true;
 
-      // Realtime Orders Sub
       const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
       const orderQuery = query(ordersRef, orderBy("createdAt", "desc"), limit(150));
       
@@ -848,6 +833,44 @@
       this.updateDOM();
     };
 
+    store.fetchMyOrders = async function() {
+      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+      if (localHistory.length === 0) {
+        this.myOrders = [];
+        this.loadingMyOrders = false;
+        this.renderCartDrawer();
+        return;
+      }
+
+      this.loadingMyOrders = true;
+      this.renderCartDrawer();
+
+      try {
+        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+        // Retrieve matching client order documents securely without exposing other orders
+        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10))); // Get up to last 10 local orders
+        const snap = await getDocs(q);
+        const list = [];
+        snap.forEach(doc => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Sort descending by date
+        list.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB - dateA;
+        });
+
+        this.myOrders = list;
+      } catch (err) {
+        console.error("Could not fetch user order telemetry:", err);
+      }
+
+      this.loadingMyOrders = false;
+      this.renderCartDrawer();
+    };
+
     store.updateQty = function(id, delta) {
       const match = this.cart.find(item => item.id === id);
       if (!match) return;
@@ -859,13 +882,33 @@
       this.updateDOM();
     };
 
+    store.getRecommendations = function(purchasedItemIds) {
+      const purchasedItems = store.products.filter(p => purchasedItemIds.includes(p.id));
+      const purchasedCategories = [...new Set(purchasedItems.map(p => p.category))];
+      const purchasedGenders = [...new Set(purchasedItems.map(p => getNormalizedGender(p.gender)))];
+
+      let candidates = store.products.filter(p => !purchasedItemIds.includes(p.id));
+
+      candidates = candidates.map(p => {
+        let score = 0;
+        if (purchasedCategories.includes(p.category)) score += 3;
+        if (purchasedGenders.includes(getNormalizedGender(p.gender))) score += 2;
+        if (p.isBestSeller) score += 1;
+        return { product: p, score };
+      });
+
+      candidates.sort((a, b) => b.score - a.score);
+
+      return candidates.slice(0, 3).map(c => c.product);
+    };
+
     store.removeFromCart = function(id) {
       this.cart = this.cart.filter(item => item.id !== id);
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
       this.updateDOM();
     };
 
-    // Chart.js Lazy Loader for Analytics Graphs
+    // Chart.js Lazy Loader
     let chartLoaderPromise = null;
     const loadChartLibrary = () => {
       if (chartLoaderPromise) return chartLoaderPromise;
@@ -1006,6 +1049,11 @@
         const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
         await addDoc(ordersCol, newOrder);
 
+        // --- NEW: Save placed Order ID locally for personalized History Tracking ---
+        const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+        localHistory.push(orderId);
+        localStorage.setItem("sovanex_order_history", JSON.stringify(localHistory));
+
         let productsMsg = "";
         this.cart.forEach(item => {
           productsMsg += `• *${item.name}* x${item.quantity} (${item.discountPrice || item.price} MAD)\n`;
@@ -1039,22 +1087,70 @@
           }
         }
 
+        const purchasedItemIds = this.cart.map(item => item.id);
+        const recommendations = store.getRecommendations(purchasedItemIds);
+
         this.cart = [];
         localStorage.setItem("bp_cart", JSON.stringify([]));
         this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "" };
         this.cartOpen = false;
         this.checkoutLoading = false;
         
-        // Show Order Confirmation modal
+        let recommendationsMarkup = "";
+        if (recommendations.length > 0) {
+          recommendationsMarkup = `
+            <!-- Inline style to hide default confirm buttons -->
+            <style>
+              #confirm-submit-btn { display: none !important; }
+            </style>
+            <div class="mt-8 border-t border-luxuryGold/20 pt-6 space-y-4">
+              <!-- Premium Motivational / Persuasive Text -->
+              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20 max-w-md mx-auto text-center space-y-1">
+                <p class="text-xs font-serif text-luxuryGold font-bold uppercase tracking-wider">✨ Complete Your Sovereign Casket ✨</p>
+                <p class="text-[10px] text-gray-300 leading-relaxed font-light">
+                  Your luxury wax-sealed chest is still open at our atelier! Add any of these curated masterpieces to your current shipment with <strong class="text-luxuryGold">Zero Additional Delivery Fees</strong>. Create the ultimate pairing before our private courier departs.
+                </p>
+              </div>
+
+              <p class="text-[11px] uppercase tracking-[0.2em] text-luxuryGold font-extrabold mb-2">✨ Curated Exclusives for You ✨</p>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                ${recommendations.map(rec => {
+                  const cleanRecName = rec.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
+                  return `
+                    <div class="bg-black/40 p-2.5 rounded-xl border border-luxuryGold/10 flex flex-col justify-between items-center text-center">
+                      <img src="${rec.imageURL || fallbackImage}" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-luxuryGold/15 mb-2">
+                      <div class="flex-1 flex flex-col justify-between w-full">
+                        <div>
+                          <p class="text-[10px] font-bold text-white line-clamp-1">${cleanRecName}</p>
+                          <p class="text-[10px] text-luxuryGold font-medium mt-0.5">${rec.price} MAD</p>
+                        </div>
+                        <button class="rec-view-product-btn mt-2 w-full py-1 bg-luxuryGold/10 hover:bg-luxuryGold text-luxuryGold hover:text-black border border-luxuryGold/30 text-[9px] uppercase font-extrabold tracking-wider rounded-md transition" data-id="${rec.id}">
+                          View Product
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div class="pt-4">
+                <button id="rec-continue-shopping-btn" class="px-8 py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 text-xs uppercase font-extrabold tracking-widest rounded-xl shadow-lg transition">
+                  Continue Shopping
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
         triggerConfirm(
           "Selection Confirmed", 
-          `<div class="space-y-4">` +
+          `<div class="space-y-4 text-center">` +
             `<p class="text-xs text-gray-300">Your order has been registered successfully!</p>` +
-            `<div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">` +
+            `<div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20 max-w-xs mx-auto">` +
               `<p class="text-[10px] uppercase tracking-wider text-luxuryGold font-semibold mb-1">Order Code (ID)</p>` +
               `<span class="inline-block bg-black/80 text-luxuryGold font-mono text-base font-bold px-4 py-2 rounded-lg border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">${orderId}</span>` +
             `</div>` +
-            `<p class="text-[11px] text-gray-400">Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.</p>` +
+            `<p class="text-[11px] text-gray-400 max-w-sm mx-auto">Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.</p>` +
+            recommendationsMarkup +
           `</div>`, 
           () => {
             store.setPage("home");
@@ -1062,14 +1158,38 @@
           true
         );
 
+        setTimeout(() => {
+          document.querySelectorAll(".rec-view-product-btn").forEach(btn => {
+            btn.onclick = (e) => {
+              e.preventDefault();
+              const recId = btn.getAttribute("data-id");
+              const modalConfirm = document.getElementById("confirm-modal-container");
+              if (modalConfirm) modalConfirm.classList.add("hidden");
+              store.setPage("shop");
+              const targetProd = store.products.find(p => p.id === recId);
+              if (targetProd) {
+                setTimeout(() => {
+                  store.openProductDetailsModal(targetProd);
+                }, 300);
+              }
+            };
+          });
+
+          const continueShoppingBtn = document.getElementById("rec-continue-shopping-btn");
+          if (continueShoppingBtn) {
+            continueShoppingBtn.onclick = (e) => {
+              e.preventDefault();
+              const modalConfirm = document.getElementById("confirm-modal-container");
+              if (modalConfirm) modalConfirm.classList.add("hidden");
+              store.setPage("shop");
+            };
+          }
+        }, 100);
+
       } catch (err) {
         console.error(err);
         this.checkoutLoading = false;
         showToast("Order checkout pipeline failed. Please try again.", "error");
-        showFirebaseDiagnosticModal(
-          "Checkout Connection Blocked", 
-          `Unable to register order in Firestore. Firebase error details: ${err.message}`
-        );
         this.updateDOM();
       }
     };
@@ -1094,7 +1214,6 @@
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
           
-          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="contact-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
               ← Back to Home
@@ -1111,7 +1230,6 @@
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-            <!-- Contact Form -->
             <div class="bg-luxuryBeige p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6">
               <h3 class="font-serif text-xl text-white">Send us a Private Note</h3>
               <form id="contact-page-form" class="space-y-4">
@@ -1133,7 +1251,6 @@
               </form>
             </div>
 
-            <!-- Atelier details -->
             <div class="space-y-8">
               <div class="bg-luxuryBeige/50 p-8 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-6">
                 <h3 class="font-serif text-xl text-white">Our Coordinates</h3>
@@ -1208,7 +1325,6 @@
       container.innerHTML = `
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
           
-          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="policies-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
               ← Back to Home
@@ -1225,7 +1341,6 @@
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-stretch mt-12">
-            <!-- Delivery Conditions Card -->
             <div class="bg-[#141414] p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6 flex flex-col justify-between">
               <div class="space-y-4">
                 <div class="flex items-center gap-3 border-b border-luxuryGold/10 pb-4">
@@ -1244,7 +1359,6 @@
               </div>
             </div>
 
-            <!-- Return Policy Card -->
             <div class="bg-[#141414] p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6 flex flex-col justify-between">
               <div class="space-y-4">
                 <div class="flex items-center gap-3 border-b border-luxuryGold/10 pb-4">
@@ -1264,7 +1378,6 @@
             </div>
           </div>
 
-          <!-- Extra Trust Callout -->
           <div class="text-center p-8 bg-luxuryBeige/50 rounded-3xl border border-luxuryGold/10 mt-8 space-y-4">
             <p class="text-xs text-gray-400 font-light leading-relaxed">
               Need a size adjustment or bespoke engraving before shipment? Our dedicated concierge hotline is available instantly to accommodate your requests.
@@ -1308,7 +1421,7 @@
                 <span class="font-serif text-md font-semibold text-luxuryGold">${r.customerName}</span>
                 <span class="text-xs text-amber-400">${"★".repeat(r.rating || 5)}</span>
               </div>
-              ${productObj ? `<p class="text-[11px] text-gray-400">Item: <strong class="font-semibold text-luxuryGold">${productObj.name}</strong></p>` : ''}
+              ${productObj ? `<p class="text-[11px] text-gray-400">Item: <strong class="font-semibold text-luxuryGold">${productObj.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim()}</strong></p>` : ''}
               <p class="text-xs md:text-sm font-light text-white/85 italic">"${r.comment}"</p>
             </div>
             <div class="flex justify-between items-center pt-2 border-t border-white/5 text-[10px] text-luxuryGold uppercase tracking-wider">
@@ -1352,7 +1465,7 @@
                   <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Product Purchased</label>
                   <select name="productId" class="w-full bg-[#111] border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
                     <option value="general" class="text-white">General Experience</option>
-                    ${this.products.map(p => `<option value="${p.id}" class="text-white">${p.name}</option>`).join('')}
+                    ${this.products.map(p => `<option value="${p.id}" class="text-white">${p.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim()}</option>`).join('')}
                   </select>
                 </div>
                 <div>
@@ -1397,7 +1510,7 @@
                 ${this.settings.websiteDescription}
               </p>
               <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-                <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">Discover Private Boutique</button>
+                <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">Discover Private Store</button>
                 <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-luxuryGold/50 text-white font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition backdrop-blur-md text-center flex items-center justify-center gap-2">
                   Connect With Us
                 </a>
@@ -1416,7 +1529,7 @@
               <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Select Your Collection</span>
               <h2 class="text-3xl font-serif text-white">STORE Collections</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
               <!-- GIRLS STORE Collection Card -->
               <div id="portal-driat" class="pink-luxury-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
                 <div class="absolute -right-10 -bottom-10 opacity-10 text-luxuryGold transform group-hover:scale-110 transition duration-300">
@@ -1430,16 +1543,29 @@
                 </div>
               </div>
 
-              <!-- MAN STORE Collection Card -->
+              <!-- MEN STORE Collection Card -->
               <div id="portal-drari" class="blue-luxury-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
                 <div class="absolute -right-10 -bottom-10 opacity-10 text-luxuryGold transform group-hover:scale-110 transition duration-300">
                   ${getIconSvg('male', 'w-64 h-64')}
                 </div>
                 <div class="space-y-4 max-w-xs relative z-10">
-                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">MAN STORE</span>
+                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">MEN STORE</span>
                   <h3 class="text-3xl font-serif text-white font-bold">For Him</h3>
                   <p class="text-xs text-gray-300">Explore mechanical chronographs, carbon jewelry, and robust, high-end steel accessories.</p>
                   <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP FOR HIM</button>
+                </div>
+              </div>
+
+              <!-- PACKS STORE Collection Card -->
+              <div id="portal-packs" class="gold-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-black transform group-hover:scale-110 transition duration-300">
+                  ${getIconSvg('gift', 'w-64 h-64')}
+                </div>
+                <div class="space-y-4 max-w-xs relative z-10 text-black">
+                  <span class="px-3 py-1 bg-black/10 text-black text-[10px] font-bold uppercase rounded-full tracking-wider">PACKS STORE</span>
+                  <h3 class="text-3xl font-serif font-bold">Exclusive Packs</h3>
+                  <p class="text-xs text-black/80 font-light">Explore custom bundling options, premium pairings, and elegant high-end multi-product sets.</p>
+                  <button class="px-5 py-2.5 bg-black text-white hover:bg-black/85 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP PACKS</button>
                 </div>
               </div>
             </div>
@@ -1491,7 +1617,7 @@
               ${bestGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic">No signature works configured.</p>'}
             </div>
             <div class="text-center pt-6">
-              <button id="browse-all-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-premium">Girls & Men Collections</button>
+              <button id="browse-all-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-premium">Explore All Collections</button>
             </div>
           </section>
 
@@ -1534,7 +1660,12 @@
       };
 
       document.getElementById("portal-drari").onclick = () => {
-        store.selectedGenderSection = "MAN STORE";
+        store.selectedGenderSection = "MEN STORE";
+        store.setPage("shop");
+      };
+
+      document.getElementById("portal-packs").onclick = () => {
+        store.selectedGenderSection = "PACKS STORE";
         store.setPage("shop");
       };
       
@@ -1587,16 +1718,20 @@
     store.createProductCardMarkup = function(product) {
       const normalizedGender = getNormalizedGender(product.gender);
       const isGirls = normalizedGender === "GIRLS STORE";
+      const isPacks = normalizedGender === "PACKS STORE";
       const genderThemeBorder = 'border-luxuryGold/30 hover:border-luxuryGold';
-      const badgeColor = isGirls ? 'bg-luxuryGold/10 text-luxuryGold' : 'bg-white/10 text-white';
+      const badgeColor = isGirls ? 'bg-luxuryGold/10 text-luxuryGold' : (isPacks ? 'bg-luxuryGold text-black' : 'bg-white/10 text-white');
       const btnOutlineColor = 'border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black';
       const btnSolidColor = 'bg-luxuryGold hover:bg-luxuryGold/90 text-black';
+
+      // Clean the name from parentheses labels like (Les Hommes) or (Les Filles)
+      const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
 
       return `
         <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
           <div>
             <div class="h-44 sm:h-64 md:h-80 overflow-hidden relative cursor-pointer card-img-trigger" data-id="${product.id}">
-              <img src="${product.imageURL || fallbackImage}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" decoding="async">
+              <img src="${product.imageURL || fallbackImage}" alt="${cleanName}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" decoding="async">
               <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition"></div>
               
               <div class="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1">
@@ -1604,13 +1739,13 @@
                 ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">Best</span>` : ''}
               </div>
               <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4">
-                <span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">${normalizedGender}</span>
+                ${isPacks ? `<span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">Packs</span>` : ''}
               </div>
             </div>
 
             <div class="p-3 sm:p-6 space-y-1.5 sm:space-y-4">
               <span class="text-[8px] sm:text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
-              <h3 class="font-serif text-sm sm:text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-10 sm:h-14 overflow-hidden" data-id="${product.id}">${product.name}</h3>
+              <h3 class="font-serif text-sm sm:text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-10 sm:h-14 overflow-hidden" data-id="${product.id}">${cleanName}</h3>
               
               <div class="flex items-center gap-1 text-[10px] sm:text-xs">
                 <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
@@ -1691,7 +1826,7 @@
       }
 
       const genderSelectorTabs = `
-        <div class="grid grid-cols-3 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
+        <div class="grid grid-cols-4 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
           <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "All" ? 'bg-luxuryGold text-black' : 'text-white hover:bg-white/5'
           }" data-gender="All">All</button>
@@ -1701,8 +1836,12 @@
           }" data-gender="GIRLS STORE">GIRLS</button>
           
           <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
-            this.selectedGenderSection === "MAN STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="MAN STORE">MAN</button>
+            this.selectedGenderSection === "MEN STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
+          }" data-gender="MEN STORE">MEN</button>
+
+          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+            this.selectedGenderSection === "PACKS STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
+          }" data-gender="PACKS STORE">PACKS</button>
         </div>
       `;
 
@@ -1730,7 +1869,7 @@
 
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Catalog</span>
-            <h1 class="text-4xl font-serif text-white">The Boutique</h1>
+            <h1 class="text-4xl font-serif text-white">Store</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-2"></div>
           </div>
 
@@ -1744,7 +1883,6 @@
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Sidebar Navigation Categories -->
             <div class="lg:col-span-1 space-y-6">
               <div class="bg-luxuryBeige p-6 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-4">
                 <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider border-b border-luxuryGold/10 pb-2">Atelier Collections</p>
@@ -1754,7 +1892,6 @@
               </div>
             </div>
 
-            <!-- Products Segment Grid -->
             <div class="lg:col-span-3">
               ${filtered.length === 0 ? `
                 <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10">
@@ -1786,7 +1923,7 @@
         btn.onclick = () => {
           store.selectedGenderSection = btn.getAttribute("data-gender");
           store.renderShopPage();
-          store.updateDOM(); 
+          store.updateDOM(); // Rerender completely to shift dynamic body theme seamlessly!
         };
       });
 
@@ -1843,21 +1980,7 @@
             }
           } catch (error) {
             console.error("Login failed", error);
-            if (error.code === "auth/unauthorized-domain") {
-              const currentDomain = window.location.hostname;
-              showFirebaseDiagnosticModal(
-                "Unauthorized Domain Error",
-                `Firebase blocks Google login from this specific address because it is not in your authorized domains list.<br><br>` +
-                `<strong>How to fix this right now:</strong><br>` +
-                `1. Open your <strong>Firebase Console</strong>.<br>` +
-                `2. Navigate to <strong>Authentication</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Authorized domains</strong>.<br>` +
-                `3. Click <strong>Add domain</strong>.<br>` +
-                `4. Copy and paste exactly this domain: <br><code class="block bg-black/60 text-luxuryGold p-2 rounded font-mono text-[10px] mt-1 select-all">${currentDomain}</code><br>` +
-                `5. Click <strong>Save</strong> and refresh this page. Everything will work perfectly!`
-              );
-            } else {
-              showToast(`Google Sign-In failed: ${error.message}`, "error");
-            }
+            showToast(`Google Sign-In failed: ${error.message}`, "error");
           }
         };
         return;
@@ -1879,7 +2002,7 @@
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings", "profit-calculator"].map(tab => `
+            ${["dashboard", "profit-calculator", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -1919,6 +2042,8 @@
 
       if (this.adminView === "dashboard") {
         this.renderAdminDashboard(container);
+      } else if (this.adminView === "profit-calculator") {
+        this.renderAdminProfitCalculator(container);
       } else if (this.adminView === "products") {
         this.renderAdminProducts(container);
       } else if (this.adminView === "orders") {
@@ -1935,8 +2060,6 @@
         this.renderAdminTelegramSettings(container);
       } else if (this.adminView === "general-settings") {
         this.renderAdminGeneralSettings(container);
-      } else if (this.adminView === "profit-calculator") {
-        this.renderAdminProfitCalculator(container);
       }
     };
 
@@ -1976,17 +2099,20 @@
               <div>
                 <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider mb-4 border-b border-luxuryGold/10 pb-2">Top Items</h3>
                 <div class="space-y-4">
-                  ${this.products.slice(0, 4).map((p, idx) => `
-                    <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3">
-                      <span class="text-xs font-bold text-luxuryGold">#${idx+1}</span>
-                      <img src="${p.imageURL || fallbackImage}" class="w-10 h-10 object-cover rounded-lg" loading="lazy">
-                      <div class="flex-1">
-                        <p class="text-xs font-semibold text-white line-clamp-1">${p.name}</p>
-                        <p class="text-[10px] text-gray-400">${p.category} (${getNormalizedGender(p.gender)})</p>
+                  ${this.products.slice(0, 4).map((p, idx) => {
+                    const cleanName = p.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
+                    return `
+                      <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3">
+                        <span class="text-xs font-bold text-luxuryGold">#${idx+1}</span>
+                        <img src="${p.imageURL || fallbackImage}" class="w-10 h-10 object-cover rounded-lg" loading="lazy">
+                        <div class="flex-1">
+                          <p class="text-xs font-semibold text-white line-clamp-1">${cleanName}</p>
+                          <p class="text-[10px] text-gray-400">${p.category} (${getNormalizedGender(p.gender)})</p>
+                        </div>
+                        <span class="text-xs font-serif font-bold text-luxuryGold">${p.price} MAD</span>
                       </div>
-                      <span class="text-xs font-serif font-bold text-luxuryGold">${p.price} MAD</span>
-                    </div>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </div>
               </div>
             </div>
@@ -1995,6 +2121,324 @@
       `;
 
       this.renderAnalyticsChart();
+    };
+
+    store.renderAdminProfitCalculator = function(container) {
+      // Calculate dynamic parameters from real database orders
+      const deliveredOrders = this.orders.filter(o => o.status === "processed");
+      const totalDeliveredRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+      const totalDeliveredCount = deliveredOrders.length || 1; // Prevent division by zero
+      
+      const lifetimeAOV = Math.round(totalDeliveredRevenue / totalDeliveredCount) || 1100; // Fallback to 1100 MAD
+
+      let totalItemsSold = 0;
+      deliveredOrders.forEach(o => {
+        if (o.items) {
+          o.items.forEach(item => {
+            totalItemsSold += (item.quantity || 0);
+          });
+        }
+      });
+      const avgPiecesPerOrder = Number((totalItemsSold / totalDeliveredCount).toFixed(2)) || 1.2;
+
+      // Render Layout Container
+      container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <!-- SECTION 1: BREAKEVEN CALCULATOR -->
+          <div class="bg-[#141414] rounded-3xl p-6 sm:p-8 border border-luxuryGold/20 space-y-6 shadow-xl">
+            <div class="border-b border-luxuryGold/10 pb-4">
+              <h2 class="font-serif text-xl sm:text-2xl text-luxuryGold flex items-center gap-2">
+                ${getIconSvg('percent', 'w-6 h-6 text-luxuryGold')} Breakeven Simulator
+              </h2>
+              <p class="text-xs text-gray-400 mt-1">Determine critical performance indicators for your campaigns to avoid losses.</p>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="space-y-4 text-xs text-gray-300">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
+                  <p class="text-[10px] uppercase text-luxuryGold tracking-wider font-semibold">Atelier Lifetime AOV</p>
+                  <p class="text-base font-serif font-bold text-white mt-1">${lifetimeAOV} MAD</p>
+                </div>
+                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
+                  <p class="text-[10px] uppercase text-luxuryGold tracking-wider font-semibold">Average Pieces / Order</p>
+                  <p class="text-base font-serif font-bold text-white mt-1">${avgPiecesPerOrder}</p>
+                </div>
+              </div>
+
+              <!-- Inputs Form controls -->
+              <div class="space-y-3 pt-2">
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-luxuryGold">Number of Leads</label>
+                    <span id="lbl-leads-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">1,000</span>
+                  </div>
+                  <input type="range" id="input-leads-bk" min="100" max="10000" step="100" value="1000" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-luxuryGold">Cost Per Lead (CPL)</label>
+                    <span id="lbl-cpl-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">15 MAD</span>
+                  </div>
+                  <input type="range" id="input-cpl-bk" min="1" max="100" step="1" value="15" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-luxuryGold">Confirmation Rate (%)</label>
+                    <span id="lbl-confirm-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">50%</span>
+                  </div>
+                  <input type="range" id="input-confirm-bk" min="10" max="100" step="5" value="50" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-luxuryGold">Delivery Rate (%)</label>
+                    <span id="lbl-delivery-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">60%</span>
+                  </div>
+                  <input type="range" id="input-delivery-bk" min="10" max="100" step="5" value="60" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-luxuryGold">Product Cost / Piece</label>
+                    <span id="lbl-productcost-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">120 MAD</span>
+                  </div>
+                  <input type="range" id="input-productcost-bk" min="10" max="500" step="5" value="120" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- Calculated Metrics Highlight -->
+            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-luxuryGold/10">
+              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
+                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven CPL</p>
+                <p id="out-bk-cpl" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00 MAD</p>
+                <p class="text-[8px] text-gray-500 mt-1">Maximum cost allowed per lead</p>
+              </div>
+              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
+                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven Delivery</p>
+                <p id="out-bk-delivery" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00%</p>
+                <p class="text-[8px] text-gray-500 mt-1">Minimum delivery rate required</p>
+              </div>
+              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
+                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven Confirmation</p>
+                <p id="out-bk-confirm" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00%</p>
+                <p class="text-[8px] text-gray-500 mt-1">Minimum confirmation rate required</p>
+              </div>
+              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
+                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven AOV</p>
+                <p id="out-bk-aov" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00 MAD</p>
+                <p class="text-[8px] text-gray-500 mt-1">Minimum basket value required</p>
+              </div>
+            </div>
+
+            <!-- Mathematical Formulas Explanations -->
+            <div class="bg-black/80 p-4 rounded-2xl border border-white/5 space-y-2 text-[10px] text-gray-400">
+              <p class="font-bold text-luxuryGold uppercase tracking-wider">Formula Explanations:</p>
+              <ul class="list-disc list-inside space-y-1 text-gray-400 font-light">
+                <li><strong class="text-gray-300">Delivered Order Fee:</strong> 40 MAD (~$4)</li>
+                <li><strong class="text-gray-300">Returned Order Fee:</strong> 13 MAD (~$1.3)</li>
+                <li><strong class="text-gray-300">Net Breakeven Balance:</strong> Confirmed leads costs must equal delivered revenues minus logistics and return fees.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- SECTION 2: PROFIT SCALING CALCULATOR -->
+          <div class="bg-[#141414] rounded-3xl p-6 sm:p-8 border border-luxuryGold/20 space-y-6 shadow-xl flex flex-col justify-between">
+            <div class="space-y-6">
+              <div class="border-b border-luxuryGold/10 pb-4">
+                <h2 class="font-serif text-xl sm:text-2xl text-luxuryGold flex items-center gap-2">
+                  ${getIconSvg('shopping-cart', 'w-6 h-6 text-luxuryGold')} Profit Scaling Calculator
+                </h2>
+                <p class="text-xs text-gray-400 mt-1">Simulate expectations and operational budgets as you scale traffic volumes.</p>
+              </div>
+
+              <!-- Metrics Stats outputs -->
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
+                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Expected Revenue</p>
+                  <p id="out-sc-revenue" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                </div>
+                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
+                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Total Ad Cost</p>
+                  <p id="out-sc-adcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                </div>
+                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
+                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Product Cost</p>
+                  <p id="out-sc-prodcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                </div>
+                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
+                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Delivery Cost</p>
+                  <p id="out-sc-delcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                </div>
+                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
+                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Return Cost</p>
+                  <p id="out-sc-retcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                </div>
+                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
+                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Total Costs</p>
+                  <p id="out-sc-totcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                </div>
+              </div>
+
+              <!-- High Emphasis Key Stats Outputs -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-luxuryGold/10">
+                <div class="bg-black/60 p-4 rounded-xl border-2 border-luxuryGold">
+                  <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-extrabold">Estimated Net Profit</p>
+                  <p id="out-sc-netprofit" class="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">0.00 MAD</p>
+                  <p class="text-[9px] text-gray-400 mt-1">Final pocketed returns</p>
+                </div>
+                <div class="bg-black/60 p-4 rounded-xl border-2 border-luxuryGold">
+                  <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-extrabold">Net Profit Margin (%)</p>
+                  <p id="out-sc-margin" class="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">0.00%</p>
+                  <p class="text-[9px] text-gray-400 mt-1">Efficiency ratio on revenue</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Orders Quantities Breakdown Metrics -->
+            <div class="bg-black/30 p-4 rounded-2xl border border-white/5 grid grid-cols-3 gap-2 text-center text-xs">
+              <div>
+                <p class="text-gray-400 text-[10px]">Confirmed</p>
+                <p id="out-sc-confirmedqty" class="text-base font-serif font-bold text-white mt-0.5">0</p>
+              </div>
+              <div>
+                <p class="text-gray-400 text-[10px]">Delivered</p>
+                <p id="out-sc-deliveredqty" class="text-base font-serif font-bold text-emerald-400 mt-0.5">0</p>
+              </div>
+              <div>
+                <p class="text-gray-400 text-[10px]">Returned</p>
+                <p id="out-sc-returnedqty" class="text-base font-serif font-bold text-red-400 mt-0.5">0</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+      // Mathematical logic bindings and event handlers
+      const inLeads = document.getElementById("input-leads-bk");
+      const inCpl = document.getElementById("input-cpl-bk");
+      const inConfirm = document.getElementById("input-confirm-bk");
+      const inDelivery = document.getElementById("input-delivery-bk");
+      const inProdCost = document.getElementById("input-productcost-bk");
+
+      const lblLeads = document.getElementById("lbl-leads-bk");
+      const lblCpl = document.getElementById("lbl-cpl-bk");
+      const lblConfirm = document.getElementById("lbl-confirm-bk");
+      const lblDelivery = document.getElementById("lbl-delivery-bk");
+      const lblProdCost = document.getElementById("lbl-productcost-bk");
+
+      const outBkCpl = document.getElementById("out-bk-cpl");
+      const outBkDelivery = document.getElementById("out-bk-delivery");
+      const outBkConfirm = document.getElementById("out-bk-confirm");
+      const outBkAov = document.getElementById("out-bk-aov");
+
+      const outScRevenue = document.getElementById("out-sc-revenue");
+      const outScAdcost = document.getElementById("out-sc-adcost");
+      const outScProdcost = document.getElementById("out-sc-prodcost");
+      const outScDelcost = document.getElementById("out-sc-delcost");
+      const outScRetcost = document.getElementById("out-sc-retcost");
+      const outScTotcost = document.getElementById("out-sc-totcost");
+      const outScNetprofit = document.getElementById("out-sc-netprofit");
+      const outScMargin = document.getElementById("out-sc-margin");
+
+      const outScConfirmedQty = document.getElementById("out-sc-confirmedqty");
+      const outScDeliveredQty = document.getElementById("out-sc-deliveredqty");
+      const outScReturnedQty = document.getElementById("out-sc-returnedqty");
+
+      const recalculateMetrics = () => {
+        // Values parse
+        const leads = Number(inLeads.value);
+        const cpl = Number(inCpl.value);
+        const confirmRate = Number(inConfirm.value) / 100;
+        const deliveryRate = Number(inDelivery.value) / 100;
+        const rawProductCost = Number(inProdCost.value);
+
+        // Standard Pieces normalizer
+        const productCostPerOrder = rawProductCost * avgPiecesPerOrder;
+
+        // Label outputs updates
+        lblLeads.textContent = leads.toLocaleString('en-US');
+        lblCpl.textContent = `${cpl} MAD`;
+        lblConfirm.textContent = `${inConfirm.value}%`;
+        lblDelivery.textContent = `${inDelivery.value}%`;
+        lblProdCost.textContent = `${rawProductCost} MAD`;
+
+        // Logistics standards
+        const deliveryFee = 40; // ~4$
+        const returnFee = 13;   // ~1.3$
+
+        // Orders breakdown numbers
+        const expectedConfirmed = leads * confirmRate;
+        const expectedDelivered = expectedConfirmed * deliveryRate;
+        const expectedReturned = expectedConfirmed * (1 - deliveryRate);
+
+        // Scaling projections calculations
+        const scAdCost = leads * cpl;
+        const scRevenue = expectedDelivered * lifetimeAOV;
+        const scProductCost = expectedConfirmed * productCostPerOrder;
+        const scDeliveryCost = expectedDelivered * deliveryFee;
+        const scReturnCost = expectedReturned * returnFee;
+
+        const scTotalCosts = scAdCost + scProductCost + scDeliveryCost + scReturnCost;
+        const scNetProfit = scRevenue - scTotalCosts;
+        const scMargin = scRevenue > 0 ? (scNetProfit / scRevenue) * 100 : 0;
+
+        // Update Scaling simulator UI
+        outScRevenue.textContent = `${Math.round(scRevenue).toLocaleString('en-US')} MAD`;
+        outScAdcost.textContent = `${Math.round(scAdCost).toLocaleString('en-US')} MAD`;
+        outScProdcost.textContent = `${Math.round(scProductCost).toLocaleString('en-US')} MAD`;
+        outScDelcost.textContent = `${Math.round(scDeliveryCost).toLocaleString('en-US')} MAD`;
+        outScRetcost.textContent = `${Math.round(scReturnCost).toLocaleString('en-US')} MAD`;
+        outScTotcost.textContent = `${Math.round(scTotalCosts).toLocaleString('en-US')} MAD`;
+        
+        outScNetprofit.textContent = `${Math.round(scNetProfit).toLocaleString('en-US')} MAD`;
+        outScNetprofit.className = scNetProfit >= 0 ? "text-2xl sm:text-3xl font-serif font-bold text-emerald-400 mt-1" : "text-2xl sm:text-3xl font-serif font-bold text-red-400 mt-1";
+        
+        outScMargin.textContent = `${scMargin.toFixed(1)}%`;
+        outScMargin.className = scMargin >= 0 ? "text-2xl sm:text-3xl font-serif font-bold text-emerald-400 mt-1" : "text-2xl sm:text-3xl font-serif font-bold text-red-400 mt-1";
+
+        outScConfirmedQty.textContent = Math.round(expectedConfirmed).toLocaleString('en-US');
+        outScDeliveredQty.textContent = Math.round(expectedDelivered).toLocaleString('en-US');
+        outScReturnedQty.textContent = Math.round(expectedReturned).toLocaleString('en-US');
+
+        // BREAKEVEN ALGORITHMS AND FORMULAS
+
+        // 1. Breakeven CPL:
+        // CPL_bk = CR * [ DR * (AOV - DeliveryFee + ReturnFee) - ProductCost - ReturnFee ]
+        const bkCpl = confirmRate * (deliveryRate * (lifetimeAOV - deliveryFee + returnFee) - productCostPerOrder - returnFee);
+        outBkCpl.textContent = bkCpl > 0 ? `${bkCpl.toFixed(1)} MAD` : "Infeasible";
+
+        // 2. Breakeven Delivery Rate:
+        // DR_bk = [ (CPL / CR) + ProductCost + ReturnFee ] / [ AOV - DeliveryFee + ReturnFee ]
+        const numDr = (cpl / confirmRate) + productCostPerOrder + returnFee;
+        const denDr = lifetimeAOV - deliveryFee + returnFee;
+        const bkDelivery = denDr > 0 ? (numDr / denDr) * 100 : 0;
+        outBkDelivery.textContent = (bkDelivery > 0 && bkDelivery <= 100) ? `${bkDelivery.toFixed(1)}%` : "Infeasible";
+
+        // 3. Breakeven Confirmation Rate:
+        // CR_bk = CPL / [ DR * (AOV - DeliveryFee + ReturnFee) - ProductCost - ReturnFee ]
+        const denCr = deliveryRate * (lifetimeAOV - deliveryFee + returnFee) - productCostPerOrder - returnFee;
+        const bkConfirm = denCr > 0 ? (cpl / denCr) * 100 : 0;
+        outBkConfirm.textContent = (bkConfirm > 0 && bkConfirm <= 100) ? `${bkConfirm.toFixed(1)}%` : "Infeasible";
+
+        // 4. Breakeven AOV:
+        // AOV_bk = [ CPL / (CR * DR) ] + [ ProductCost / DR ] + DeliveryFee - [ ((1 - DR) / DR) * ReturnFee ]
+        const bkAov = (cpl / (confirmRate * deliveryRate)) + (productCostPerOrder / deliveryRate) + deliveryFee - (((1 - deliveryRate) / deliveryRate) * returnFee);
+        outBkAov.textContent = bkAov > 0 ? `${Math.round(bkAov)} MAD` : "Infeasible";
+      };
+
+      // Bind slide events
+      [inLeads, inCpl, inConfirm, inDelivery, inProdCost].forEach(el => {
+        el.oninput = recalculateMetrics;
+      });
+
+      // Fire initial simulation calculations trigger
+      recalculateMetrics();
     };
 
     store.renderAdminProducts = function(container) {
@@ -2013,29 +2457,32 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
-                ${this.products.map(p => `
-                  <tr class="hover:bg-white/5 transition">
-                    <td class="p-4 flex items-center gap-3">
-                      <img src="${p.imageURL || fallbackImage}" class="w-12 h-12 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
-                      <div>
-                        <p class="font-semibold text-white">${p.name}</p>
-                        <p class="text-[10px] text-gray-400">Rating: ${p.rating} ★</p>
-                      </div>
-                    </td>
-                    <td class="p-4">
-                      <span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase bg-luxuryGold/10 text-luxuryGold border border-luxuryGold/20">${getNormalizedGender(p.gender)}</span>
-                    </td>
-                    <td class="p-4 text-gray-300">${p.category}</td>
-                    <td class="p-4 font-bold text-luxuryGold">${p.discountPrice ? `${p.discountPrice} <span class="line-through text-gray-500 font-normal">${p.price}</span>` : p.price} MAD</td>
-                    <td class="p-4">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${p.stock <= 3 ? 'bg-red-950 text-red-300' : 'bg-emerald-950 text-emerald-300'}">${p.stock} remaining</span>
-                    </td>
-                    <td class="p-4 text-right space-x-2">
-                      <button class="edit-prod-btn px-3 py-1 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded text-[10px] uppercase font-bold" data-id="${p.id}">Edit</button>
-                      <button class="del-prod-btn px-3 py-1 bg-red-700 hover:bg-red-850 text-white rounded text-[10px] uppercase font-bold" data-id="${p.id}">Delete</button>
-                    </td>
-                  </tr>
-                `).join('')}
+                ${this.products.map(p => {
+                  const cleanName = p.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
+                  return `
+                    <tr class="hover:bg-white/5 transition">
+                      <td class="p-4 flex items-center gap-3">
+                        <img src="${p.imageURL || fallbackImage}" class="w-12 h-12 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
+                        <div>
+                          <p class="font-semibold text-white">${cleanName}</p>
+                          <p class="text-[10px] text-gray-400">Rating: ${p.rating} ★</p>
+                        </div>
+                      </td>
+                      <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase bg-luxuryGold/10 text-luxuryGold border border-luxuryGold/20">${getNormalizedGender(p.gender).replace(" STORE", "")}</span>
+                      </td>
+                      <td class="p-4 text-gray-300">${p.category}</td>
+                      <td class="p-4 font-bold text-luxuryGold">${p.discountPrice ? `${p.discountPrice} <span class="line-through text-gray-500 font-normal">${p.price}</span>` : p.price} MAD</td>
+                      <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${p.stock <= 3 ? 'bg-red-950 text-red-300' : 'bg-emerald-950 text-emerald-300'}">${p.stock} remaining</span>
+                      </td>
+                      <td class="p-4 text-right space-x-2">
+                        <button class="edit-prod-btn px-3 py-1 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded text-[10px] uppercase font-bold" data-id="${p.id}">Edit</button>
+                        <button class="del-prod-btn px-3 py-1 bg-red-700 hover:bg-red-850 text-white rounded text-[10px] uppercase font-bold" data-id="${p.id}">Delete</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -2075,7 +2522,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Product Name</label>
-              <input type="text" name="name" required value="${product ? product.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              <input type="text" name="name" required value="${product ? product.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim() : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Category</label>
@@ -2087,10 +2534,11 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Gender Segment</label>
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Gender / Segment</label>
               <select name="gender" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-bold">
                 <option value="GIRLS STORE" ${currentNormalizedGender === "GIRLS STORE" ? "selected" : ""}>GIRLS STORE</option>
-                <option value="MAN STORE" ${currentNormalizedGender === "MAN STORE" ? "selected" : ""}>MAN STORE</option>
+                <option value="MEN STORE" ${currentNormalizedGender === "MEN STORE" ? "selected" : ""}>MEN STORE</option>
+                <option value="PACKS STORE" ${currentNormalizedGender === "PACKS STORE" ? "selected" : ""}>PACKS STORE</option>
               </select>
             </div>
             <div>
@@ -2212,7 +2660,7 @@
                       <p class="text-[10px] text-gray-400 mt-1">${o.phone} — ${o.address} (${o.deliveryCity || 'Morocco'})</p>
                     </td>
                     <td class="p-4">
-                      ${o.items?.map(item => `<p class="text-[11px] text-gray-300">• ${item.name} <strong class="text-luxuryGold">x${item.quantity}</strong></p>`).join('')}
+                      ${o.items?.map(item => `<p class="text-[11px] text-gray-300">• ${item.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim()} <strong class="text-luxuryGold">x${item.quantity}</strong></p>`).join('')}
                     </td>
                     <td class="p-4 font-serif font-bold text-luxuryGold">${o.total} MAD</td>
                     <td class="p-4">
@@ -2243,6 +2691,9 @@
       document.querySelectorAll(".cancel-order-btn").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
+          const order = store.orders.find(o => o.id === id);
+          if (!order) return;
+
           triggerConfirm("Cancel Order", "Remove this order from database tracking?", async () => {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "cancelled" });
             showToast("Order cancelled.");
@@ -2607,7 +3058,7 @@
             } else {
               payload.createdAt = new Date();
               await addDoc(collectionRef, payload);
-              showToast("Lookbook post created successfully.");
+              showToast("Lookbook post added successfully.");
             }
             formMount.classList.add("hidden");
           } catch (err) {
@@ -2629,9 +3080,9 @@
       document.querySelectorAll(".delete-lookbook-btn").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
-          triggerConfirm("Delete Lookbook Post", "Are you sure you want to remove this lookbook post?", async () => {
+          triggerConfirm("Delete Lookbook Post", "Remove this post from the public lookbook?", async () => {
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lookbook', id));
-            showToast("Lookbook post removed.");
+            showToast("Lookbook post deleted successfully.");
           });
         };
       });
@@ -2640,27 +3091,42 @@
     store.renderAdminTelegramSettings = function(container) {
       container.innerHTML = `
         <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <h3 class="font-serif text-xl text-luxuryGold">Telegram Automation API</h3>
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Telegram Bot API Controller</h3>
+            <p class="text-xs text-gray-400">Configure instant Telegram order notifications securely saved on Firestore.</p>
+          </div>
+
           <form id="telegram-settings-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Bot Token</label>
-                <input type="text" name="botToken" value="${this.telegramSettings.botToken}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Telegram Bot Token</label>
+                <input type="password" name="botToken" placeholder="123456789:ABCdefGhIJKlmNoPQRs..." value="${this.telegramSettings.botToken || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-mono">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Chat ID</label>
-                <input type="text" name="chatId" value="${this.telegramSettings.chatId}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Status Switch</label>
+                <div class="flex items-center gap-3 h-10">
+                  <input type="checkbox" id="botEnabledToggle" name="botEnabled" ${this.telegramSettings.botEnabled ? 'checked' : ''} class="rounded text-luxuryGold">
+                  <span class="text-xs font-semibold ${this.telegramSettings.botEnabled ? 'text-emerald-400' : 'text-gray-400'}">${this.telegramSettings.botEnabled ? 'Active / Automated' : 'Silent Mode'}</span>
+                </div>
               </div>
             </div>
+
             <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Template Content</label>
-              <textarea name="template" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white h-40 resize-none">${this.telegramSettings.template}</textarea>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Admin Telegram Chat ID</label>
+              <input type="text" name="chatId" placeholder="987654321" value="${this.telegramSettings.chatId || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-mono">
+              <p class="text-[9px] text-gray-400 mt-1">Get your Telegram chat ID from @userinfobot or @RawDataBot.</p>
             </div>
-            <div class="flex items-center gap-2">
-              <input type="checkbox" name="botEnabled" ${this.telegramSettings.botEnabled ? 'checked' : ''} class="rounded text-luxuryGold">
-              <label class="text-xs text-gray-300 font-semibold">Enable Live Alerts</label>
+
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Custom Telegram Markdown Message Template</label>
+              <textarea name="template" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-48 resize-none font-mono">${this.telegramSettings.template}</textarea>
+              <p class="text-[9px] text-gray-400 mt-1">Variables: {products}, {subtotal}, {city}, {delivery}, {total}, {name}, {address}, {phone}, {orderId}</p>
             </div>
-            <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Settings</button>
+
+            <div class="flex gap-3 justify-end border-t border-white/10 pt-4">
+              <button type="button" id="send-test-msg-btn" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Send Test Message</button>
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Configuration</button>
+            </div>
           </form>
         </div>
       `;
@@ -2670,17 +3136,46 @@
         const form = e.target;
         const payload = {
           botToken: form.botToken.value,
+          botEnabled: form.botEnabled.checked,
           chatId: form.chatId.value,
-          template: form.template.value,
-          botEnabled: form.botEnabled.checked
+          template: form.template.value
         };
 
         try {
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live'), payload);
-          this.telegramSettings = { ...this.telegramSettings, ...payload };
-          showToast("Telegram configuration updated successfully.");
+          showToast("Telegram configuration saved.");
         } catch (err) {
-          showToast("Failed to write Telegram configuration.", "error");
+          showToast("Failed to write configurations.", "error");
+        }
+      };
+
+      document.getElementById("send-test-msg-btn").onclick = async () => {
+        const token = document.querySelector("[name='botToken']").value;
+        const chat = document.querySelector("[name='chatId']").value;
+        if (!token || !chat) {
+          showToast("Bot Token and Chat ID required to dispatch test payload.", "error");
+          return;
+        }
+        showToast("Dispatching test payload...");
+        try {
+          const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+          const response = await fetch(telegramUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chat,
+              text: "🌸 *SOVANEX Bot Online* 🌸\n\nYour Telegram integration has been configured successfully! Telemetry reports are active.",
+              parse_mode: "Markdown"
+            })
+          });
+          
+          if (response.ok) {
+            showToast("Test payload dispatched! Verify your Telegram inbox.");
+          } else {
+            showToast("Test payload delivery rejected by Telegram.", "error");
+          }
+        } catch (apiErr) {
+          showToast("Test payload delivery network failure.", "error");
         }
       };
     };
@@ -2688,45 +3183,67 @@
     store.renderAdminGeneralSettings = function(container) {
       container.innerHTML = `
         <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <h3 class="font-serif text-xl text-luxuryGold">Global Atelier Setup</h3>
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Atelier Brand & Social Preferences</h3>
+            <p class="text-xs text-gray-400">Modify dynamic website parameters, update brand logos, and edit social platforms dynamically.</p>
+          </div>
+
           <form id="general-settings-form" class="space-y-4">
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Brand Logo Image URL</label>
+              <input type="url" name="logoURL" placeholder="https://..." value="${this.settings.logoURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              <p class="text-[9px] text-gray-400 mt-1">Leave blank to use the high-end default typography logo design.</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Logo Image URL</label>
-                <input type="url" name="logoURL" value="${this.settings.logoURL}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Brand Tagline</label>
+                <input type="text" name="tagline" placeholder="Sovereign Collection..." value="${this.settings.tagline || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Atelier Hotline (WhatsApp)</label>
-                <input type="text" name="whatsappHotline" value="${this.settings.whatsappHotline}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">WhatsApp Hotline</label>
+                <input type="text" name="whatsappHotline" placeholder="+212..." value="${this.settings.whatsappHotline || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
               </div>
             </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Instagram Link</label>
-                <input type="url" name="instagramURL" value="${this.settings.instagramURL}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Instagram Profile</label>
+                <input type="url" name="instagramURL" placeholder="https://instagram.com/..." value="${this.settings.instagramURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Email Address Contact</label>
-                <input type="email" name="emailCoordinate" value="${this.settings.emailCoordinate}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Facebook Link</label>
+                <input type="url" name="facebookURL" placeholder="https://facebook.com/..." value="${this.settings.facebookURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
               </div>
             </div>
+
             <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Website Description Tagline</label>
-              <input type="text" name="tagline" value="${this.settings.tagline}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Email Address</label>
+              <input type="email" name="emailCoordinate" placeholder="contact@sovanex.com" value="${this.settings.emailCoordinate || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
+
             <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Detailed Store Overview</label>
-              <textarea name="websiteDescription" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white h-24 resize-none">${this.settings.websiteDescription}</textarea>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Website Description Text</label>
+              <textarea name="websiteDescription" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-24 resize-none">${this.settings.websiteDescription}</textarea>
+              <p class="text-[9px] text-gray-400 mt-1">This text is loaded dynamically on the main landing/homepage hero section.</p>
             </div>
-            <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Insured Delivery Terms</label>
-              <textarea name="deliveryTerms" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white h-32 resize-none">${this.settings.deliveryTerms}</textarea>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Shipping Conditions</label>
+                <textarea name="deliveryTerms" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-40 resize-y">${this.settings.deliveryTerms || ''}</textarea>
+                <p class="text-[9px] text-gray-400 mt-1">Displayed on the Shipping & Returns page. Explain the delivery times and dispatch methods of the Atelier.</p>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Return Policy</label>
+                <textarea name="returnPolicy" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-40 resize-y">${this.settings.returnPolicy || ''}</textarea>
+                <p class="text-[9px] text-gray-400 mt-1">Displayed on the Shipping & Returns page. Specify the exchange and return rules of the Atelier.</p>
+              </div>
             </div>
-            <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Return Standard Policies</label>
-              <textarea name="returnPolicy" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white h-32 resize-none">${this.settings.returnPolicy}</textarea>
+
+            <div class="flex justify-end border-t border-white/10 pt-4">
+              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Brand Preferences</button>
             </div>
-            <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Settings</button>
           </form>
         </div>
       `;
@@ -2736,10 +3253,11 @@
         const form = e.target;
         const payload = {
           logoURL: form.logoURL.value,
+          tagline: form.tagline.value,
           whatsappHotline: form.whatsappHotline.value,
           instagramURL: form.instagramURL.value,
+          facebookURL: form.facebookURL.value,
           emailCoordinate: form.emailCoordinate.value,
-          tagline: form.tagline.value,
           websiteDescription: form.websiteDescription.value,
           deliveryTerms: form.deliveryTerms.value,
           returnPolicy: form.returnPolicy.value
@@ -2747,459 +3265,352 @@
 
         try {
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), payload);
-          this.settings = { ...this.settings, ...payload };
-          showToast("Atelier Global setup successfully configured.");
-          this.updateDOM();
+          showToast("Atelier brand settings saved.");
+          store.updateDOM();
         } catch (err) {
-          showToast("Failed to write setup configs.", "error");
+          showToast("Failed to write general settings.", "error");
         }
       };
     };
 
-    store.renderAdminProfitCalculator = function(container) {
-      // 1. Resolve and calculate system lifetime metrics
-      const nonCancelled = this.orders.filter(o => o.status !== 'cancelled');
-      const totalRevenue = nonCancelled.reduce((sum, o) => sum + (o.total || 0), 0);
-      const totalOrdersCount = nonCancelled.length;
+    store.renderFooter = function() {
+      const container = document.getElementById("app-footer");
+      if (!container) return;
       
-      // Lifetime Average Order Value (AOV)
-      const systemAOV = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 1200; // default to 1200 MAD if empty
-      
-      // Average Pieces Per Order
-      let totalPieces = 0;
-      nonCancelled.forEach(o => {
-        if (o.items) {
-          o.items.forEach(item => {
-            totalPieces += (item.quantity || 1);
-          });
-        }
-      });
-      const systemAvgPieces = totalOrdersCount > 0 ? (totalPieces / totalOrdersCount).toFixed(2) : 1.5;
+      let categoriesMarkup = this.categories.filter(c => c.isActive).map(c => `
+        <li><button class="footer-cat-btn hover:text-luxuryGold transition" data-name="${c.name}">${c.name}</button></li>
+      `).join('');
 
       container.innerHTML = `
-        <div class="space-y-8 animate-fade-in">
-          <!-- Interactive Settings Banner -->
-          <div class="bg-[#141414] border border-luxuryGold/20 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
-            <div>
-              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-extrabold">Shop Metrics Integration</p>
-              <h2 class="text-xl font-serif text-white">Dynamic Store Baselines</h2>
-              <p class="text-xs text-gray-400 mt-1">Calculators automatically synchronize with your active order data database.</p>
-            </div>
-            <div class="flex gap-4">
-              <div class="bg-black/50 border border-white/5 px-4 py-2.5 rounded-2xl">
-                <p class="text-[9px] uppercase text-gray-400 tracking-wider">Lifetime AOV</p>
-                <p class="text-md font-serif font-bold text-luxuryGold">${systemAOV} MAD</p>
-              </div>
-              <div class="bg-black/50 border border-white/5 px-4 py-2.5 rounded-2xl">
-                <p class="text-[9px] uppercase text-gray-400 tracking-wider">Avg. Items / Order</p>
-                <p class="text-md font-serif font-bold text-luxuryGold">${systemAvgPieces}</p>
-              </div>
-            </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div class="space-y-4">
+            <h3 class="text-2xl font-serif tracking-widest text-luxuryGold font-extrabold">SOVANEX</h3>
+            <p class="text-sm text-gray-400 font-light leading-relaxed">Luxury destination for the finest curated handpicked watches and premium accessories designed to royal standards.</p>
           </div>
 
-          <!-- Section 1: Breakeven Calculator -->
-          <div class="bg-[#141414] rounded-3xl p-6 sm:p-8 border border-luxuryGold/20 space-y-6 shadow-xl">
-            <div class="border-b border-luxuryGold/10 pb-4">
-              <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Simulation 1</span>
-              <h3 class="text-2xl font-serif text-white">Breakeven Calculator</h3>
-              <p class="text-xs text-gray-400 mt-1">Determine critical performance indicators at zero profit.</p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <!-- Inputs Panel -->
-              <div class="lg:col-span-1 space-y-4 bg-black/40 p-5 rounded-2xl border border-white/5">
-                <h4 class="text-xs uppercase font-bold text-luxuryGold tracking-wider border-b border-white/10 pb-2">Simulator Inputs</h4>
-                
-                <div class="space-y-1">
-                  <label class="block text-[10px] uppercase text-gray-300 font-semibold">Number of Leads</label>
-                  <input type="number" id="be-input-leads" value="1000" class="w-full bg-black border border-luxuryGold/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Cost Per Lead (CPL)</label>
-                    <span id="be-label-cpl" class="text-luxuryGold font-bold">15 MAD</span>
-                  </div>
-                  <input type="range" id="be-input-cpl" min="1" max="150" value="15" class="w-full accent-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Confirmation Rate (%)</label>
-                    <span id="be-label-conf" class="text-luxuryGold font-bold">65%</span>
-                  </div>
-                  <input type="range" id="be-input-conf" min="5" max="100" value="65" class="w-full accent-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Delivery Rate (%)</label>
-                    <span id="be-label-del" class="text-luxuryGold font-bold">70%</span>
-                  </div>
-                  <input type="range" id="be-input-del" min="5" max="100" value="70" class="w-full accent-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <label class="block text-[10px] uppercase text-gray-300 font-semibold">Product Cost (per order)</label>
-                  <input type="number" id="be-input-prod-cost" value="250" class="w-full bg-black border border-luxuryGold/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                </div>
-
-                <!-- Hidden parameters loaded explicitly -->
-                <input type="hidden" id="be-input-aov" value="${systemAOV}">
-                <input type="hidden" id="be-input-pieces" value="${systemAvgPieces}">
-              </div>
-
-              <!-- Metrics Summary & Calculations Panel -->
-              <div class="lg:col-span-2 space-y-6">
-                <!-- Large Highlighted Metrics Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div class="bg-black/60 p-5 rounded-2xl border-l-4 border-luxuryGold shadow-md space-y-1">
-                    <span class="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Breakeven CPL</span>
-                    <p id="be-out-cpl" class="text-2xl sm:text-3xl font-serif font-extrabold text-luxuryGold">0.00 MAD</p>
-                    <span class="text-[8px] text-gray-400 block">Max viable ad spend per lead</span>
-                  </div>
-                  <div class="bg-black/60 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md space-y-1">
-                    <span class="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Net Profit</span>
-                    <p id="be-out-profit" class="text-2xl sm:text-3xl font-serif font-extrabold text-emerald-400">0.00 MAD</p>
-                    <span class="text-[8px] text-gray-400 block">Remaining operating margin</span>
-                  </div>
-                  <div class="bg-black/60 p-5 rounded-2xl border-l-4 border-emerald-600 shadow-md space-y-1">
-                    <span class="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Profit Margin</span>
-                    <p id="be-out-margin" class="text-2xl sm:text-3xl font-serif font-extrabold text-emerald-500">0.0%</p>
-                    <span class="text-[8px] text-gray-400 block">Percent of revenue kept</span>
-                  </div>
-                </div>
-
-                <!-- Secondary calculations table grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Total Ad Spend</p>
-                    <p id="be-out-adspend" class="font-bold text-white mt-1">0 MAD</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Confirmed Orders</p>
-                    <p id="be-out-confirmed" class="font-bold text-white mt-1">0</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Delivered Orders</p>
-                    <p id="be-out-delivered" class="font-bold text-white mt-1">0</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Returned Orders</p>
-                    <p id="be-out-returned" class="font-bold text-white mt-1">0</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Gross Revenue</p>
-                    <p id="be-out-revenue" class="font-bold text-luxuryGold mt-1">0 MAD</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Total Product Costs</p>
-                    <p id="be-out-prodcosts" class="font-bold text-white mt-1">0 MAD</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Delivery Costs</p>
-                    <p id="be-out-delcosts" class="font-bold text-white mt-1">0 MAD</p>
-                  </div>
-                  <div class="bg-black/30 p-3 rounded-xl border border-white/5">
-                    <p class="text-gray-400 uppercase tracking-widest text-[8px]">Return Costs</p>
-                    <p id="be-out-retcosts" class="font-bold text-white mt-1">0 MAD</p>
-                  </div>
-                </div>
-
-                <!-- Operational parameters and Breakeven metrics -->
-                <div class="bg-black/60 p-4 rounded-xl border border-luxuryGold/20 space-y-3">
-                  <h5 class="text-[10px] uppercase font-bold text-luxuryGold tracking-wider">Critical Breakeven Parameters</h5>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    <div class="p-3 bg-black/40 rounded-lg border border-white/5">
-                      <p class="text-gray-400 text-[9px] uppercase">Breakeven Delivery Rate</p>
-                      <p id="be-out-be-del-rate" class="font-bold text-white mt-1">0.0%</p>
-                    </div>
-                    <div class="p-3 bg-black/40 rounded-lg border border-white/5">
-                      <p class="text-gray-400 text-[9px] uppercase">Breakeven Conf. Rate</p>
-                      <p id="be-out-be-conf-rate" class="font-bold text-white mt-1">0.0%</p>
-                    </div>
-                    <div class="p-3 bg-black/40 rounded-lg border border-white/5">
-                      <p class="text-gray-400 text-[9px] uppercase">Breakeven AOV</p>
-                      <p id="be-out-be-aov" class="font-bold text-white mt-1">0 MAD</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Formulas explanation block -->
-                <div class="p-4 bg-black/30 rounded-xl border border-white/5 space-y-2">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Standard COD Mathematical Formulations Used</p>
-                  <ul class="text-[9px] text-gray-400 space-y-1 font-mono list-disc list-inside leading-relaxed">
-                    <li>Fixed Operational Delivery = 40 MAD (4$) | Return Fee = 13 MAD (1.3$) per returned shipment</li>
-                    <li>Breakeven CPL = [Delivered × (AOV - Product Cost - Delivery Fee) - Returned × Return Fee] / Leads</li>
-                    <li>Breakeven Delivery Rate = (Ad Spend + Confirmed × Return Fee) / [Confirmed × (AOV - Product Cost - Delivery Fee + Return Fee)]</li>
-                    <li>Breakeven Confirmation Rate = Ad Spend / [Leads × (Delivery Rate × (AOV - Product Cost - Delivery Fee + Return Fee) - Return Fee)]</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+          <div>
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Atelier Collections</h4>
+            <ul class="space-y-2 text-sm text-gray-400 font-light">
+              ${categoriesMarkup}
+            </ul>
           </div>
 
-          <!-- Section 2: Profit Scaling Calculator -->
-          <div class="bg-[#141414] rounded-3xl p-6 sm:p-8 border border-luxuryGold/20 space-y-6 shadow-xl">
-            <div class="border-b border-luxuryGold/10 pb-4">
-              <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Simulation 2</span>
-              <h3 class="text-2xl font-serif text-white">Profit Scaling & Forecast</h3>
-              <p class="text-xs text-gray-400 mt-1">Estimate cash flow margins and volumes when scaling up budgets.</p>
-            </div>
+          <div>
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Contact Us</h4>
+            <p class="text-sm text-gray-400 font-light leading-relaxed">
+              Avenue de la Resistance, Centre Commercial La Perle de la Medina, Rabat, Morocco, 10040<br>
+              Signature deliveries adjusted instantly by city of checkout.
+            </p>
+            <p class="text-xs text-luxuryGold mt-2">Open Daily: 9:00 AM — 10:00 PM</p>
+          </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-              <!-- Sliders & Inputs Panel -->
-              <div class="lg:col-span-1 space-y-4 bg-black/40 p-5 rounded-2xl border border-white/5">
-                <h4 class="text-xs uppercase font-bold text-luxuryGold tracking-wider border-b border-white/10 pb-2">Scaling Inputs</h4>
-                
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Scaling Leads</label>
-                    <span id="scale-label-leads" class="text-luxuryGold font-bold">5000</span>
-                  </div>
-                  <input type="range" id="scale-input-leads" min="500" max="50000" step="500" value="5000" class="w-full accent-luxuryGold">
-                </div>
+          <div>
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Join The Atelier</h4>
+            <p class="text-sm text-gray-400 font-light mb-4">Subscribe to receive private invitations to our luxury seasonal releases.</p>
+            <form id="newsletter-form" class="flex">
+              <input type="email" required placeholder="Email address" class="px-4 py-2 text-xs w-full bg-white/5 text-white border border-luxuryGold/40 focus:outline-none focus:border-luxuryGold rounded-l-lg">
+              <button type="submit" class="bg-luxuryGold hover:bg-luxuryGold/90 text-black px-4 py-2 text-xs font-bold uppercase rounded-r-lg transition">Join</button>
+            </form>
+          </div>
+        </div>
 
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Scaling CPL</label>
-                    <span id="scale-label-cpl" class="text-luxuryGold font-bold">15 MAD</span>
-                  </div>
-                  <input type="range" id="scale-input-cpl" min="1" max="150" value="15" class="w-full accent-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Confirmation Rate (%)</label>
-                    <span id="scale-label-conf" class="text-luxuryGold font-bold">65%</span>
-                  </div>
-                  <input type="range" id="scale-input-conf" min="5" max="100" value="65" class="w-full accent-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase">
-                    <label class="text-gray-300 font-semibold">Delivery Rate (%)</label>
-                    <span id="scale-label-del" class="text-luxuryGold font-bold">70%</span>
-                  </div>
-                  <input type="range" id="scale-input-del" min="5" max="100" value="70" class="w-full accent-luxuryGold">
-                </div>
-
-                <div class="space-y-1">
-                  <label class="block text-[10px] uppercase text-gray-300 font-semibold">Scaling Product Cost</label>
-                  <input type="number" id="scale-input-prod-cost" value="250" class="w-full bg-black border border-luxuryGold/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                </div>
-              </div>
-
-              <!-- Output Cards Panel -->
-              <div class="lg:col-span-3 space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="bg-black/50 p-6 rounded-2xl border border-luxuryGold/15 shadow flex justify-between items-center">
-                    <div>
-                      <span class="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Expected Profit</span>
-                      <p id="scale-out-profit" class="text-3xl font-serif font-extrabold text-emerald-400">0.00 MAD</p>
-                    </div>
-                    <div class="bg-emerald-950/40 p-3 rounded-xl border border-emerald-800 text-emerald-400">
-                      ${getIconSvg('shield-check', 'w-6 h-6')}
-                    </div>
-                  </div>
-
-                  <div class="bg-black/50 p-6 rounded-2xl border border-luxuryGold/15 shadow flex justify-between items-center">
-                    <div>
-                      <span class="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Expected Revenue</span>
-                      <p id="scale-out-revenue" class="text-3xl font-serif font-extrabold text-luxuryGold">0.00 MAD</p>
-                    </div>
-                    <div class="bg-luxuryGold/10 p-3 rounded-xl border border-luxuryGold/40 text-luxuryGold">
-                      ${getIconSvg('banknote', 'w-6 h-6')}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Structured Cost Ledger Breakdown -->
-                <div class="bg-black/40 p-6 rounded-2xl border border-white/5 space-y-4">
-                  <h4 class="text-xs uppercase font-bold text-gray-300 tracking-wider border-b border-white/10 pb-2">Fulfillment Ledger Forecast</h4>
-                  
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="space-y-2.5">
-                      <div class="flex justify-between border-b border-white/5 pb-1.5">
-                        <span class="text-gray-400">Expected Delivered Orders</span>
-                        <span id="scale-out-delivered" class="font-semibold text-white">0</span>
-                      </div>
-                      <div class="flex justify-between border-b border-white/5 pb-1.5">
-                        <span class="text-gray-400">Expected Returned Orders</span>
-                        <span id="scale-out-returned" class="font-semibold text-white">0</span>
-                      </div>
-                      <div class="flex justify-between border-b border-white/5 pb-1.5">
-                        <span class="text-gray-400">Total Ad Budget Cost</span>
-                        <span id="scale-out-adspend" class="font-semibold text-white">0 MAD</span>
-                      </div>
-                    </div>
-
-                    <div class="space-y-2.5">
-                      <div class="flex justify-between border-b border-white/5 pb-1.5">
-                        <span class="text-gray-400">Product Acquisition Costs</span>
-                        <span id="scale-out-prodcosts" class="font-semibold text-white">0 MAD</span>
-                      </div>
-                      <div class="flex justify-between border-b border-white/5 pb-1.5">
-                        <span class="text-gray-400">Fulfillment & Delivery Fees</span>
-                        <span id="scale-out-delcosts" class="font-semibold text-white">0 MAD</span>
-                      </div>
-                      <div class="flex justify-between border-b border-white/5 pb-1.5">
-                        <span class="text-gray-400">Reverse Logistics Return Fees</span>
-                        <span id="scale-out-retcosts" class="font-semibold text-white">0 MAD</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex justify-between pt-2 border-t border-luxuryGold/20">
-                    <span class="text-sm font-bold text-white uppercase">Aggregate Projected Costs</span>
-                    <span id="scale-out-totalcosts" class="text-sm font-bold text-red-400">0 MAD</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-gray-500 font-light flex flex-col md:flex-row justify-between items-center gap-4">
+          <p>© 2026 SOVANEX. All Rights Reserved. Designed with deep elegance. <span id="footer-btn-admin" class="cursor-pointer text-xs ml-1 opacity-20 hover:opacity-100 transition select-none">⚜️</span></p>
+          <div class="flex gap-6 items-center">
+            <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">Shipping & Returns</a>
+            <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Instagram</a>
+            <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Facebook</a>
           </div>
         </div>
       `;
 
-      // 2. Real-Time Math Calculations Logic
-      const runBreakevenCalculations = () => {
-        const leads = Math.max(1, parseFloat(document.getElementById("be-input-leads").value) || 0);
-        const cpl = parseFloat(document.getElementById("be-input-cpl").value) || 0;
-        const confRate = (parseFloat(document.getElementById("be-input-conf").value) || 0) / 100;
-        const delRate = (parseFloat(document.getElementById("be-input-del").value) || 0) / 100;
-        const productCost = parseFloat(document.getElementById("be-input-prod-cost").value) || 0;
-        
-        const aov = parseFloat(document.getElementById("be-input-aov").value) || 1200;
+      document.querySelectorAll(".footer-cat-btn").forEach(btn => {
+        btn.onclick = () => {
+          store.selectedCategory = btn.getAttribute("data-name");
+          store.setPage("shop");
+        };
+      });
 
-        // UI Label Updates
-        document.getElementById("be-label-cpl").innerText = `${cpl} MAD`;
-        document.getElementById("be-label-conf").innerText = `${Math.round(confRate * 100)}%`;
-        document.getElementById("be-label-del").innerText = `${Math.round(delRate * 100)}%`;
-
-        // Intermediate Values
-        const adSpend = leads * cpl;
-        const confirmed = Math.round(leads * confRate);
-        const delivered = Math.round(confirmed * delRate);
-        const returned = Math.max(0, confirmed - delivered);
-
-        // Core Financials
-        const revenue = delivered * aov;
-        const totalProductCosts = delivered * productCost;
-        
-        const deliveryCost = delivered * 40; // 4$ delivered (assuming 40 MAD baseline)
-        const returnCost = returned * 13;   // 1.3$ returned (assuming 13 MAD baseline)
-
-        const totalCosts = adSpend + totalProductCosts + deliveryCost + returnCost;
-        const netProfit = revenue - totalCosts;
-        const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
-
-        // Breakeven metrics derivations
-        const beCplNumerator = (delivered * (aov - productCost - 40)) - (returned * 13);
-        const breakevenCPL = beCplNumerator / leads;
-
-        const beDelDenom = confirmed * (aov - productCost - 40 + 13);
-        const breakevenDelRate = beDelDenom > 0 ? ((adSpend + (confirmed * 13)) / beDelDenom) : 0;
-
-        const beConfDenom = leads * ((delRate * (aov - productCost - 40 + 13)) - 13);
-        const breakevenConfRate = beConfDenom > 0 ? (adSpend / beConfDenom) : 0;
-
-        const breakevenAOV = delivered > 0 ? (totalCosts / delivered) : 0;
-
-        // Push calculations output back to HTML inputs
-        document.getElementById("be-out-adspend").innerText = `${adSpend.toLocaleString()} MAD`;
-        document.getElementById("be-out-confirmed").innerText = confirmed.toLocaleString();
-        document.getElementById("be-out-delivered").innerText = delivered.toLocaleString();
-        document.getElementById("be-out-returned").innerText = returned.toLocaleString();
-        
-        document.getElementById("be-out-revenue").innerText = `${revenue.toLocaleString()} MAD`;
-        document.getElementById("be-out-prodcosts").innerText = `${totalProductCosts.toLocaleString()} MAD`;
-        document.getElementById("be-out-delcosts").innerText = `${deliveryCost.toLocaleString()} MAD`;
-        document.getElementById("be-out-retcosts").innerText = `${returnCost.toLocaleString()} MAD`;
-
-        document.getElementById("be-out-profit").innerText = `${Math.round(netProfit).toLocaleString()} MAD`;
-        document.getElementById("be-out-profit").className = netProfit >= 0 ? "text-2xl sm:text-3xl font-serif font-extrabold text-emerald-400" : "text-2xl sm:text-3xl font-serif font-extrabold text-red-400";
-        
-        document.getElementById("be-out-margin").innerText = `${profitMargin.toFixed(1)}%`;
-        document.getElementById("be-out-margin").className = netProfit >= 0 ? "text-2xl sm:text-3xl font-serif font-extrabold text-emerald-500" : "text-2xl sm:text-3xl font-serif font-extrabold text-red-500";
-
-        document.getElementById("be-out-cpl").innerText = breakevenCPL >= 0 ? `${breakevenCPL.toFixed(1)} MAD` : "N/A";
-        document.getElementById("be-out-be-del-rate").innerText = (breakevenDelRate >= 0 && breakevenDelRate <= 1) ? `${(breakevenDelRate * 100).toFixed(1)}%` : "N/A";
-        document.getElementById("be-out-be-conf-rate").innerText = (breakevenConfRate >= 0 && breakevenConfRate <= 1) ? `${(breakevenConfRate * 100).toFixed(1)}%` : "N/A";
-        document.getElementById("be-out-be-aov").innerText = breakevenAOV > 0 ? `${Math.round(breakevenAOV).toLocaleString()} MAD` : "0 MAD";
+      document.getElementById("newsletter-form").onsubmit = (e) => {
+        e.preventDefault();
+        showToast("Subscribed successfully!");
+        e.target.reset();
       };
 
-      const runScalingCalculations = () => {
-        const leads = parseFloat(document.getElementById("scale-input-leads").value) || 0;
-        const cpl = parseFloat(document.getElementById("scale-input-cpl").value) || 0;
-        const confRate = (parseFloat(document.getElementById("scale-input-conf").value) || 0) / 100;
-        const delRate = (parseFloat(document.getElementById("scale-input-del").value) || 0) / 100;
-        const productCost = parseFloat(document.getElementById("scale-input-prod-cost").value) || 0;
-
-        const aov = systemAOV;
-
-        // UI Label Updates
-        document.getElementById("scale-label-leads").innerText = leads.toLocaleString();
-        document.getElementById("scale-label-cpl").innerText = `${cpl} MAD`;
-        document.getElementById("scale-label-conf").innerText = `${Math.round(confRate * 100)}%`;
-        document.getElementById("scale-label-del").innerText = `${Math.round(delRate * 100)}%`;
-
-        // Scale Mathematics 
-        const adSpend = leads * cpl;
-        const confirmed = Math.round(leads * confRate);
-        const delivered = Math.round(confirmed * delRate);
-        const returned = Math.max(0, confirmed - delivered);
-
-        const revenue = delivered * aov;
-        const totalProductCosts = delivered * productCost;
-        const deliveryCost = delivered * 40; 
-        const returnCost = returned * 13;
-
-        const totalCosts = adSpend + totalProductCosts + deliveryCost + returnCost;
-        const netProfit = revenue - totalCosts;
-
-        // Output DOM assignments
-        document.getElementById("scale-out-delivered").innerText = delivered.toLocaleString();
-        document.getElementById("scale-out-returned").innerText = returned.toLocaleString();
-        document.getElementById("scale-out-adspend").innerText = `${adSpend.toLocaleString()} MAD`;
-        document.getElementById("scale-out-prodcosts").innerText = `${totalProductCosts.toLocaleString()} MAD`;
-        document.getElementById("scale-out-delcosts").innerText = `${deliveryCost.toLocaleString()} MAD`;
-        document.getElementById("scale-out-retcosts").innerText = `${returnCost.toLocaleString()} MAD`;
-
-        document.getElementById("scale-out-totalcosts").innerText = `${totalCosts.toLocaleString()} MAD`;
-        document.getElementById("scale-out-revenue").innerText = `${revenue.toLocaleString()} MAD`;
-        
-        document.getElementById("scale-out-profit").innerText = `${Math.round(netProfit).toLocaleString()} MAD`;
-        document.getElementById("scale-out-profit").className = netProfit >= 0 ? "text-3xl font-serif font-extrabold text-emerald-400" : "text-3xl font-serif font-extrabold text-red-400";
+      document.getElementById("footer-btn-admin").onclick = (e) => {
+        e.preventDefault();
+        store.setPage("admin");
       };
 
-      // Registering Live Event Callbacks on Inputs / Sliders
-      const registerEvents = () => {
-        // Section 1 triggers
-        const ids1 = ["be-input-leads", "be-input-cpl", "be-input-conf", "be-input-del", "be-input-prod-cost"];
-        ids1.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.oninput = runBreakevenCalculations;
-        });
+      const policiesLink = document.getElementById("footer-link-policies");
+      if (policiesLink) {
+        policiesLink.onclick = (e) => {
+          e.preventDefault();
+          store.setPage("policies");
+        };
+      }
+    };
 
-        // Section 2 triggers
-        const ids2 = ["scale-input-leads", "scale-input-cpl", "scale-input-conf", "scale-input-del", "scale-input-prod-cost"];
-        ids2.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.oninput = runScalingCalculations;
-        });
-      };
+    store.renderCartDrawer = function() {
+      const container = document.getElementById("cart-drawer-overlay");
+      if (!container) return;
+      if (!this.cartOpen) {
+        container.classList.add("hidden");
+        return;
+      }
 
-      registerEvents();
+      const existingName = document.querySelector("input[name='customerName']")?.value;
+      const existingPhone = document.querySelector("input[name='phone']")?.value;
+      const existingAddress = document.querySelector("textarea[name='address']")?.value;
+      const existingCityId = document.getElementById("checkout-city-select")?.value;
 
-      // Run initial rendering loop calculation passes on mount
-      runBreakevenCalculations();
-      runScalingCalculations();
+      if (existingName !== undefined) this.checkoutFormValues.customerName = existingName;
+      if (existingPhone !== undefined) this.checkoutFormValues.phone = existingPhone;
+      if (existingAddress !== undefined) this.checkoutFormValues.address = existingAddress;
+      if (existingCityId !== undefined) this.checkoutFormValues.cityId = existingCityId;
+
+      const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+
+      const selectedCityId = this.checkoutFormValues.cityId;
+      const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
+      const deliveryFee = cityObj ? cityObj.price : 0;
+      const total = subtotal + deliveryFee;
+
+      let itemsMarkup = this.cart.map(item => {
+        const cleanName = item.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
+        return `
+          <div class="flex gap-4 p-3 bg-black/60 rounded-xl border border-luxuryGold/10 hover:border-luxuryGold/35 transition">
+            <img src="${item.imageURL || fallbackImage}" class="w-20 h-20 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <h4 class="font-serif text-sm text-white font-medium line-clamp-1">${cleanName}</h4>
+                <p class="text-xs text-luxuryGold font-semibold mt-0.5">${item.discountPrice || item.price} MAD</p>
+              </div>
+              <div class="flex justify-between items-center mt-2">
+                <div class="flex items-center border border-luxuryGold/30 rounded-lg overflow-hidden bg-black">
+                  <button class="cart-qty-minus px-2.5 py-1 hover:bg-white/5 text-xs font-bold" data-id="${item.id}">-</button>
+                  <span class="px-3 text-xs font-semibold text-white">${item.quantity}</span>
+                  <button class="cart-qty-plus px-2.5 py-1 hover:bg-white/5 text-xs font-bold" data-id="${item.id}">+</button>
+                </div>
+                <button class="cart-remove-item text-xs text-red-400 hover:text-red-600 transition" data-id="${item.id}">Remove</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-xs transition-opacity" id="cart-drawer-backdrop"></div>
+        <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
+          <div class="w-screen max-w-md bg-black border-l border-luxuryGold/30 flex flex-col shadow-2xl text-white">
+            
+            <!-- Drawer Header Tabs -->
+            <div class="p-4 border-b border-luxuryGold/20 bg-[#141414] space-y-3">
+              <div class="flex justify-between items-center">
+                <h2 class="text-lg font-serif text-luxuryGold flex items-center gap-2">
+                  ${getIconSvg('shopping-bag', 'text-luxuryGold w-5 h-5')} Sovereign Space
+                </h2>
+                <button id="cart-drawer-close" class="p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/5">✕</button>
+              </div>
+
+              <!-- Cart vs Order History Toggle -->
+              <div class="grid grid-cols-2 gap-2 p-1 bg-black rounded-xl border border-luxuryGold/15 text-center text-xs">
+                <button id="tab-cart-btn" class="py-2 rounded-lg font-bold uppercase tracking-wider transition ${this.cartTab === 'cart' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
+                  My Cart (${cartCount})
+                </button>
+                <button id="tab-history-btn" class="py-2 rounded-lg font-bold uppercase tracking-wider transition ${this.cartTab === 'history' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
+                  My Orders ⚜️
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab content rendering -->
+            <div class="flex-grow overflow-y-auto p-5 space-y-4">
+              ${this.cartTab === 'cart' ? `
+                <!-- CART VIEW -->
+                ${cartCount === 0 ? `
+                  <div class="text-center py-12 space-y-4">
+                    <div class="text-luxuryGold/30 animate-spin" style="animation-duration: 8s">${getIconSvg('flower', 'w-16 h-16 mx-auto')}</div>
+                    <p class="font-serif text-lg text-luxuryGold">Your cart is empty</p>
+                    <button id="cart-drawer-shop-btn" class="mt-4 px-6 py-2 bg-luxuryGold text-black text-xs font-bold uppercase rounded-lg">Store</button>
+                  </div>
+                ` : itemsMarkup}
+              ` : `
+                <!-- HISTORY VIEW -->
+                ${this.loadingMyOrders ? `
+                  <!-- Luxury loading skeleton -->
+                  <div class="space-y-4 animate-pulse">
+                    ${[1, 2].map(() => `
+                      <div class="p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/10 space-y-3">
+                        <div class="flex justify-between">
+                          <div class="h-4 bg-luxuryGold/20 rounded w-1/3 animate-pulse"></div>
+                          <div class="h-4 bg-white/10 rounded w-1/4 animate-pulse"></div>
+                        </div>
+                        <div class="h-3 bg-white/5 rounded w-1/2"></div>
+                        <div class="h-10 bg-black/40 rounded-xl"></div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : this.myOrders.length === 0 ? `
+                  <div class="text-center py-16 space-y-4">
+                    <div class="text-luxuryGold/20">${getIconSvg('lock', 'w-14 h-14 mx-auto')}</div>
+                    <p class="font-serif text-md text-luxuryGold">No local orders found</p>
+                    <p class="text-[10px] text-gray-500 max-w-xs mx-auto">Orders placed on this device will automatically track here in real-time.</p>
+                    <button id="history-drawer-shop-btn" class="mt-2 px-6 py-2 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black text-xs font-bold uppercase rounded-lg transition">Discover Atelier</button>
+                  </div>
+                ` : this.myOrders.map(o => {
+                  const itemsCount = o.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+                  const orderDateString = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+                  const waText = encodeURIComponent(`Hello SOVANEX, I would like to track my order code: ${o.orderId}.`);
+                  
+                  return `
+                    <div class="p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-lg space-y-3">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <p class="font-mono text-xs font-bold text-luxuryGold select-all">${o.orderId}</p>
+                          <p class="text-[9px] text-gray-400 mt-0.5">${orderDateString} — ${itemsCount} items</p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border ${
+                          o.status === 'pending' ? 'bg-red-950/40 text-red-300 border-red-800' : 
+                          o.status === 'cancelled' ? 'bg-white/5 text-gray-500 border-white/10' : 
+                          'bg-emerald-950/40 text-emerald-300 border-emerald-800'
+                        }">${o.status || 'pending'}</span>
+                      </div>
+
+                      <div class="border-t border-b border-white/5 py-2 space-y-1">
+                        ${o.items?.map(item => `
+                          <div class="flex justify-between text-[10px]">
+                            <span class="text-gray-300 line-clamp-1">${item.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim()} <strong class="text-luxuryGold">x${item.quantity}</strong></span>
+                            <span class="text-luxuryGold font-medium">${item.price * item.quantity} MAD</span>
+                          </div>
+                        `).join('')}
+                      </div>
+
+                      <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total with shipping:</span>
+                        <span class="font-serif font-bold text-luxuryGold text-sm">${o.total} MAD</span>
+                      </div>
+
+                      <div class="pt-1">
+                        <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}?text=${waText}" target="_blank" class="w-full py-2 bg-emerald-600/15 hover:bg-emerald-600 border border-emerald-500/30 text-emerald-300 hover:text-white rounded-lg text-[10px] uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 transition">
+                          ${getIconSvg('message-circle', 'w-3.5 h-3.5')} Track on WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              `}
+            </div>
+
+            <!-- Active Cart Checkout Controls -->
+            ${this.cartTab === 'cart' && cartCount > 0 ? `
+              <div class="p-6 border-t border-luxuryGold/30 bg-[#141414] space-y-4">
+                <div class="flex justify-between items-center text-sm font-medium">
+                  <span class="text-gray-300">Subtotal</span>
+                  <span class="text-xl font-serif font-bold text-luxuryGold">${subtotal} MAD</span>
+                </div>
+
+                ${selectedCityId ? `
+                  <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
+                    <span class="text-gray-300">Delivery Fee</span>
+                    <span class="font-serif font-bold text-luxuryGold">${deliveryFee} MAD</span>
+                  </div>
+                  <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
+                    <span class="text-gray-300">Total</span>
+                    <span class="text-xl font-serif font-bold text-luxuryGold">${total} MAD</span>
+                  </div>
+                ` : ''}
+
+                <div class="bg-black/40 p-4 rounded-xl border border-luxuryGold/20">
+                  <p class="text-xs font-semibold text-luxuryGold mb-3 uppercase">Shipping Information</p>
+                  <form id="checkout-form" class="space-y-3">
+                    <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                    <input type="tel" name="phone" required placeholder="Phone Number (e.g. 06...)" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                    
+                    <select id="checkout-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                      <option value="" disabled ${!selectedCityId ? 'selected' : ''}>Select Delivery City</option>
+                      ${this.deliveryCities.filter(c => c.isActive).map(c => `
+                        <option value="${c.id}" ${selectedCityId === c.id ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
+                      `).join('')}
+                    </select>
+
+                    <textarea name="address" required placeholder="Delivery Address" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
+                    
+                    <button type="submit" id="checkout-submit-button" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
+                      ${this.checkoutLoading ? "Processing Request..." : "Confirm Luxury Order"}
+                      ${getIconSvg('send', 'w-3.5 h-3.5')}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      document.getElementById("cart-drawer-backdrop").onclick = () => { store.cartOpen = false; store.renderCartDrawer(); };
+      document.getElementById("cart-drawer-close").onclick = () => { store.cartOpen = false; store.renderCartDrawer(); };
+      
+      const shopBtn = document.getElementById("cart-drawer-shop-btn");
+      if (shopBtn) {
+        shopBtn.onclick = () => { store.cartOpen = false; store.setPage("shop"); };
+      }
+
+      // Tab selector bindings
+      const tabCartBtn = document.getElementById("tab-cart-btn");
+      if (tabCartBtn) {
+        tabCartBtn.onclick = () => {
+          store.cartTab = "cart";
+          store.renderCartDrawer();
+        };
+      }
+
+      const tabHistoryBtn = document.getElementById("tab-history-btn");
+      if (tabHistoryBtn) {
+        tabHistoryBtn.onclick = () => {
+          store.cartTab = "history";
+          store.fetchMyOrders();
+        };
+      }
+
+      const historyShopBtn = document.getElementById("history-drawer-shop-btn");
+      if (historyShopBtn) {
+        historyShopBtn.onclick = () => {
+          store.cartOpen = false;
+          store.setPage("shop");
+        };
+      }
+
+      document.querySelectorAll(".cart-qty-minus").forEach(btn => {
+        btn.onclick = () => store.updateQty(btn.getAttribute("data-id"), -1);
+      });
+
+      document.querySelectorAll(".cart-qty-plus").forEach(btn => {
+        btn.onclick = () => store.updateQty(btn.getAttribute("data-id"), 1);
+      });
+
+      document.querySelectorAll(".cart-remove-item").forEach(btn => {
+        btn.onclick = () => store.removeFromCart(btn.getAttribute("data-id"));
+      });
+
+      const citySelect = document.getElementById("checkout-city-select");
+      if (citySelect) {
+        citySelect.onchange = () => store.renderCartDrawer();
+      }
+
+      const checkoutForm = document.getElementById("checkout-form");
+      if (checkoutForm) {
+        checkoutForm.onsubmit = (e) => store.processCheckout(e);
+      }
     };
 
     store.openProductDetailsModal = function(product) {
       const modal = document.getElementById("product-detail-container");
       if (!modal) return;
       this.activeImg = product.imageURL;
+
+      const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
 
       const renderInsideModal = () => {
         let galleryMarkup = `
@@ -3223,6 +3634,8 @@
             `;
           }).join('');
         }
+
+        const normalizedGender = getNormalizedGender(product.gender);
 
         modal.innerHTML = `
           <div class="fixed inset-0 bg-black/85 backdrop-blur-xs" id="product-modal-backdrop"></div>
@@ -3249,9 +3662,9 @@
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
                   <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
-                  <span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold/10 text-luxuryGold border border-luxuryGold/20">${getNormalizedGender(product.gender)}</span>
+                  ${normalizedGender === 'PACKS STORE' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
                 </div>
-                <h2 class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${product.name}</h2>
+                <h2 class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
                 
                 <div class="flex items-center gap-1">
                   <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
@@ -3339,164 +3752,6 @@
       modal.classList.remove("hidden");
     };
 
-    store.renderCartDrawer = function() {
-      const container = document.getElementById("cart-drawer-overlay");
-      if (!container) return;
-      if (!this.cartOpen) {
-        container.classList.add("hidden");
-        return;
-      }
-
-      const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
-      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
-      
-      const selectedCityId = this.checkoutFormValues.cityId;
-      const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
-      const deliveryFee = cityObj ? cityObj.price : 0;
-      const total = subtotal + deliveryFee;
-
-      container.classList.remove("hidden");
-      container.innerHTML = `
-        <div class="absolute inset-0 bg-black/85 backdrop-blur-xs transition-opacity" id="cart-drawer-backdrop"></div>
-        <div class="absolute inset-y-0 right-0 w-full max-w-md bg-[#0A0A0A] border-l border-luxuryGold/30 flex flex-col justify-between text-white z-10 animate-fade-in shadow-2xl h-full">
-          <div class="p-6 border-b border-luxuryGold/20 flex items-center justify-between flex-shrink-0">
-            <div class="flex items-center gap-2">
-              ${getIconSvg('shopping-bag', 'text-luxuryGold w-5 h-5')}
-              <h3 class="font-serif text-lg">Your Selection (${cartCount})</h3>
-            </div>
-            <button id="cart-drawer-close" class="p-2 text-gray-400 hover:text-white transition bg-white/5 rounded-xl">✕</button>
-          </div>
-
-          <!-- Middle Scrollable Section -->
-          <div class="flex-grow overflow-y-auto p-6 space-y-8 h-1/2">
-            ${this.cart.length === 0 ? `
-              <div class="text-center py-20 space-y-4">
-                <p class="text-sm text-gray-400 italic">Your cart is empty.</p>
-                <button id="cart-drawer-shop-cta" class="px-6 py-2.5 bg-luxuryGold text-black text-xs font-bold uppercase tracking-wider rounded-xl transition">Explore Boutique</button>
-              </div>
-            ` : `
-              <!-- Cart Items List -->
-              <div class="space-y-4">
-                ${this.cart.map(item => `
-                  <div class="flex gap-4 p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/15 shadow-sm">
-                    <img src="${item.imageURL || fallbackImage}" class="w-16 h-16 object-cover rounded-xl border border-luxuryGold/10 flex-shrink-0" onerror="this.src='${fallbackImage}'">
-                    <div class="flex-1 space-y-1">
-                      <h4 class="text-xs font-semibold text-white line-clamp-1">${item.name}</h4>
-                      <p class="text-[10px] text-luxuryGold font-serif font-bold">${item.discountPrice || item.price} MAD</p>
-                      <div class="flex items-center justify-between pt-1">
-                        <div class="flex items-center gap-2 bg-black/50 border border-white/10 rounded-lg px-2 py-0.5">
-                          <button class="qty-minus text-xs text-luxuryGold font-extrabold" data-id="${item.id}">-</button>
-                          <span class="text-xs font-bold px-1">${item.quantity}</span>
-                          <button class="qty-plus text-xs text-luxuryGold font-extrabold" data-id="${item.id}">+</button>
-                        </div>
-                        <button class="item-remove text-[10px] text-red-400 font-bold uppercase tracking-wider hover:text-red-300" data-id="${item.id}">Remove</button>
-                      </div>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-
-              <!-- Checkout Form -->
-              <div class="border-t border-luxuryGold/20 pt-6 space-y-4">
-                <h4 class="font-serif text-md text-luxuryGold">Delivery Coordinates</h4>
-                <form id="drawer-checkout-form" class="space-y-3">
-                  <div>
-                    <label class="block text-[9px] uppercase tracking-wider text-gray-400 mb-1">Full Name</label>
-                    <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full bg-black/50 border border-luxuryGold/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                  </div>
-                  <div>
-                    <label class="block text-[9px] uppercase tracking-wider text-gray-400 mb-1">Phone Number (WhatsApp Active)</label>
-                    <input type="tel" name="phone" required placeholder="e.g. 0677746730" value="${this.checkoutFormValues.phone}" class="w-full bg-black/50 border border-luxuryGold/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                  </div>
-                  <div>
-                    <label class="block text-[9px] uppercase tracking-wider text-gray-400 mb-1">City for Delivery</label>
-                    <select name="cityId" id="drawer-city-select" required class="w-full bg-[#111] border border-luxuryGold/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                      <option value="">Select your city...</option>
-                      ${this.deliveryCities.filter(c => c.isActive).map(c => `
-                        <option value="${c.id}" ${c.id === selectedCityId ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
-                      `).join('')}
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-[9px] uppercase tracking-wider text-gray-400 mb-1">Delivery Address</label>
-                    <textarea name="address" required placeholder="Street address, apartment number..." class="w-full bg-black/50 border border-luxuryGold/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold h-16 resize-none">${this.checkoutFormValues.address}</textarea>
-                  </div>
-                </form>
-              </div>
-            `}
-          </div>
-
-          <!-- Bottom Summary Section -->
-          ${this.cart.length > 0 ? `
-            <div class="p-6 bg-black/80 border-t border-luxuryGold/20 space-y-4 flex-shrink-0">
-              <div class="space-y-1.5 text-xs">
-                <div class="flex justify-between">
-                  <span class="text-gray-400">Atelier Subtotal</span>
-                  <span class="font-semibold text-white">${subtotal} MAD</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-400">Insured Delivery Charge</span>
-                  <span class="font-semibold text-luxuryGold">${deliveryFee === 0 ? 'Free / Not Selected' : `${deliveryFee} MAD`}</span>
-                </div>
-                <div class="flex justify-between pt-2 border-t border-white/5 text-sm font-bold">
-                  <span>Aggregate Total</span>
-                  <span class="text-luxuryGold font-serif text-md">${total} MAD</span>
-                </div>
-              </div>
-
-              <button type="submit" form="drawer-checkout-form" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[11px] rounded-xl transition shadow-md flex items-center justify-center gap-2">
-                ${this.checkoutLoading ? `<div class="w-3.5 h-3.5 border border-black/20 border-t-black rounded-full animate-spin"></div> processing...` : 'Confirm Selection'}
-              </button>
-            </div>
-          ` : ''}
-        </div>
-      `;
-
-      document.getElementById("cart-drawer-backdrop").onclick = () => { this.cartOpen = false; this.renderCartDrawer(); };
-      document.getElementById("cart-drawer-close").onclick = () => { this.cartOpen = false; this.renderCartDrawer(); };
-
-      const shopCta = document.getElementById("cart-drawer-shop-cta");
-      if (shopCta) {
-        shopCta.onclick = () => {
-          this.cartOpen = false;
-          this.renderCartDrawer();
-          this.setPage("shop");
-        };
-      }
-
-      // Live event bindings for qty manipulations
-      document.querySelectorAll(".qty-minus").forEach(btn => {
-        btn.onclick = () => this.updateQty(btn.getAttribute("data-id"), -1);
-      });
-      document.querySelectorAll(".qty-plus").forEach(btn => {
-        btn.onclick = () => this.updateQty(btn.getAttribute("data-id"), 1);
-      });
-      document.querySelectorAll(".item-remove").forEach(btn => {
-        btn.onclick = () => this.removeFromCart(btn.getAttribute("data-id"));
-      });
-
-      const citySelect = document.getElementById("drawer-city-select");
-      if (citySelect) {
-        citySelect.onchange = (e) => {
-          this.checkoutFormValues.cityId = e.target.value;
-          this.renderCartDrawer();
-        };
-      }
-
-      const checkoutForm = document.getElementById("drawer-checkout-form");
-      if (checkoutForm) {
-        checkoutForm.oninput = () => {
-          this.checkoutFormValues = {
-            customerName: checkoutForm.customerName.value,
-            phone: checkoutForm.phone.value,
-            cityId: checkoutForm.cityId.value,
-            address: checkoutForm.address.value
-          };
-        };
-        checkoutForm.onsubmit = (e) => this.processCheckout(e);
-      }
-    };
-
     store.renderFloatingActions = function() {
       const container = document.getElementById("floating-actions");
       if (!container) return;
@@ -3504,6 +3759,7 @@
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
 
       container.innerHTML = `
+        <!-- Floating WhatsApp Help Chat Action -->
         <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="fixed bottom-6 left-6 z-40 bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition hover:scale-110" title="Chat with Support on WhatsApp">
           ${getIconSvg('message-circle', 'w-6 h-6')}
         </a>
@@ -3533,49 +3789,6 @@
       }
     };
 
-    store.renderFooter = function() {
-      const container = document.getElementById("app-footer");
-      if (!container) return;
-      container.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="space-y-4">
-              <span class="font-serif text-2xl tracking-widest font-extrabold text-white">
-                SOV<span class="text-luxuryGold font-sans font-light">ANEX</span>
-              </span>
-              <p class="text-xs text-gray-400 leading-relaxed font-light">${this.settings.websiteDescription}</p>
-            </div>
-            <div class="space-y-3">
-              <h4 class="text-xs uppercase font-extrabold text-luxuryGold tracking-widest border-b border-luxuryGold/10 pb-2">Navigation</h4>
-              <div class="flex flex-col gap-2 text-xs text-gray-400">
-                <button id="footer-btn-home" class="text-left hover:text-white transition">Home Atelier</button>
-                <button id="footer-btn-shop" class="text-left hover:text-white transition">The Boutique Catalog</button>
-                <button id="footer-btn-contact" class="text-left hover:text-white transition">Contact Curators</button>
-                <button id="footer-btn-policies" class="text-left hover:text-white transition">Shipping & Returns</button>
-              </div>
-            </div>
-            <div class="space-y-3">
-              <h4 class="text-xs uppercase font-extrabold text-luxuryGold tracking-widest border-b border-luxuryGold/10 pb-2">Atelier Hours</h4>
-              <p class="text-xs text-gray-400 font-light leading-relaxed">Operated Daily from Kenitra & Rabat Workspace:<br><span class="text-luxuryGold font-semibold">9:00 AM — 10:00 PM</span></p>
-            </div>
-          </div>
-          <div class="pt-8 border-t border-white/10 text-center text-[11px] text-gray-500 flex flex-col md:flex-row justify-between gap-4">
-            <p>© 2026 SOVANEX Atelier. All rights reserved. <span id="footer-btn-admin" class="cursor-pointer text-[9px] opacity-15 hover:opacity-100 transition duration-300 ml-1 select-none">⚜️</span></p>
-            <div class="flex gap-4 justify-center text-luxuryGold font-semibold">
-              <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:underline">Instagram</a>
-              <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="hover:underline">WhatsApp</a>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById("footer-btn-home").onclick = () => this.setPage("home");
-      document.getElementById("footer-btn-shop").onclick = () => this.setPage("shop");
-      document.getElementById("footer-btn-contact").onclick = () => this.setPage("contact");
-      document.getElementById("footer-btn-policies").onclick = () => this.setPage("policies");
-      document.getElementById("footer-btn-admin").onclick = () => this.setPage("admin");
-    };
-
     const hidePreloader = () => {
       const preloader = document.getElementById('app-preloader');
       if (preloader) {
@@ -3597,7 +3810,7 @@
               const credential = await signInWithCustomToken(auth, customToken);
               user = credential.user;
             } catch (tokenError) {
-              console.warn("Firebase Auth token mismatch, fallback to Anonymous.", tokenError);
+              console.warn("Firebase Auth: Custom token mismatch. Bypassing to Anonymous Authentication.", tokenError);
               const credential = await signInAnonymously(auth);
               user = credential.user;
             }
@@ -3645,6 +3858,7 @@
         if (usr) {
           store.user = usr;
 
+          // Admin Privileges Guard Pre-Check
           if (usr.email === "bilalotami@gmail.com") {
             store.isAdmin = true;
           } else {
