@@ -1867,6 +1867,8 @@
         `;
       }
 
+      const activeSettingsLogo = (store.settings.logoURL && store.settings.logoURL.trim() !== "") ? store.settings.logoURL.trim() : 'image_1c76b5.png';
+
       container.innerHTML = `
         <div class="space-y-24">
           <!-- ULTRA-PREMIUM LUXURY HERO SECTION -->
@@ -1913,11 +1915,11 @@
                   <div class="absolute inset-6 rounded-full border border-luxuryGold/10 animate-spin" style="animation-duration: 25s; animation-direction: reverse;"></div>
                   
                   <!-- Verbatim Main Identity Logo -->
-                  <img src="${this.settings.logoURL || 'image_1c76b5.png'}" alt="SOVANEX Official Crest" class="w-56 h-56 sm:w-64 sm:h-64 object-contain relative z-10 drop-shadow-[0_15px_15px_rgba(212,175,55,0.4)] hover:scale-[1.03] transition-premium cursor-pointer" onerror="this.src='image_1c76b5.png'">
+                  <img src="${activeSettingsLogo}" alt="SOVANEX Official Crest" class="w-56 h-56 sm:w-64 sm:h-64 object-contain relative z-10 drop-shadow-[0_15px_15px_rgba(212,175,55,0.4)] hover:scale-[1.03] transition-premium cursor-pointer" onerror="this.onerror=null; this.src='image_1c76b5.png';">
                 </div>
               </div>
 
-              <!-- Right Column: Luxury Art Composition on Black Marble (lg:col-span-4) -->
+              <!-- Right Column: Luxury Art Composition (lg:col-span-4) -->
               <div class="lg:col-span-4 relative flex justify-center items-center order-3 h-[320px] sm:h-[400px] lg:h-full lg:min-h-[450px] w-full" data-parallax-depth="-0.03">
                 <div class="relative w-full max-w-[350px] h-full flex flex-col justify-end pb-8">
                   
@@ -1941,13 +1943,12 @@
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
                   </div>
 
-                  <!-- Deep Black Polished Marble Platform Pedestal -->
-                  <div class="w-full h-20 bg-gradient-to-b from-zinc-900 to-black border-t-2 border-luxuryGold/30 rounded-3xl relative overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.9)] z-10">
-                    <div class="absolute inset-0 marble-sheen opacity-40"></div>
-                    <!-- Reflection mirrored effect -->
-                    <div class="absolute inset-x-0 top-0 h-full opacity-20 reflection-overlay pointer-events-none origin-top scale-y-[-1] translate-y-2 flex justify-center gap-10">
-                      <div class="w-16 h-16 bg-luxuryGold/10 rounded-full blur-[10px]"></div>
-                    </div>
+                  <!-- Glowing Gold Horizon Glass Base -->
+                  <div class="w-full h-3 bg-gradient-to-r from-transparent via-luxuryGold to-transparent rounded-full relative z-20 shadow-[0_0_30px_var(--accent-glow)] mb-12">
+                    <!-- Spot Light Reflection -->
+                    <div class="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-16 bg-[radial-gradient(circle,rgba(212,175,55,0.2)_0%,transparent_75%)] blur-[10px] pointer-events-none"></div>
+                    <!-- Horizon Specular Glow -->
+                    <div class="absolute -top-1 left-[5%] right-[5%] h-[1.5px] bg-white/20 blur-[0.5px] rounded-full"></div>
                   </div>
 
                 </div>
