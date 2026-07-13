@@ -247,6 +247,49 @@
     const auth = getAuth(app);
     const fallbackImage = "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=800";
 
+    // Global Fallback Logo Handler to prevent broken image icons and provide a luxurious SVG alternative
+    window.handleLogoError = function(imgElement) {
+      if (!imgElement) return;
+      
+      // If we failed loading a customized admin URL, try loading the local file fallback first
+      const defaultFilename = 'image_1c76b5.png';
+      if (imgElement.getAttribute('src') !== defaultFilename) {
+        imgElement.setAttribute('src', defaultFilename);
+        return;
+      }
+
+      // If even the default file is missing, replace it instantly with an ultra-premium inline SVG crown crest
+      const svgCrest = `
+        <div class="w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center relative z-10 drop-shadow-[0_15px_30px_rgba(212,175,55,0.35)] hover:scale-[1.03] transition-premium cursor-pointer">
+          <svg viewBox="0 0 200 200" class="w-full h-full text-luxuryGold" fill="currentColor">
+            <!-- Elegant Circular Frame -->
+            <circle cx="100" cy="110" r="62" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 3" opacity="0.6"/>
+            <circle cx="100" cy="110" r="56" fill="none" stroke="currentColor" stroke-width="2" opacity="0.8"/>
+            
+            <!-- Majestic Royal Crown -->
+            <path d="M72,75 L81,95 L100,82 L119,95 L128,75 L116,99 L84,99 Z" fill="currentColor"/>
+            <circle cx="72" cy="73" r="2.5" fill="currentColor"/>
+            <circle cx="100" cy="80" r="3" fill="currentColor"/>
+            <circle cx="128" cy="73" r="2.5" fill="currentColor"/>
+            
+            <!-- Laurel Leaf Branches -->
+            <path d="M42,138 Q50,126 66,131 Q53,142 42,138 Z" fill="currentColor" opacity="0.9"/>
+            <path d="M158,138 Q150,126 134,131 Q147,142 158,138 Z" fill="currentColor" opacity="0.9"/>
+            <circle cx="100" cy="162" r="2" fill="currentColor"/>
+            
+            <!-- Stylized Luxury "S" Monogram -->
+            <text x="100" y="146" font-family="'Playfair Display', serif" font-weight="900" font-size="64" text-anchor="middle" fill="currentColor" letter-spacing="-0.05em">S</text>
+          </svg>
+        </div>
+      `;
+      
+      const parentNode = imgElement.parentNode;
+      if (parentNode) {
+        imgElement.remove();
+        parentNode.insertAdjacentHTML('beforeend', svgCrest);
+      }
+    };
+
     const store = {
       user: null,
       isAdmin: false,
@@ -1910,12 +1953,9 @@
                 <div class="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center animate-float-slow">
                   <!-- Golden Halo Ambient Light Aura -->
                   <div class="absolute w-[80%] h-[80%] rounded-full bg-luxuryGold/25 blur-[60px] opacity-60 animate-ambient-glow pointer-events-none"></div>
-                  <!-- Rotating Golden Streak Edge -->
-                  <div class="absolute inset-0 rounded-full border border-luxuryGold/20 animate-spin" style="animation-duration: 40s"></div>
-                  <div class="absolute inset-6 rounded-full border border-luxuryGold/10 animate-spin" style="animation-duration: 25s; animation-direction: reverse;"></div>
                   
                   <!-- Verbatim Main Identity Logo -->
-                  <img src="${activeSettingsLogo}" alt="SOVANEX Official Crest" class="w-56 h-56 sm:w-64 sm:h-64 object-contain relative z-10 drop-shadow-[0_15px_15px_rgba(212,175,55,0.4)] hover:scale-[1.03] transition-premium cursor-pointer" onerror="this.onerror=null; this.src='image_1c76b5.png';">
+                  <img src="${activeSettingsLogo}" alt="SOVANEX Official Crest" class="w-56 h-56 sm:w-64 sm:h-64 object-contain relative z-10 drop-shadow-[0_15px_15px_rgba(212,175,55,0.4)] hover:scale-[1.03] transition-premium cursor-pointer" onerror="window.handleLogoError && window.handleLogoError(this);">
                 </div>
               </div>
 
