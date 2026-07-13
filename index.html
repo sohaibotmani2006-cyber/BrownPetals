@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOVANEX — Sovereign Watches & Accoutrements</title>
+  <title>SOVANEX — Sovereign Watches, Accessories & Fine Wallets</title>
   
   <!-- DNS Preconnect to reduce load latency -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,6 +70,13 @@
       color: #E5E5E5;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
+    /* Enforce custom styling for RTL structures when in Arabic mode */
+    body[dir="rtl"] {
+      font-family: 'Plus Jakarta Sans', "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body[dir="rtl"] .font-serif {
+      font-family: 'Playfair Display', serif;
+    }
     .luxury-gradient {
       background: linear-gradient(135deg, #0A0A0A 0%, #141414 100%);
     }
@@ -121,7 +128,7 @@
     </div>
     <div style="width: 32px; height: 32px; border: 1.5px solid var(--accent-glow); border-top: 1.5px solid var(--accent-color); border-radius: 50%; animation: preloader-spin 0.9s linear infinite;"></div>
     <div style="margin-top: 20px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; color: var(--accent-color); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 400;">
-      Loading Atelier Collections...
+      Loading Shop Collections...
     </div>
   </div>
 
@@ -217,16 +224,247 @@
       myOrders: [],
       loadingMyOrders: false,
 
+      // Translation dictionary
+      language: localStorage.getItem("sovanex_lang") || "en",
+      translations: {
+        en: {
+          home: "Home",
+          shop: "Store",
+          contact: "Contact",
+          policies: "Shipping & Returns",
+          search: "Search Shop...",
+          cart: "Cart",
+          tagline: "The Sovereign Shop of Royal Watches, Accessories & Fine Leather Goods",
+          heroTitle: "SOVANEX <br>Masterpiece Creations",
+          heroDesc: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
+          discoverStore: "Discover Private Store",
+          connectUs: "Connect With Us",
+          selectCollection: "Select Your Collection",
+          storeCollections: "STORE Collections",
+          forHer: "For Her",
+          forHerDesc: "Discover majestic watches, delicate luxury bracelets, and elegant purses crafted with gold and diamonds.",
+          shopForHer: "SHOP FOR HER",
+          forHim: "For Him",
+          forHimDesc: "Explore mechanical chronographs, carbon jewelry, robust steel accessories, and premium leather wallets.",
+          shopForHim: "SHOP FOR HIM",
+          exclusivePacks: "EXCLUSIVE PACKS",
+          atelierPacks: "Exclusive Packs",
+          atelierPacksDesc: "Explore custom bundling options, premium pairings, and elegant high-end multi-product sets.",
+          mensPacks: "MEN'S PACKS",
+          womensPacks: "WOMEN'S PACKS",
+          watchmaking: "Masterful Horology & Leathercraft",
+          watchmakingDesc: "We curate premium automatic movements, fine grade-A leathers for wallets, and premium stainless steels designed for lifetime elegance.",
+          shipping: "Secure Express Shipping",
+          shippingDesc: "Packaged with care and shipped securely to Rabat, Casablanca, Tangier, Marrakech, Kenitra, and all major cities in Morocco.",
+          certificate: "Premium Wax-Sealed Certificate",
+          certificateDesc: "Every accessory or leather parcel includes a custom certificate of authenticity, sealed with our official stamp of luxury metallic golden hot wax.",
+          offers: "Sensational Offers",
+          exclusivePromos: "Exclusive Premium Promotions",
+          signatures: "Our Signatures",
+          mostCoveted: "Most Coveted Creations",
+          browseAll: "Explore All Collections",
+          reviewsTitle: "What Moroccan Collectors Say",
+          leaveReview: "Leave a Review",
+          lookbookTitle: "Shop Lookbook",
+          lookbookSub: "Follow our dynamic feed",
+          footerDesc: "Luxury destination for the finest curated handpicked watches, premium accessories, and signature leather goods designed to royal standards.",
+          operatingHours: "Open Daily: 9:00 AM — 10:00 PM",
+          backToHome: "← Back to Home",
+          yourSelection: "Your Selection",
+          sovereignCart: "Sovereign Cart ⚜️",
+          myCartTab: "My Cart",
+          myOrdersTab: "My Orders ⚜️",
+          cartEmpty: "Your cart is empty",
+          discoverAtelier: "Discover Shop",
+          noOrders: "No local orders found",
+          ordersTrackLocal: "Orders placed on this device will automatically track here in real-time.",
+          orderConfirmed: "Selection Confirmed",
+          orderConfirmedAr: "تم تأكيد طلبك بنجاح ⚜️",
+          fullName: "Full Name",
+          phoneNumber: "Phone Number",
+          citySelect: "Select Delivery City",
+          deliveryAddress: "Delivery Address",
+          confirmOrder: "Confirm Luxury Order",
+          cashOnDelivery: "Cash on Delivery",
+          shippingInfo: "Shipping Information",
+          trackWhatsapp: "Track on WhatsApp",
+          orderCode: "Order Code (ID)",
+          orderCopyTip: "Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.",
+          orderCopyTipAr: "عافاك صيفط لينا هاد الكود فالواتساب باش نأكدو الطلب ديالك ونصيفطوه ليك دغيا.",
+          continueShopping: "Continue Shopping",
+          continueShoppingAr: "متابعة التسوق",
+          customCardTip: "🚚 A complimentary custom premium card is included with every masterpiece.",
+          shareLink: "Share Link",
+          addToCart: "Add To Cart",
+          orderNow: "Order Now",
+          allCategories: "All Categories",
+          atelierCollections: "Shop Collections",
+          searchBoutique: "Search boutique creations...",
+          sendPrivateNote: "Send us a Private Note",
+          yourName: "Your Name",
+          emailAddress: "Email Address",
+          message: "Message",
+          sendMessage: "Send Message",
+          ourCoordinates: "Our Coordinates",
+          atelierAddress: "Shop Address",
+          hotline: "Hotline",
+          emailCoordinate: "Email Coordinates",
+          instagramProfile: "Instagram Profile",
+          operatingHoursFooter: "Open Daily: 9:00 AM — 10:00 PM",
+          joinAtelier: "Join The Shop",
+          joinAtelierDesc: "Subscribe to receive private invitations to our luxury seasonal releases.",
+          join: "Join",
+          newsletterPlaceholder: "Email address",
+          copyright: "© 2026 SOVANEX. All Rights Reserved. Designed with deep elegance.",
+          womenColl: "Women",
+          menColl: "Men",
+          mensPacksColl: "Men's Packs",
+          womensPacksColl: "Women's Packs",
+          allColl: "All",
+          ratingLabel: "Rating",
+          starsLabel: "Stars",
+          yourNote: "Your Note",
+          submitReview: "Submit Review",
+          verifiedBuyer: "Verified Buyer",
+          productPurchased: "Product Purchased",
+          generalExperience: "General Experience",
+          addBtn: "Add",
+          buyBtn: "Buy",
+          saleBadge: "Sale",
+          bestBadge: "Best",
+          packsBadge: "Packs",
+          onlyItemsLeft: "pieces remaining in exclusive stock.",
+          noProductsFound: "No products match this selection currently.",
+          quickView: "Quick View",
+          tapToZoom: "🔍 Tap to Zoom"
+        },
+        ar: {
+          home: "الرئيسية",
+          shop: "المتجر",
+          contact: "اتصل بنا",
+          policies: "الشحن والاسترجاع",
+          search: "ابحث في المتجر...",
+          cart: "السلة",
+          tagline: "المتجر السيادي للساعات الملكية والمقتنيات ومصنوعات الجلد الفاخرة",
+          heroTitle: "سوفانكس <br>مقتنيات فنية فاخرة",
+          heroDesc: "وجهة فاخرة أصيلة للساعات الراقية، الإكسسوارات المصنوعة يدويًا، والمحافظ الجلدية المتقنة والمصممة وفقًا للمعايير الملكية الأكثر رقيًا.",
+          discoverStore: "اكتشف المتجر الخاص",
+          connectUs: "تواصل معنا",
+          selectCollection: "اختر مجموعتك المفضلة",
+          storeCollections: "مجموعات المتجر المميزة",
+          forHer: "لها",
+          forHerDesc: "اكتشفي الساعات المهيبة، الأساور الفاخرة الرقيقة، والمحافظ الجلدية الأنيقة المصنوعة بلمسات ملكية دافئة.",
+          shopForHer: "تسوقي لها الآن",
+          forHim: "له",
+          forHimDesc: "استكشف الكرونوغراف الميكانيكي، مجوهرات الكربون، الإكسسوارات الفولاذية، والمحافظ الجلدية الراقية.",
+          shopForHim: "تسوق له الآن",
+          exclusivePacks: "باقات حصرية متميزة",
+          atelierPacks: "باقات المتجر الخاصة",
+          atelierPacksDesc: "اكتشف الباقات الفاخرة المنسقة والمجموعات المتكاملة المخصصة للإهداء والمقتنيات الشخصية.",
+          mensPacks: "باقات الرجال",
+          womensPacks: "باقات النساء",
+          watchmaking: "صناعة دقيقة ومصنوعات فاخرة",
+          watchmakingDesc: "نحن نختار حركات أوتوماتيكية متميزة عالية الدقة، جلوداً طبيعية عالية الجودة للمحافظ، وفولاذًا راقيًا يضمن إحساسًا ملكيًا حقيقيًا.",
+          shipping: "شحن سريع وآمن ومؤمن بالكامل",
+          shippingDesc: "يتم تغليف الطلبات بعناية فائقة وشحنها بأمان تام إلى كافة المدن الكبرى بالمغرب (الرباط، الدار البيضاء، طنجة، مراكش، القنيطرة، وغيرها).",
+          certificate: "شهادة أصالة مختومة بالشمع الفاخر",
+          certificateDesc: "كل طرد يتم شحنه يتضمن شهادة أصالة مخصصة، مختومة بختم رسمي من الشمع الملكي الذهبي الساخن.",
+          offers: "العروض والمناسبات الخاصة",
+          exclusivePromos: "العروض الحصرية الفاخرة",
+          signatures: "توقيعاتنا الاستثنائية",
+          mostCoveted: "الابتكارات الأكثر رواجًا وطلبًا",
+          browseAll: "استكشف كافة المجموعات",
+          reviewsTitle: "ماذا يقول هواة جمع الساعات المغاربة",
+          leaveReview: "اترك تقييمك الخاص",
+          lookbookTitle: "كتالوج المتجر",
+          lookbookSub: "تابعوا منشوراتنا المتجددة وإطلالاتنا اليومية",
+          footerDesc: "وجهة حصرية للأفراد الراغبين في اقتناء أرقى الساعات، الإكسسوارات الفاخرة، والمحافظ الجلدية المتقنة والمصنوعة وفق أعلى المعايير الجمالية.",
+          operatingHours: "مفتوح يوميًا: 9:00 صباحًا — 10:00 مساءً",
+          backToHome: "← العودة للرئيسية",
+          yourSelection: "اختياراتك الفاخرة",
+          sovereignCart: "سلة المقتنيات السيادية ⚜️",
+          myCartTab: "سلة المشتريات",
+          myOrdersTab: "طلباتي السابقة ⚜️",
+          cartEmpty: "سلة المشتريات فارغة حاليًا",
+          discoverAtelier: "استكشف المتجر",
+          noOrders: "لا توجد طلبات سابقة مسجلة",
+          ordersTrackLocal: "الطلبات التي تقوم بإنشائها على هذا الجهاز ستظهر تلقائيًا هنا لتتبعها في الوقت الفعلي.",
+          orderConfirmed: "تم تسجيل الطلب بنجاح",
+          orderConfirmedAr: "تم تأكيد طلبك بنجاح ⚜️",
+          fullName: "الاسم الكامل / Full Name",
+          phoneNumber: "رقم الهاتف للتواصل / Phone Number",
+          citySelect: "اختر مدينة التوصيل / Select Delivery City",
+          deliveryAddress: "عنوان التوصيل الكامل بالتفصيل / Delivery Address",
+          confirmOrder: "تأكيد الطلب الفاخر / Confirm Order",
+          cashOnDelivery: "الدفع نقدًا عند الاستلام (COD)",
+          shippingInfo: "معلومات الشحن والتوصيل",
+          trackWhatsapp: "تتبع حالة طلبك عبر واتساب",
+          orderCode: "رمز الطلب الخاص بك (ID)",
+          orderCopyTip: "يرجى نسخ هذا الرمز وإرساله إلى فريق دعم العملاء على واتساب لتأكيد وتسريع عملية الشحن والتوصيل.",
+          orderCopyTipAr: "يرجى إرسال هذا الكود لنا عبر واتساب لتأكيد طلبك وتسهيل التوصيل السريع لك.",
+          continueShopping: "متابعة التسوق",
+          continueShoppingAr: "متابعة التسوق والطلب",
+          customCardTip: "🚚 يتم إرفاق بطاقة إهداء مخصصة فاخرة مجانية مع كل قطعة مقتنيات فنية.",
+          shareLink: "مشاركة رابط القطعة",
+          addToCart: "إضافة إلى السلة",
+          orderNow: "اطلب الآن مباشرة",
+          allCategories: "جميع الفئات",
+          atelierCollections: "مجموعات المتجر",
+          searchBoutique: "ابحث عن ابتكارات مخصصة...",
+          sendPrivateNote: "أرسل لنا رسالة خاصة",
+          yourName: "الاسم الكامل",
+          emailAddress: "البريد الإلكتروني",
+          message: "تفاصيل استفسارك أو طلبك الخاص",
+          sendMessage: "إرسال الرسالة",
+          ourCoordinates: "تفاصيل الاتصال والموقع",
+          atelierAddress: "عنوان المتجر الرئيسي",
+          hotline: "خط الدعم المباشر",
+          emailCoordinate: "عنوان البريد الإلكتروني",
+          instagramProfile: "حساب إنستغرام الرسمي",
+          operatingHoursFooter: "مفتوح يوميًا: 9:00 صباحًا — 10:00 مساءً",
+          joinAtelier: "انضم إلى المتجر",
+          joinAtelierDesc: "سجل بريدك لتلقي دعوات خاصة وحصرية للإصدارات الفاخرة والمجموعات الموسمية المحدودة.",
+          join: "انضمام",
+          newsletterPlaceholder: "بريدك الإلكتروني الفاخر",
+          copyright: "© 2026 سوفانكس. جميع الحقوق محفوظة. صُمم بأعلى درجات الأناقة والجمال.",
+          womenColl: "النساء",
+          menColl: "الرجال",
+          mensPacksColl: "باقات الرجال",
+          womensPacksColl: "باقات النساء",
+          allColl: "الكل",
+          ratingLabel: "التقييم العام",
+          starsLabel: "النجوم",
+          yourNote: "رسالتك وتقييمك",
+          submitReview: "إرسال التقييم للمراجعة",
+          verifiedBuyer: "مشترٍ مؤكد الأصالة",
+          productPurchased: "المنتج الذي تم شراؤه",
+          generalExperience: "التجربة العامة للخدمة",
+          addBtn: "إضافة",
+          buyBtn: "شراء",
+          saleBadge: "تخفيض",
+          bestBadge: "الأفضل",
+          packsBadge: "باقة",
+          onlyItemsLeft: "قطع متبقية فقط في المخزون الحصري.",
+          noProductsFound: "لا توجد منتجات تطابق هذا الاختيار حالياً.",
+          quickView: "رؤية سريعة",
+          tapToZoom: "🔍 اضغط للتكبير"
+        }
+      },
+      t(key) {
+        const lang = this.language === 'ar' ? 'ar' : 'en';
+        return this.translations[lang][key] || this.translations['en'][key] || key;
+      },
+
       // Admin settings dynamically customized
       settings: {
         logoURL: "",
-        websiteDescription: "An authentic luxury destination for high-end watches and premium handcrafted accessories designed to royal standards.",
-        tagline: "The Sovereign Atelier of Royal Watches & Accoutrements",
+        websiteDescription: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
+        tagline: "The Sovereign Shop of Royal Watches, Accessories & Fine Leather Goods",
         instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
         facebookURL: "https://facebook.com",
         whatsappHotline: "+212 777467304",
         emailCoordinate: "brownpetals24@gmail.com",
-        deliveryTerms: "Every SOVANEX timepiece or accessory is shipped in a golden wax-sealed luxury casket. Our deliveries are handled by premium private couriers.\n\nStandard delivery time is 24 to 48 hours across major cities in Morocco (Rabat, Casablanca, Marrakech, Kenitra, Tangier, Fes). Delivery is fully secured and 100% insured against loss or damage.",
+        deliveryTerms: "Every SOVANEX luxury watch, accessory, or leather wallet is shipped in a golden wax-sealed premium presentation casket. Our deliveries are handled by signature private couriers.\n\nStandard delivery time is 24 to 48 hours across major cities in Morocco (Rabat, Casablanca, Marrakech, Kenitra, Tangier, Fes). Delivery is fully secured and 100% insured against loss or damage.",
         returnPolicy: "Because excellence suffers no imperfection, SOVANEX offers a 14-day exchange or return period from the date of receipt.\n\nThe item must be returned in its absolute original state, unused, and in its original sealed casket. Returns are simple: contact our dedicated customer service on WhatsApp and we will schedule a premium courier to retrieve the package from your doorstep."
       },
       
@@ -332,6 +570,9 @@
       } else if (this.selectedGenderSection === "Men" || this.selectedGenderSection === "Men's Packs") {
         body.classList.add('theme-boys');
       }
+
+      // Automatically mirror layout direction for flawless Arabic rendering
+      body.dir = this.language === 'ar' ? 'rtl' : 'ltr';
     };
 
     const getIconSvg = (name, customClass = "w-5 h-5") => {
@@ -415,31 +656,36 @@
             <!-- Navigation Links -->
             <div class="hidden md:flex items-center gap-3 text-xs uppercase tracking-[0.15em] font-bold">
               <button id="nav-link-home" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'home' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
-                Home
+                ${this.t('home')}
               </button>
               <button id="nav-link-shop" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'shop' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
-                Store
+                ${this.t('shop')}
               </button>
               <button id="nav-link-contact" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'contact' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
-                Contact
+                ${this.t('contact')}
               </button>
               <button id="nav-link-policies" class="px-4 py-2 rounded-xl transition-all duration-300 border ${this.currentPage === 'policies' ? 'bg-luxuryGold/10 border-luxuryGold text-luxuryGold shadow-md shadow-luxuryGold/5' : 'border-transparent text-gray-200 hover:bg-white/5 hover:text-white hover:border-white/10'}">
-                Shipping & Returns
+                ${this.t('policies')}
               </button>
             </div>
 
             <!-- Actions -->
             <div class="flex items-center gap-3">
+              <!-- Premium Translation Button -->
+              <button id="nav-lang-btn" class="flex items-center gap-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl shadow-md transition-premium text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                🌐 ${this.language === 'en' ? 'العربية' : 'EN'}
+              </button>
+
               <!-- Search Bar -->
               <div class="relative hidden lg:block">
-                <input id="nav-search-input" type="text" placeholder="Search Atelier..." value="${this.searchQuery}" class="pl-9 pr-4 py-2 text-[10px] uppercase tracking-wider rounded-xl border border-luxuryGold/30 bg-black/50 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
+                <input id="nav-search-input" type="text" placeholder="${this.t('search')}" value="${this.searchQuery}" class="pl-9 pr-4 py-2 text-[10px] uppercase tracking-wider rounded-xl border border-luxuryGold/30 bg-black/50 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
                 <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
               </div>
 
               <!-- Cart Button -->
               <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group" title="Open Cart">
                 ${getIconSvg('shopping-bag', 'w-4 h-4')}
-                <span class="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">Cart</span>
+                <span class="hidden sm:inline text-[9px] font-bold uppercase tracking-widest">${this.t('cart')}</span>
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-luxuryGold text-black group-hover:bg-black group-hover:text-luxuryGold transition">
                   ${cartCount}
                 </span>
@@ -463,6 +709,17 @@
     
     const policiesLink = document.getElementById("nav-link-policies");
     if (policiesLink) policiesLink.onclick = () => { this.setPage("policies"); };
+
+    const langBtn = document.getElementById("nav-lang-btn");
+    if (langBtn) {
+      langBtn.onclick = () => {
+        const nextLang = this.language === 'en' ? 'ar' : 'en';
+        this.language = nextLang;
+        localStorage.setItem("sovanex_lang", nextLang);
+        this.updateTheme();
+        this.updateDOM();
+      };
+    }
 
     const mobileMenuBtn = document.getElementById("nav-mobile-menu-btn");
     if (mobileMenuBtn) {
@@ -518,10 +775,10 @@
             </div>
             
             <div class="flex flex-col gap-3">
-              <button id="mobile-nav-home" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'home' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Home</button>
-              <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Store</button>
-              <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Contact</button>
-              <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">Shipping & Returns</button>
+              <button id="mobile-nav-home" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'home' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('home')}</button>
+              <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('shop')}</button>
+              <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('contact')}</button>
+              <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('policies')}</button>
             </div>
           </div>
 
@@ -876,7 +1133,7 @@
       const match = this.cart.find(item => item.id === product.id);
       if (match) {
         if (product.stock && match.quantity >= product.stock) {
-          showToast("Only " + product.stock + " pieces remaining in exclusive stock.", "error");
+          showToast("Only " + product.stock + " " + this.t('onlyItemsLeft'), "error");
           return;
         }
         match.quantity += 1;
@@ -1266,13 +1523,13 @@
           
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="contact-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Home
+              ${this.t('backToHome')}
             </button>
           </div>
 
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Seamless Service</span>
-            <h1 class="text-4xl md:text-5xl font-serif text-white">Contact Us</h1>
+            <h1 class="text-4xl md:text-5xl font-serif text-white">${this.t('contact')}</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
             <p class="text-sm text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
               Connect directly with our master atelier team, inquire about shipping parameters, or discuss customized engravings.
@@ -1281,35 +1538,35 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
             <div class="bg-luxuryBeige p-8 rounded-3xl border border-luxuryGold/15 shadow-xl space-y-6">
-              <h3 class="font-serif text-xl text-white">Send us a Private Note</h3>
+              <h3 class="font-serif text-xl text-white">${this.t('sendPrivateNote')}</h3>
               <form id="contact-page-form" class="space-y-4">
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Name</label>
-                  <input type="text" name="name" required placeholder="Your Name" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold">
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('yourName')}</label>
+                  <input type="text" name="name" required placeholder="${this.t('yourName')}" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold">
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Email Address</label>
-                  <input type="email" name="email" required placeholder="Your Email Address" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold">
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('emailAddress')}</label>
+                  <input type="email" name="email" required placeholder="${this.t('emailAddress')}" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold">
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Message</label>
-                  <textarea name="message" required placeholder="Describe your custom product requests..." class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold h-32 resize-none"></textarea>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('message')}</label>
+                  <textarea name="message" required placeholder="${this.t('message')}" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold h-32 resize-none"></textarea>
                 </div>
                 <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black font-extrabold uppercase tracking-widest text-xs rounded-xl transition shadow-md">
-                  Send Message
+                  ${this.t('sendMessage')}
                 </button>
               </form>
             </div>
 
             <div class="space-y-8">
               <div class="bg-luxuryBeige/50 p-8 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-6">
-                <h3 class="font-serif text-xl text-white">Our Coordinates</h3>
+                <h3 class="font-serif text-xl text-white">${this.t('ourCoordinates')}</h3>
                 
                 <div class="space-y-4">
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('gift', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Atelier Address</h4>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">${this.t('atelierAddress')}</h4>
                       <p class="text-xs text-gray-400 font-light mt-1">Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040</p>
                     </div>
                   </div>
@@ -1318,14 +1575,14 @@
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('clock', 'w-5 h-5')}</div>
                     <div>
                       <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Operating Hours</h4>
-                      <p class="text-xs text-gray-400 font-light mt-1">Open Daily: 9:00 AM — 10:00 PM</p>
+                      <p class="text-xs text-gray-400 font-light mt-1">${this.t('operatingHours')}</p>
                     </div>
                   </div>
 
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('phone', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Hotline</h4>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">${this.t('hotline')}</h4>
                       <p class="text-xs text-gray-400 font-light mt-1">${this.settings.whatsappHotline || '+212 777467304'}</p>
                     </div>
                   </div>
@@ -1338,7 +1595,7 @@
                       </svg>
                     </div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Email Coordinates</h4>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">${this.t('emailCoordinate')}</h4>
                       <a href="mailto:${this.settings.emailCoordinate || 'brownpetals24@gmail.com'}" class="text-xs text-gray-400 font-light mt-1 block hover:text-luxuryGold transition-premium underline underline-offset-4">${this.settings.emailCoordinate || 'brownpetals24@gmail.com'}</a>
                     </div>
                   </div>
@@ -1346,7 +1603,7 @@
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('instagram', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Instagram Profile</h4>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">${this.t('instagramProfile')}</h4>
                       <a href="${this.settings.instagramURL || '#'}" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 font-light mt-1 block hover:text-luxuryGold transition-premium underline underline-offset-4">SOVANEX Official</a>
                     </div>
                   </div>
@@ -1377,13 +1634,13 @@
           
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="policies-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Home
+              ${this.t('backToHome')}
             </button>
           </div>
 
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Atelier Policies</span>
-            <h1 class="text-4xl md:text-5xl font-serif text-white">Shipping & Returns</h1>
+            <h1 class="text-4xl md:text-5xl font-serif text-white">${this.t('policies')}</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
             <p class="text-xs text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
               Our dedication to excellence continues long after your purchase. Discover the exclusive standards we maintain for every shipment and return.
@@ -1476,7 +1733,7 @@
             </div>
             <div class="flex justify-between items-center pt-2 border-t border-white/5 text-[10px] text-luxuryGold uppercase tracking-wider">
               <span>${r.customerLocation || "Morocco"}</span>
-              <span>Verified Buyer</span>
+              <span>${this.t('verifiedBuyer')}</span>
             </div>
           </div>
         `;
@@ -1496,30 +1753,30 @@
         reviewFormMarkup = `
           <div class="max-w-lg mx-auto bg-luxuryBeige p-8 rounded-3xl border border-luxuryGold/35 text-left space-y-6 shadow-2xl">
             <div class="flex justify-between items-center border-b border-white/10 pb-3">
-              <h3 class="font-serif text-xl text-luxuryGold">Your Valued Feedback</h3>
+              <h3 class="font-serif text-xl text-luxuryGold">${this.t('yourValuedFeedback')}</h3>
               <button id="close-review-form" class="text-gray-400 hover:text-white transition-premium">✕</button>
             </div>
             <form id="home-review-form" class="space-y-4">
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Name</label>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('yourName')}</label>
                   <input type="text" name="customerName" required placeholder="Name" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">City</label>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('citySelect')}</label>
                   <input type="text" name="customerLocation" required placeholder="e.g. Rabat" class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
                 </div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Product Purchased</label>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('productPurchased')}</label>
                   <select name="productId" class="w-full bg-[#111] border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
-                    <option value="general" class="text-white">General Experience</option>
+                    <option value="general" class="text-white">${this.t('generalExperience')}</option>
                     ${this.products.map(p => `<option value="${p.id}" class="text-white">${p.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim()}</option>`).join('')}
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Stars</label>
+                  <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('starsLabel')}</label>
                   <select name="rating" class="w-full bg-[#111] border border-luxuryGold/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-luxuryGold">
                     <option value="5" class="text-white">5 Stars</option>
                     <option value="4" class="text-white">4 Stars</option>
@@ -1528,16 +1785,16 @@
                 </div>
               </div>
               <div>
-                <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">Your Note</label>
+                <label class="block text-[10px] uppercase tracking-wider text-luxuryGold mb-1 font-semibold">${this.t('yourNote')}</label>
                 <textarea name="comment" required placeholder="Your message..." class="w-full bg-black/50 border border-luxuryGold/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-luxuryGold h-24 resize-none"></textarea>
               </div>
-              <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/95 text-black font-extrabold uppercase tracking-widest text-xs rounded-xl transition font-bold">Submit Review</button>
+              <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/95 text-black font-extrabold uppercase tracking-widest text-xs rounded-xl transition font-bold">${this.t('submitReview')}</button>
             </form>
           </div>
         `;
       } else {
         reviewFormMarkup = `
-          <button id="open-review-form-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-widest rounded-xl transition-premium shadow-xl">Leave a Review</button>
+          <button id="open-review-form-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-widest rounded-xl transition-premium shadow-xl">${this.t('leaveReview')}</button>
         `;
       }
 
@@ -1551,18 +1808,17 @@
             </div>
 
             <div class="relative max-w-5xl mx-auto px-4 text-center space-y-8 z-10 text-white">
-              <p class="text-xs md:text-sm uppercase tracking-[0.4em] font-semibold text-luxuryGold">${this.settings.tagline}</p>
+              <p class="text-xs md:text-sm uppercase tracking-[0.4em] font-semibold text-luxuryGold">${this.t('tagline')}</p>
               <h1 class="text-5xl md:text-8xl font-serif tracking-tight leading-none text-white drop-shadow-xl font-extrabold">
-                SOVANEX <br>
-                <span class="italic font-light text-luxuryGold">Masterpiece Accoutrements</span>
+                ${this.t('heroTitle')}
               </h1>
               <p class="text-sm md:text-lg max-w-2xl mx-auto text-gray-300 font-light leading-relaxed">
-                ${this.settings.websiteDescription}
+                ${this.t('heroDesc')}
               </p>
               <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-                <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">Discover Private Store</button>
+                <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition shadow-2xl">${this.t('discoverStore')}</button>
                 <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-luxuryGold/50 text-white font-bold text-xs uppercase tracking-[0.2em] rounded-xl transition backdrop-blur-md text-center flex items-center justify-center gap-2">
-                  Connect With Us
+                  ${this.t('connectUs')}
                 </a>
               </div>
             </div>
@@ -1576,8 +1832,8 @@
           <!-- Gender Specific Direct Portals -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <div class="text-center">
-              <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Select Your Collection</span>
-              <h2 class="text-3xl font-serif text-white">STORE Collections</h2>
+              <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('selectCollection')}</span>
+              <h2 class="text-3xl font-serif text-white">${this.t('storeCollections')}</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
               <!-- Women Collection Card -->
@@ -1586,10 +1842,10 @@
                   ${getIconSvg('female', 'w-64 h-64')}
                 </div>
                 <div class="space-y-4 max-w-xs relative z-10">
-                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">Women</span>
-                  <h3 class="text-3xl font-serif text-white font-bold">For Her</h3>
-                  <p class="text-xs text-gray-300">Discover majestic watches and delicate luxury bracelets crafted with elegant gold and diamonds.</p>
-                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP FOR HER</button>
+                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">${this.t('womenColl')}</span>
+                  <h3 class="text-3xl font-serif text-white font-bold">${this.t('forHer')}</h3>
+                  <p class="text-xs text-gray-300">${this.t('forHerDesc')}</p>
+                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">${this.t('shopForHer')}</button>
                 </div>
               </div>
 
@@ -1599,10 +1855,10 @@
                   ${getIconSvg('male', 'w-64 h-64')}
                 </div>
                 <div class="space-y-4 max-w-xs relative z-10">
-                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">Men</span>
-                  <h3 class="text-3xl font-serif text-white font-bold">For Him</h3>
-                  <p class="text-xs text-gray-300">Explore mechanical chronographs, carbon jewelry, and robust, high-end steel accessories.</p>
-                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP FOR HIM</button>
+                  <span class="px-3 py-1 bg-luxuryGold/10 text-luxuryGold text-[10px] font-bold uppercase rounded-full tracking-wider">${this.t('menColl')}</span>
+                  <h3 class="text-3xl font-serif text-white font-bold">${this.t('forHim')}</h3>
+                  <p class="text-xs text-gray-300">${this.t('forHimDesc')}</p>
+                  <button class="px-5 py-2.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">${this.t('shopForHim')}</button>
                 </div>
               </div>
 
@@ -1612,12 +1868,12 @@
                   ${getIconSvg('gift', 'w-64 h-64')}
                 </div>
                 <div class="space-y-4 max-w-xs relative z-10 text-black">
-                  <span class="px-3 py-1 bg-black/10 text-black text-[10px] font-bold uppercase rounded-full tracking-wider">EXCLUSIVE PACKS</span>
-                  <h3 class="text-3xl font-serif font-bold">Atelier Packs</h3>
-                  <p class="text-xs text-black/80 font-light">Explore custom bundling options, premium pairings, and elegant high-end multi-product sets.</p>
+                  <span class="px-3 py-1 bg-black/10 text-black text-[10px] font-bold uppercase rounded-full tracking-wider">${this.t('exclusivePacks')}</span>
+                  <h3 class="text-3xl font-serif font-bold">${this.t('atelierPacks')}</h3>
+                  <p class="text-xs text-black/80 font-light">${this.t('atelierPacksDesc')}</p>
                   <div class="flex flex-col sm:flex-row gap-2 pt-2">
-                    <button id="portal-packs-men" class="px-4 py-2.5 bg-black text-white hover:bg-black/85 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition">MEN'S PACKS</button>
-                    <button id="portal-packs-girls" class="px-4 py-2.5 bg-white text-black hover:bg-gray-100 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition border border-black/10">WOMEN'S PACKS</button>
+                    <button id="portal-packs-men" class="px-4 py-2.5 bg-black text-white hover:bg-black/85 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition">${this.t('mensPacks')}</button>
+                    <button id="portal-packs-girls" class="px-4 py-2.5 bg-white text-black hover:bg-gray-100 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition border border-black/10">${this.t('womensPacks')}</button>
                   </div>
                 </div>
               </div>
@@ -1629,18 +1885,18 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
               <div class="p-8 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-sm text-center space-y-4 hover:shadow-lg transition">
                 <div class="w-12 h-12 rounded-full bg-[#111] text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('gem', 'w-6 h-6')}</div>
-                <h3 class="font-serif text-xl text-white font-semibold">Exquisite Watchmaking</h3>
-                <p class="text-xs text-gray-400 font-light leading-relaxed">We select premium-grade automatic movements ensuring high accuracy, pristine sapphire glass reflection, and a luxurious feel.</p>
+                <h3 class="font-serif text-xl text-white font-semibold">${this.t('watchmaking')}</h3>
+                <p class="text-xs text-gray-400 font-light leading-relaxed">${this.t('watchmakingDesc')}</p>
               </div>
               <div class="p-8 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-sm text-center space-y-4 hover:shadow-lg transition">
                 <div class="w-12 h-12 rounded-full bg-[#111] text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('truck', 'w-6 h-6')}</div>
-                <h3 class="font-serif text-xl text-white font-semibold">Secure Express Shipping</h3>
-                <p class="text-xs text-gray-400 font-light leading-relaxed">Packaged with care and shipped securely to Rabat, Casablanca, Tangier, Marrakech, Kenitra, and all major cities in Morocco.</p>
+                <h3 class="font-serif text-xl text-white font-semibold">${this.t('shipping')}</h3>
+                <p class="text-xs text-gray-400 font-light leading-relaxed">${this.t('shippingDesc')}</p>
               </div>
               <div class="p-8 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-sm text-center space-y-4 hover:shadow-lg transition">
                 <div class="w-12 h-12 rounded-full bg-[#111] text-luxuryGold flex items-center justify-center mx-auto mb-4">${getIconSvg('gift', 'w-6 h-6')}</div>
-                <h3 class="font-serif text-xl text-white font-semibold">Premium Wax-Sealed Certificate</h3>
-                <p class="text-xs text-gray-400 font-light leading-relaxed">Every accessory parcel includes a custom certificate of authenticity, sealed with our official stamp of luxury metallic golden hot wax.</p>
+                <h3 class="font-serif text-xl text-white font-semibold">${this.t('certificate')}</h3>
+                <p class="text-xs text-gray-400 font-light leading-relaxed">${this.t('certificateDesc')}</p>
               </div>
             </div>
           </section>
@@ -1649,8 +1905,8 @@
           <section class="luxury-gradient py-16 border-y border-luxuryGold/25">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
               <div class="text-center space-y-2">
-                <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Sensational Offers</span>
-                <h2 class="text-3xl md:text-4xl font-serif text-white">Exclusive Premium Promotions</h2>
+                <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('offers')}</span>
+                <h2 class="text-3xl md:text-4xl font-serif text-white">${this.t('exclusivePromos')}</h2>
                 <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1662,15 +1918,15 @@
           <!-- Bestsellers -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div class="text-center space-y-2">
-              <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Our Signatures</span>
-              <h2 class="text-3xl md:text-4xl font-serif text-white">Most Coveted Creations</h2>
+              <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('signatures')}</span>
+              <h2 class="text-3xl md:text-4xl font-serif text-white">${this.t('mostCoveted')}</h2>
               <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               ${bestGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic">No signature works configured.</p>'}
             </div>
             <div class="text-center pt-6">
-              <button id="browse-all-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-premium">Explore All Collections</button>
+              <button id="browse-all-btn" class="px-8 py-3.5 bg-luxuryGold hover:bg-luxuryGold/80 text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-premium">${this.t('browseAll')}</button>
             </div>
           </section>
 
@@ -1679,7 +1935,7 @@
             <div class="max-w-5xl mx-auto px-4 text-center space-y-12 relative z-10">
               <div class="space-y-3">
                 <p class="text-xs uppercase tracking-[0.3em] text-luxuryGold font-extrabold">CLIENT REVIEWS</p>
-                <h2 class="text-3xl md:text-5xl font-serif">What Moroccan Collectors Say</h2>
+                <h2 class="text-3xl md:text-5xl font-serif">${this.t('reviewsTitle')}</h2>
                 <div class="w-16 h-0.5 bg-luxuryGold mx-auto"></div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
@@ -1694,8 +1950,8 @@
           <!-- Lookbook Section -->
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-16">
             <div class="text-center">
-              <h2 class="text-3xl font-serif text-white">Atelier Lookbook</h2>
-              <p class="text-xs text-luxuryGold tracking-widest uppercase mt-2">Follow our dynamic feed</p>
+              <h2 class="text-3xl font-serif text-white">${this.t('lookbookTitle')}</h2>
+              <p class="text-xs text-luxuryGold tracking-widest uppercase mt-2">${this.t('lookbookSub')}</p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               ${lookbookGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic py-8">No lookbook creations active.</p>'}
@@ -1793,18 +2049,18 @@
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
       return `
-        <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+        <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           <div>
             <div class="h-44 sm:h-64 md:h-80 overflow-hidden relative cursor-pointer card-img-trigger" data-id="${product.id}">
               <img src="${product.imageURL || fallbackImage}" alt="${cleanName}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700" loading="lazy" decoding="async">
               <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition"></div>
               
               <div class="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1">
-                ${product.isPromotion ? `<span class="bg-red-700 text-white text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">Sale</span>` : ''}
-                ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">Best</span>` : ''}
+                ${product.isPromotion ? `<span class="bg-red-700 text-white text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">${this.t('saleBadge')}</span>` : ''}
+                ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">${this.t('bestBadge')}</span>` : ''}
               </div>
               <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4">
-                ${isPacks ? `<span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">Packs</span>` : ''}
+                ${isPacks ? `<span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">${this.t('packsBadge')}</span>` : ''}
               </div>
             </div>
 
@@ -1828,8 +2084,8 @@
             </div>
 
             <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
-              <button class="add-to-cart-btn px-1 py-1.5 sm:px-2 sm:py-2 border ${btnOutlineColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">Add</button>
-              <button class="order-now-btn px-1 py-1.5 sm:px-2 sm:py-2 ${btnSolidColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">Buy</button>
+              <button class="add-to-cart-btn px-1 py-1.5 sm:px-2 sm:py-2 border ${btnOutlineColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">${this.t('addBtn')}</button>
+              <button class="order-now-btn px-1 py-1.5 sm:px-2 sm:py-2 ${btnSolidColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">${this.t('buyBtn')}</button>
             </div>
           </div>
         </div>
@@ -1892,30 +2148,30 @@
         <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
           <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "All" ? 'bg-luxuryGold text-black' : 'text-white hover:bg-white/5'
-          }" data-gender="All">All</button>
+          }" data-gender="All">${this.t('allColl')}</button>
           
           <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "Women" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="Women">Women</button>
+          }" data-gender="Women">${this.t('womenColl')}</button>
           
           <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "Men" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="Men">Men</button>
+          }" data-gender="Men">${this.t('menColl')}</button>
 
           <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "Men's Packs" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="Men's Packs">Men's Packs</button>
+          }" data-gender="Men's Packs">${this.t('mensPacksColl')}</button>
 
           <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "Women's Packs" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="Women's Packs">Women's Packs</button>
+          }" data-gender="Women's Packs">${this.t('womensPacksColl')}</button>
         </div>
       `;
 
       let categoryButtons = `
         <button class="category-filter-btn text-left px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-premium ${
           this.selectedCategory === "All" ? 'bg-luxuryGold text-black shadow-sm' : 'text-white hover:bg-white/5'
-        }" data-name="All">All Categories</button>
+        }" data-name="All">${this.t('allCategories')}</button>
       `;
 
       categoryButtons += this.categories.filter(c => c.isActive).map(c => `
@@ -1925,18 +2181,18 @@
       `).join('');
 
       container.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="shop-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Home
+              ${this.t('backToHome')}
             </button>
           </div>
 
           <div class="text-center space-y-3 pt-8">
-            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">SOVANEX Catalog</span>
-            <h1 class="text-4xl font-serif text-white">Store</h1>
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('storeCollections')}</span>
+            <h1 class="text-4xl font-serif text-white">${this.t('shop')}</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-2"></div>
           </div>
 
@@ -1944,7 +2200,7 @@
             ${genderSelectorTabs}
             
             <div class="relative w-full">
-              <input id="shop-search-input" type="text" placeholder="Search boutique creations..." value="${this.searchQuery}" class="w-full pl-10 pr-4 py-3 text-xs rounded-xl border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium">
+              <input id="shop-search-input" type="text" placeholder="${this.t('searchBoutique')}" value="${this.searchQuery}" class="w-full pl-10 pr-4 py-3 text-xs rounded-xl border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium">
               <div class="absolute left-3.5 top-3.5 text-luxuryGold">${getIconSvg('search', 'w-4 h-4')}</div>
             </div>
           </div>
@@ -1952,7 +2208,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div class="lg:col-span-1 space-y-6">
               <div class="bg-luxuryBeige p-6 rounded-3xl border border-luxuryGold/15 shadow-sm space-y-4">
-                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider border-b border-luxuryGold/10 pb-2">Atelier Collections</p>
+                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider border-b border-luxuryGold/10 pb-2">${this.t('atelierCollections')}</p>
                 <div class="flex flex-col gap-1.5">
                   ${categoryButtons}
                 </div>
@@ -1962,7 +2218,7 @@
             <div class="lg:col-span-3">
               ${filtered.length === 0 ? `
                 <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10">
-                  <p class="text-sm text-gray-400 italic">No products match this selection currently.</p>
+                  <p class="text-sm text-gray-400 italic">${this.t('noProductsFound')}</p>
                 </div>
               ` : `
                 <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
@@ -3387,42 +3643,42 @@
       `).join('');
 
       container.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           <div class="space-y-4">
             <h3 class="text-2xl font-serif tracking-widest text-luxuryGold font-extrabold">SOVANEX</h3>
-            <p class="text-sm text-gray-400 font-light leading-relaxed">Luxury destination for the finest curated handpicked watches and premium accessories designed to royal standards.</p>
+            <p class="text-sm text-gray-400 font-light leading-relaxed">${this.t('footerDesc')}</p>
           </div>
 
           <div>
-            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Atelier Collections</h4>
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">${this.t('atelierCollections')}</h4>
             <ul class="space-y-2 text-sm text-gray-400 font-light">
               ${categoriesMarkup}
             </ul>
           </div>
 
           <div>
-            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Contact Us</h4>
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">${this.t('contact')}</h4>
             <p class="text-sm text-gray-400 font-light leading-relaxed">
               Avenue de la Resistance, Centre Commercial La Perle de la Medina, Rabat, Morocco, 10040<br>
               Signature deliveries adjusted instantly by city of checkout.
             </p>
-            <p class="text-xs text-luxuryGold mt-2">Open Daily: 9:00 AM — 10:00 PM</p>
+            <p class="text-xs text-luxuryGold mt-2">${this.t('operatingHours')}</p>
           </div>
 
           <div>
-            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">Join The Atelier</h4>
-            <p class="text-sm text-gray-400 font-light mb-4">Subscribe to receive private invitations to our luxury seasonal releases.</p>
+            <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">${this.t('joinAtelier')}</h4>
+            <p class="text-sm text-gray-400 font-light mb-4">${this.t('joinAtelierDesc')}</p>
             <form id="newsletter-form" class="flex">
-              <input type="email" required placeholder="Email address" class="px-4 py-2 text-xs w-full bg-white/5 text-white border border-luxuryGold/40 focus:outline-none focus:border-luxuryGold rounded-l-lg">
-              <button type="submit" class="bg-luxuryGold hover:bg-luxuryGold/90 text-black px-4 py-2 text-xs font-bold uppercase rounded-r-lg transition">Join</button>
+              <input type="email" required placeholder="${this.t('newsletterPlaceholder')}" class="px-4 py-2 text-xs w-full bg-white/5 text-white border border-luxuryGold/40 focus:outline-none focus:border-luxuryGold rounded-l-lg rounded-r-none">
+              <button type="submit" class="bg-luxuryGold hover:bg-luxuryGold/90 text-black px-4 py-2 text-xs font-bold uppercase rounded-r-lg rounded-l-none transition">${this.t('join')}</button>
             </form>
           </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-gray-500 font-light flex flex-col md:flex-row justify-between items-center gap-4">
-          <p>© 2026 SOVANEX. All Rights Reserved. Designed with deep elegance. <span id="footer-btn-admin" class="cursor-pointer text-xs ml-1 opacity-20 hover:opacity-100 transition select-none">⚜️</span></p>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-gray-500 font-light flex flex-col md:flex-row justify-between items-center gap-4" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+          <p>${this.t('copyright')} <span id="footer-btn-admin" class="cursor-pointer text-xs ml-1 opacity-20 hover:opacity-100 transition select-none">⚜️</span></p>
           <div class="flex gap-6 items-center">
-            <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">Shipping & Returns</a>
+            <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">${this.t('policies')}</a>
             <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Instagram</a>
             <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Facebook</a>
           </div>
@@ -3461,12 +3717,12 @@
     };
 
     store.renderCartPage = function() {
-      const container = document.getElementById("app-content");
-      if (!container) return;
-
       if (typeof fbq !== 'undefined') {
         fbq('track', 'PageView', { page_path: '/cart' });
       }
+
+      const container = document.getElementById("app-content");
+      if (!container) return;
 
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
@@ -3479,7 +3735,7 @@
       let itemsMarkup = this.cart.map(item => {
         const cleanName = item.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
         return `
-          <div class="flex gap-4 p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 hover:border-luxuryGold/55 transition">
+          <div class="flex gap-4 p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 hover:border-luxuryGold/55 transition" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
             <img src="${item.imageURL || fallbackImage}" class="w-20 h-20 object-cover rounded-xl border border-luxuryGold/20" loading="lazy">
             <div class="flex-grow flex flex-col justify-between">
               <div>
@@ -3500,27 +3756,27 @@
       }).join('');
 
       container.innerHTML = `
-        <div class="max-w-4xl mx-auto px-4 py-12 space-y-8 min-h-screen">
+        <div class="max-w-4xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="cart-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Home
+              ${this.t('backToHome')}
             </button>
           </div>
 
           <div class="text-center space-y-3 pt-8">
-            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Your Selection</span>
-            <h1 class="text-3xl md:text-4xl font-serif text-white uppercase tracking-wider">Sovereign Cart ⚜️</h1>
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('yourSelection')}</span>
+            <h1 class="text-3xl md:text-4xl font-serif text-white uppercase tracking-wider">${this.t('sovereignCart')}</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
           </div>
 
           <div class="max-w-md mx-auto grid grid-cols-2 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/15 text-center text-xs">
             <button id="cart-page-tab-cart" class="py-2.5 rounded-xl font-bold uppercase tracking-wider transition ${this.cartTab === 'cart' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
-              My Cart (${cartCount})
+              ${this.t('myCartTab')} (${cartCount})
             </button>
             <button id="cart-page-tab-history" class="py-2.5 rounded-xl font-bold uppercase tracking-wider transition ${this.cartTab === 'history' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
-              My Orders ⚜️
+              ${this.t('myOrdersTab')}
             </button>
           </div>
 
@@ -3530,8 +3786,8 @@
                 ${cartCount === 0 ? `
                   <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10 space-y-4">
                     <div class="text-luxuryGold/30 animate-spin" style="animation-duration: 8s">${getIconSvg('flower', 'w-16 h-16 mx-auto')}</div>
-                    <p class="font-serif text-lg text-luxuryGold">Your cart is empty</p>
-                    <button id="cart-page-shop-btn" class="mt-4 px-6 py-2.5 bg-luxuryGold text-black text-xs font-bold uppercase tracking-wider rounded-xl transition">Discover Atelier</button>
+                    <p class="font-serif text-lg text-luxuryGold">${this.t('cartEmpty')}</p>
+                    <button id="cart-page-shop-btn" class="mt-4 px-6 py-2.5 bg-luxuryGold text-black text-xs font-bold uppercase tracking-wider rounded-xl transition">${this.t('discoverAtelier')}</button>
                   </div>
                 ` : `
                   <div class="space-y-4">
@@ -3556,9 +3812,9 @@
                   ` : this.myOrders.length === 0 ? `
                     <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10 space-y-4">
                       <div class="text-luxuryGold/20">${getIconSvg('lock', 'w-14 h-14 mx-auto')}</div>
-                      <p class="font-serif text-md text-luxuryGold">No local orders found</p>
-                      <p class="text-[10px] text-gray-500 max-w-xs mx-auto">Orders placed on this device will automatically track here in real-time.</p>
-                      <button id="cart-page-history-shop-btn" class="mt-2 px-6 py-2 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black text-xs font-bold uppercase rounded-lg transition">Discover Atelier</button>
+                      <p class="font-serif text-md text-luxuryGold">${this.t('noOrders')}</p>
+                      <p class="text-[10px] text-gray-500 max-w-xs mx-auto">${this.t('ordersTrackLocal')}</p>
+                      <button id="cart-page-history-shop-btn" class="mt-2 px-6 py-2 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black text-xs font-bold uppercase rounded-lg transition">${this.t('discoverAtelier')}</button>
                     </div>
                   ` : this.myOrders.map(o => {
                     const itemsCount = o.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
@@ -3566,7 +3822,7 @@
                     const waText = encodeURIComponent("Hello SOVANEX, I would like to track my order code: " + o.orderId + ".");
                     
                     return `
-                      <div class="p-5 bg-luxuryBeige rounded-3xl border border-luxuryGold/20 shadow-lg space-y-3">
+                      <div class="p-5 bg-luxuryBeige rounded-3xl border border-luxuryGold/20 shadow-lg space-y-3" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
                         <div class="flex justify-between items-start">
                           <div>
                             <p class="font-mono text-xs font-bold text-luxuryGold select-all">${o.orderId}</p>
@@ -3595,7 +3851,7 @@
 
                         <div class="pt-1">
                           <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}?text=${waText}" target="_blank" class="w-full py-2 bg-emerald-600/15 hover:bg-emerald-600 border border-emerald-500/30 text-emerald-300 hover:text-white rounded-lg text-[10px] uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 transition">
-                            ${getIconSvg('message-circle', 'w-3.5 h-3.5')} Track on WhatsApp
+                            ${getIconSvg('message-circle', 'w-3.5 h-3.5')} ${this.t('trackWhatsapp')}
                           </a>
                         </div>
                       </div>
@@ -3607,7 +3863,7 @@
 
             <div class="md:col-span-5">
               ${this.cartTab === 'cart' && cartCount > 0 ? `
-                <div class="bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-xl space-y-4">
+                <div class="bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-xl space-y-4 animate-fade-in" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
                   <div class="flex justify-between items-center text-sm font-medium">
                     <span class="text-gray-300">Subtotal</span>
                     <span class="text-xl font-serif font-bold text-luxuryGold">${subtotal} MAD</span>
@@ -3625,25 +3881,28 @@
                   ` : ''}
 
                   <div class="bg-black/40 p-4 rounded-xl border border-luxuryGold/20 space-y-3">
-                    <p class="text-xs font-semibold text-luxuryGold uppercase">Shipping Information</p>
+                    <p class="text-xs font-semibold text-luxuryGold uppercase flex justify-between items-center">
+                      <span>${this.t('shippingInfo')}</span>
+                    </p>
                     <form id="cart-page-checkout-form" class="space-y-3">
-                      <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                      <input type="tel" name="phone" required placeholder="Phone Number (e.g. 06...)" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                      <input type="text" name="customerName" required placeholder="${this.t('fullName')}" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                      <input type="tel" name="phone" required placeholder="${this.t('phoneNumber')}" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
                       
                       <select id="cart-page-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                        <option value="" disabled ${!selectedCityId ? 'selected' : ''}>Select Delivery City</option>
+                        <option value="" disabled ${!selectedCityId ? 'selected' : ''}>${this.t('citySelect')}</option>
                         ${this.deliveryCities.filter(c => c.isActive).map(c => `
                           <option value="${c.id}" ${selectedCityId === c.id ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
                         `).join('')}
                       </select>
 
-                      <textarea name="address" required placeholder="Delivery Address" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
+                      <textarea name="address" required placeholder="${this.t('deliveryAddress')}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
                       
                       <button type="submit" id="cart-page-checkout-submit" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
-                        ${this.checkoutLoading ? "Processing Request..." : "Confirm Luxury Order"}
+                        <span>${this.checkoutLoading ? "Processing Request... / جاري تأكيد الطلب..." : this.t('confirmOrder')}</span>
                         ${getIconSvg('send', 'w-3.5 h-3.5')}
                       </button>
                     </form>
+                    <p class="text-[9.5px] text-center text-gray-500 font-light mt-1">${this.t('cashOnDelivery')}</p>
                   </div>
                 </div>
               ` : ''}
@@ -3697,6 +3956,13 @@
       const citySelect = document.getElementById("cart-page-city-select");
       if (citySelect) {
         citySelect.onchange = (e) => {
+          // Save currently typed values inside this.checkoutFormValues first to prevent loss of state upon re-render!
+          const checkoutForm = document.getElementById("cart-page-checkout-form");
+          if (checkoutForm) {
+            this.checkoutFormValues.customerName = checkoutForm.customerName.value;
+            this.checkoutFormValues.phone = checkoutForm.phone.value;
+            this.checkoutFormValues.address = checkoutForm.address.value;
+          }
           this.checkoutFormValues.cityId = e.target.value;
           this.renderCartPage();
         };
@@ -3876,9 +4142,9 @@
       let recommendationsMarkup = "";
       if (recommendations.length > 0) {
         recommendationsMarkup = `
-          <div class="mt-12 border-t border-luxuryGold/20 pt-10 space-y-8">
+          <div class="mt-12 border-t border-luxuryGold/20 pt-10 space-y-8" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
             <div class="text-center space-y-2">
-              <p class="text-xs uppercase tracking-[0.25em] text-luxuryGold font-extrabold">⚜️ YOU MAY ALSO LIKE ⚜️</p>
+              <p class="text-xs uppercase tracking-[0.25em] text-luxuryGold font-extrabold">⚜️ ${this.language === 'ar' ? 'قد يعجبك أيضاً / YOU MAY ALSO LIKE' : 'YOU MAY ALSO LIKE / قد يعجبك أيضاً'} ⚜️</p>
               <p class="text-[11px] text-gray-400 font-light max-w-md mx-auto">Selected signature pairings curated specifically to accompany your collection.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto px-4">
@@ -3895,7 +4161,7 @@
                         <p class="text-xs sm:text-sm text-luxuryGold font-semibold mt-1">${rec.price} MAD</p>
                       </div>
                       <button class="rec-view-product-btn w-full py-2 bg-luxuryGold/10 hover:bg-luxuryGold text-luxuryGold hover:text-black border border-luxuryGold/30 text-[10px] uppercase font-extrabold tracking-wider rounded-lg transition" data-id="${rec.id}">
-                        View Product
+                        ${this.t('quickView')}
                       </button>
                     </div>
                   </div>
@@ -3907,36 +4173,38 @@
       }
 
       container.innerHTML = `
-        <div class="max-w-3xl mx-auto px-4 py-16 text-center space-y-8 min-h-screen">
+        <div class="max-w-3xl mx-auto px-4 py-16 text-center space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
             <button id="conf-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Home
+              ${this.t('backToHome')}
             </button>
           </div>
 
           <div class="w-16 h-16 bg-emerald-600/10 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-2xl animate-pulse">✓</div>
           
           <div class="space-y-2">
-            <span class="text-xs uppercase tracking-[0.2em] text-luxuryGold font-semibold">Order Placed Successfully</span>
-            <h1 class="text-3xl md:text-5xl font-serif text-white font-bold">Selection Confirmed</h1>
+            <span class="text-xs uppercase tracking-[0.2em] text-luxuryGold font-semibold">${this.t('orderConfirmed')}</span>
+            <h1 class="text-3xl md:text-5xl font-serif text-white font-bold leading-tight">${this.t('orderConfirmedAr')}</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
           </div>
 
           <div class="bg-luxuryBeige p-6 rounded-3xl border border-luxuryGold/20 max-w-sm mx-auto shadow-2xl space-y-3">
-            <p class="text-[10px] uppercase tracking-wider text-gray-400">Order Code (ID)</p>
+            <p class="text-[10px] uppercase tracking-wider text-gray-400">${this.t('orderCode')}</p>
             <span class="inline-block bg-black/80 text-luxuryGold font-mono text-lg font-bold px-5 py-2.5 rounded-xl border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">${orderId}</span>
-            <p class="text-[11px] text-gray-400 max-w-xs mx-auto pt-1 leading-relaxed">
-              Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.
+            <p class="text-[11px] text-gray-300 max-w-xs mx-auto pt-1 leading-relaxed">
+              ${this.t('orderCopyTip')}
+              <span class="block mt-2 text-luxuryGold font-semibold">${this.t('orderCopyTipAr')}</span>
             </p>
           </div>
 
           ${recommendationsMarkup}
 
           <div class="pt-6">
-            <button id="conf-continue-shopping-btn" class="px-8 py-4 bg-luxuryGold text-black hover:bg-luxuryGold/90 text-xs uppercase font-extrabold tracking-widest rounded-xl shadow-lg transition">
-              Continue Shopping
+            <button id="conf-continue-shopping-btn" class="px-8 py-4 bg-luxuryGold text-black hover:bg-luxuryGold/90 text-xs uppercase font-extrabold tracking-widest rounded-xl shadow-lg transition flex flex-col items-center justify-center mx-auto gap-0.5">
+              <span>${this.t('continueShopping')}</span>
+              <span class="text-[10px] font-semibold tracking-wider opacity-85">${this.t('continueShoppingAr')}</span>
             </button>
           </div>
         </div>
@@ -4004,7 +4272,7 @@
 
         modal.innerHTML = `
           <div class="fixed inset-0 bg-black/85 backdrop-blur-xs" id="product-modal-backdrop"></div>
-          <div class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-fade-in my-auto h-[82vh] md:h-auto md:max-h-[85vh]">
+          <div class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-fade-in my-auto h-[82vh] md:h-auto md:max-h-[85vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
             
             <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
@@ -4014,11 +4282,11 @@
               ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
               
               <div class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
-                <span>🔍 Tap to Zoom</span>
+                <span>${this.t('tapToZoom')}</span>
               </div>
 
               <div class="absolute inset-0 bg-black/35 opacity-0 group-hover/main:opacity-100 transition flex items-center justify-center">
-                <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">Quick View</span>
+                <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">${this.t('quickView')}</span>
               </div>
             </div>
 
@@ -4038,7 +4306,7 @@
                   </div>
                   <button id="modal-share-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    Share Link
+                    ${this.t('shareLink')}
                   </button>
                 </div>
 
@@ -4064,10 +4332,10 @@
 
               <div class="space-y-3 pt-3 border-t border-white/5 flex-shrink-0">
                 <div class="grid grid-cols-2 gap-3">
-                  <button id="modal-add-to-cart-btn" class="py-2.5 md:py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition shadow-xs">Add To Cart</button>
-                  <button id="modal-order-now-btn" class="py-2.5 md:py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition transform hover:scale-[1.02]">Order Now</button>
+                  <button id="modal-add-to-cart-btn" class="py-2.5 md:py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition shadow-xs">${this.t('addToCart')}</button>
+                  <button id="modal-order-now-btn" class="py-2.5 md:py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition transform hover:scale-[1.02]">${this.t('orderNow')}</button>
                 </div>
-                <p class="text-[9px] md:text-[10px] text-center text-gray-500">🚚 A complimentary custom premium card is included with every masterpiece.</p>
+                <p class="text-[9px] md:text-[10px] text-center text-gray-500">${this.t('customCardTip')}</p>
               </div>
             </div>
           </div>
