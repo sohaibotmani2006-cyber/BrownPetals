@@ -144,6 +144,11 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+    @keyframes slow-pan {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 100%; }
+      100% { background-position: 0% 0%; }
+    }
     
     .animate-float-slow {
       animation: float-slow 8s ease-in-out infinite;
@@ -252,7 +257,7 @@
       if (!imgElement) return;
       
       // If we failed loading a customized admin URL, try loading the local file fallback first
-      const defaultFilename = 'image_1c76b5.png';
+      const defaultFilename = 'image_1d6279.png';
       if (imgElement.getAttribute('src') !== defaultFilename) {
         imgElement.setAttribute('src', defaultFilename);
         return;
@@ -547,27 +552,7 @@
         return this.translations[lang][key] || this.translations['en'][key] || key;
       },
 
-      // Admin settings dynamically customized
-      settings: {
-        logoURL: "",
-        websiteDescription: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
-        tagline: "The Sovereign Shop of Royal Watches, Accessories & Fine Leather Goods",
-        instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
-        facebookURL: "https://facebook.com",
-        whatsappHotline: "+212 777467304",
-        emailCoordinate: "brownpetals24@gmail.com",
-        deliveryTerms: "Every SOVANEX luxury watch, accessory, or leather wallet is shipped in a golden wax-sealed premium presentation casket. Our deliveries are handled by signature private couriers.\n\nStandard delivery time is 24 to 48 hours across major cities in Morocco (Rabat, Casablanca, Marrakech, Kenitra, Tangier, Fes). Delivery is fully secured and 100% insured against loss or damage.",
-        returnPolicy: "Because excellence suffers no imperfection, SOVANEX offers a 14-day exchange or return period from the date of receipt.\n\nThe item must be returned in its absolute original state, unused, and in its original sealed casket. Returns are simple: contact our dedicated customer service on WhatsApp and we will schedule a premium courier to retrieve the package from your doorstep."
-      },
-      
-      checkoutFormValues: {
-        customerName: "",
-        phone: "",
-        cityId: "",
-        address: ""
-      },
-
-      // Admin settings dynamically customized
+      // Uniquely consolidated settings module - resolving duplicate saving bug
       settings: {
         logoURL: "",
         heroTitleEn: "SOVANEX <br>Masterpiece Creations",
@@ -585,6 +570,13 @@
         emailCoordinate: "brownpetals24@gmail.com",
         deliveryTerms: "Every SOVANEX luxury watch, accessory, or leather wallet is shipped in a golden wax-sealed premium presentation casket. Our deliveries are handled by signature private couriers.\n\nStandard delivery time is 24 to 48 hours across major cities in Morocco (Rabat, Casablanca, Marrakech, Kenitra, Tangier, Fes). Delivery is fully secured and 100% insured against loss or damage.",
         returnPolicy: "Because excellence suffers no imperfection, SOVANEX offers a 14-day exchange or return period from the date of receipt.\n\nThe item must be returned in its absolute original state, unused, and in its original sealed casket. Returns are simple: contact our dedicated customer service on WhatsApp and we will schedule a premium courier to retrieve the package from your doorstep."
+      },
+      
+      checkoutFormValues: {
+        customerName: "",
+        phone: "",
+        cityId: "",
+        address: ""
       },
       
       telegramSettings: {
@@ -1910,18 +1902,22 @@
         `;
       }
 
-      const activeSettingsLogo = (store.settings.logoURL && store.settings.logoURL.trim() !== "") ? store.settings.logoURL.trim() : 'image_1c76b5.png';
+      const activeSettingsLogo = (store.settings.logoURL && store.settings.logoURL.trim() !== "") ? store.settings.logoURL.trim() : 'image_1d6279.png';
 
       container.innerHTML = `
         <div class="space-y-24">
           <!-- ULTRA-PREMIUM LUXURY HERO SECTION -->
           <section id="premium-hero" class="relative min-h-[95vh] lg:min-h-0 lg:h-[95vh] flex items-center justify-center bg-black overflow-hidden py-16 px-4 sm:px-6 lg:px-8 select-none">
-            <!-- Ambient Lighting Backgrounds -->
+            <!-- Elegant Multi-Tone Luxury Gradient and Horizontal Lighting Bars -->
             <div class="absolute inset-0">
-              <div class="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] bg-radial-gradient from-luxuryGold/10 via-transparent to-transparent rounded-full blur-[150px] animate-pulse-slow"></div>
-              <div class="absolute bottom-1/4 right-1/4 w-[45vw] h-[45vw] bg-radial-gradient from-luxuryGold/10 via-transparent to-transparent rounded-full blur-[130px] animate-ambient-glow" style="animation-duration: 12s"></div>
-              <div class="absolute inset-0 bg-[radial-gradient(#141414_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
-              <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-black/45 to-black/80"></div>
+              <div class="absolute inset-0 bg-gradient-to-tr from-[#050505] via-[#1a150d] to-[#0a0805] opacity-95"></div>
+              <div class="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#ffdf7a]/25 to-transparent"></div>
+              <div class="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] bg-radial-gradient from-luxuryGold/20 via-transparent to-transparent rounded-full blur-[140px] animate-pulse-slow"></div>
+              <div class="absolute bottom-1/4 right-1/4 w-[45vw] h-[45vw] bg-radial-gradient from-luxuryGold/15 via-transparent to-transparent rounded-full blur-[130px] animate-ambient-glow" style="animation-duration: 12s"></div>
+              <div class="absolute inset-0 bg-[radial-gradient(#1c170d_1.2px,transparent_1.2px)] [background-size:20px_20px] opacity-40"></div>
+              <div class="absolute inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-[#0A0A0A] to-transparent"></div>
+              <!-- Premium golden light streak animations -->
+              <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-luxuryGold/5 to-transparent blur-[80px] pointer-events-none"></div>
             </div>
 
             <!-- Content Area Grid -->
@@ -3751,7 +3747,7 @@
             <div>
               <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Brand Logo Image URL</label>
               <input type="url" name="logoURL" placeholder="https://..." value="${this.settings.logoURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-              <p class="text-[9px] text-gray-400 mt-1">Leave blank to use the high-end default typography logo design (image_1c76b5.png).</p>
+              <p class="text-[9px] text-gray-400 mt-1">Paste your custom Instagram/external logo image URL here. Automatically defaults to the elegant brand asset if empty.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
