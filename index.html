@@ -199,7 +199,7 @@
       cartOpen: false,
       mobileMenuOpen: false,
       searchQuery: "",
-      selectedGenderSection: "All", // "All", "GIRLS STORE", "MEN STORE", "PACKS STORE"
+      selectedGenderSection: "All", // "All", "GIRLS STORE", "MEN STORE", "PACKS MEN", "PACKS GIRLS"
       selectedCategory: "All", // "All", "Watches", "Accessories"
       products: [],
       orders: [],
@@ -272,8 +272,9 @@
         }
 
         const page = hash.replace("#/", "");
-        const validPages = ["home", "shop", "contact", "policies", "admin"];
+        const validPages = ["home", "shop", "contact", "policies", "admin", "cart", "order-confirmation"];
         if (validPages.includes(page)) {
+          const pageChanged = (this.currentPage !== page);
           this.currentPage = page;
           if (page === "admin" && this.isAdmin) {
             this.initAdminSubscriptions();
@@ -281,8 +282,10 @@
           const modal = document.getElementById("product-detail-container");
           if (modal) modal.classList.add("hidden");
 
-          window.scrollTo({ top: 0, behavior: 'instant' });
-          this.updateDOM();
+          if (pageChanged) {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            this.updateDOM();
+          }
         } else {
           window.location.hash = "#/home";
         }
@@ -310,12 +313,13 @@
       }
     };
 
-    // Helper to normalize gender strings for seamless Firestore backward-compatibility
     const getNormalizedGender = (gender) => {
       if (!gender) return "All";
       const g = gender.toUpperCase().trim();
       if (g === "LES FILLES" || g === "GIRLS STORE" || g === "GIRLS") return "GIRLS STORE";
       if (g === "LES HOMMES" || g === "BOYS STORE" || g === "MAN STORE" || g === "MAN" || g === "BOY" || g === "MEN STORE" || g === "MEN") return "MEN STORE";
+      if (g === "PACKS MEN" || g === "PACKS_MEN" || g === "MEN PACKS" || g === "BOYS PACKS") return "PACKS MEN";
+      if (g === "PACKS GIRLS" || g === "PACKS_GIRLS" || g === "GIRLS PACKS") return "PACKS GIRLS";
       if (g === "PACKS" || g === "PACKS STORE" || g === "LES PACKS") return "PACKS STORE";
       return "All";
     };
@@ -325,9 +329,9 @@
       const body = document.body;
       body.classList.remove('theme-girls', 'theme-boys');
       
-      if (this.selectedGenderSection === "GIRLS STORE") {
+      if (this.selectedGenderSection === "GIRLS STORE" || this.selectedGenderSection === "PACKS GIRLS") {
         body.classList.add('theme-girls');
-      } else if (this.selectedGenderSection === "MEN STORE") {
+      } else if (this.selectedGenderSection === "MEN STORE" || this.selectedGenderSection === "PACKS MEN") {
         body.classList.add('theme-boys');
       }
     };
@@ -449,34 +453,32 @@
 
       // Binding navbar click events
       document.getElementById("nav-brand").onclick = () => { this.setPage("home"); };
-      
-      const homeLink = document.getElementById("nav-link-home");
-      if (homeLink) homeLink.onclick = () => { this.setPage("home"); };
-      
-      const shopLink = document.getElementById("nav-link-shop");
-      if (shopLink) shopLink.onclick = () => { this.setPage("shop"); };
-      
-      const contactLink = document.getElementById("nav-link-contact");
-      if (contactLink) contactLink.onclick = () => { this.setPage("contact"); };
-      
-      const policiesLink = document.getElementById("nav-link-policies");
-      if (policiesLink) policiesLink.onclick = () => { this.setPage("policies"); };
+    
+    const homeLink = document.getElementById("nav-link-home");
+    if (homeLink) homeLink.onclick = () => { this.setPage("home"); };
+    
+    const shopLink = document.getElementById("nav-link-shop");
+    if (shopLink) shopLink.onclick = () => { this.setPage("shop"); };
+    
+    const contactLink = document.getElementById("nav-link-contact");
+    if (contactLink) contactLink.onclick = () => { this.setPage("contact"); };
+    
+    const policiesLink = document.getElementById("nav-link-policies");
+    if (policiesLink) policiesLink.onclick = () => { this.setPage("policies"); };
 
-      const mobileMenuBtn = document.getElementById("nav-mobile-menu-btn");
-      if (mobileMenuBtn) {
-        mobileMenuBtn.onclick = () => {
-          this.mobileMenuOpen = true;
-          this.renderMobileMenu();
-        };
-      }
-
-      document.getElementById("nav-cart-btn").onclick = () => {
-        this.cartOpen = true;
-        document.getElementById("cart-drawer-overlay").classList.remove("hidden");
-        this.renderCartDrawer();
+    const mobileMenuBtn = document.getElementById("nav-mobile-menu-btn");
+    if (mobileMenuBtn) {
+      mobileMenuBtn.onclick = () => {
+        this.mobileMenuOpen = true;
+        this.renderMobileMenu();
       };
+    }
 
-      const searchInput = document.getElementById("nav-search-input");
+    document.getElementById("nav-cart-btn").onclick = () => {
+      this.setPage("cart");
+    };
+
+    const searchInput = document.getElementById("nav-search-input");
       if (searchInput) {
         searchInput.oninput = (e) => {
           this.searchQuery = e.target.value;
@@ -1158,14 +1160,6 @@
               #confirm-submit-btn { display: none !important; }
             </style>
             <div class="mt-8 border-t border-luxuryGold/20 pt-6 space-y-4">
-              <!-- Premium Motivational / Persuasive Text -->
-              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20 max-w-md mx-auto text-center space-y-1">
-                <p class="text-xs font-serif text-luxuryGold font-bold uppercase tracking-wider">✨ Complete Your Sovereign Casket ✨</p>
-                <p class="text-[10px] text-gray-300 leading-relaxed font-light">
-                  Your luxury wax-sealed chest is still open at our atelier! Add any of these curated masterpieces to your current shipment with <strong class="text-luxuryGold">Zero Additional Delivery Fees</strong>. Create the ultimate pairing before our private courier departs.
-                </p>
-              </div>
-
               <p class="text-[11px] uppercase tracking-[0.2em] text-luxuryGold font-extrabold mb-2">✨ Curated Exclusives for You ✨</p>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 ${recommendations.map(rec => {
@@ -1259,6 +1253,10 @@
         this.renderPoliciesPage();
       } else if (this.currentPage === "admin") {
         this.renderAdminPage();
+      } else if (this.currentPage === "cart") {
+        this.renderCartPage();
+      } else if (this.currentPage === "order-confirmation") {
+        this.renderOrderConfirmationPage();
       }
     };
 
@@ -1611,15 +1609,18 @@
               </div>
 
               <!-- PACKS STORE Collection Card -->
-              <div id="portal-packs" class="gold-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-                <div class="absolute -right-10 -bottom-10 opacity-10 text-black transform group-hover:scale-110 transition duration-300">
+              <div class="gold-gradient p-10 rounded-3xl border border-luxuryGold/30 relative overflow-hidden group shadow-md hover:shadow-xl transition-all duration-300">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-black transform group-hover:scale-110 transition duration-300 pointer-events-none">
                   ${getIconSvg('gift', 'w-64 h-64')}
                 </div>
                 <div class="space-y-4 max-w-xs relative z-10 text-black">
-                  <span class="px-3 py-1 bg-black/10 text-black text-[10px] font-bold uppercase rounded-full tracking-wider">PACKS STORE</span>
-                  <h3 class="text-3xl font-serif font-bold">Exclusive Packs</h3>
+                  <span class="px-3 py-1 bg-black/10 text-black text-[10px] font-bold uppercase rounded-full tracking-wider">EXCLUSIVE PACKS</span>
+                  <h3 class="text-3xl font-serif font-bold">Atelier Packs</h3>
                   <p class="text-xs text-black/80 font-light">Explore custom bundling options, premium pairings, and elegant high-end multi-product sets.</p>
-                  <button class="px-5 py-2.5 bg-black text-white hover:bg-black/85 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition mt-2">SHOP PACKS</button>
+                  <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                    <button id="portal-packs-men" class="px-4 py-2.5 bg-black text-white hover:bg-black/85 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition">MEN PACKS</button>
+                    <button id="portal-packs-girls" class="px-4 py-2.5 bg-white text-black hover:bg-gray-100 rounded-lg text-xs uppercase tracking-wider font-extrabold shadow transition border border-black/10">GIRLS PACKS</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1718,10 +1719,23 @@
         store.setPage("shop");
       };
 
-      document.getElementById("portal-packs").onclick = () => {
-        store.selectedGenderSection = "PACKS STORE";
-        store.setPage("shop");
-      };
+      const portalPacksMen = document.getElementById("portal-packs-men");
+      if (portalPacksMen) {
+        portalPacksMen.onclick = (e) => {
+          e.stopPropagation();
+          store.selectedGenderSection = "PACKS MEN";
+          store.setPage("shop");
+        };
+      }
+
+      const portalPacksGirls = document.getElementById("portal-packs-girls");
+      if (portalPacksGirls) {
+        portalPacksGirls.onclick = (e) => {
+          e.stopPropagation();
+          store.selectedGenderSection = "PACKS GIRLS";
+          store.setPage("shop");
+        };
+      }
       
       const formBtn = document.getElementById("open-review-form-btn");
       if (formBtn) {
@@ -1850,9 +1864,7 @@
           if (prod) {
             store.cart = [{ ...prod, quantity: 1 }];
             localStorage.setItem("bp_cart", JSON.stringify(store.cart));
-            store.cartOpen = true;
-            document.getElementById("cart-drawer-overlay").classList.remove("hidden");
-            store.renderCartDrawer();
+            store.setPage("cart");
           }
         };
       });
@@ -1879,22 +1891,26 @@
       }
 
       const genderSelectorTabs = `
-        <div class="grid grid-cols-4 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
-          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/20">
+          <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "All" ? 'bg-luxuryGold text-black' : 'text-white hover:bg-white/5'
           }" data-gender="All">All</button>
           
-          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+          <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "GIRLS STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
           }" data-gender="GIRLS STORE">GIRLS</button>
           
-          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+          <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
             this.selectedGenderSection === "MEN STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
           }" data-gender="MEN STORE">MEN</button>
 
-          <button class="gender-section-btn py-2.5 px-3 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
-            this.selectedGenderSection === "PACKS STORE" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
-          }" data-gender="PACKS STORE">PACKS</button>
+          <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+            this.selectedGenderSection === "PACKS MEN" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
+          }" data-gender="PACKS MEN">PACKS MEN</button>
+
+          <button class="gender-section-btn py-2 px-1 text-[9px] sm:text-xs font-bold uppercase rounded-xl tracking-wider transition ${
+            this.selectedGenderSection === "PACKS GIRLS" ? 'bg-luxuryGold text-black shadow-md' : 'text-luxuryGold hover:bg-white/5'
+          }" data-gender="PACKS GIRLS">PACKS GIRLS</button>
         </div>
       `;
 
@@ -1997,6 +2013,12 @@
       if (!this.isAdmin) {
         container.innerHTML = `
           <div class="max-w-md mx-auto px-4 py-24">
+            <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
+            <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+              <button id="admin-login-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+                ← Back to Home
+              </button>
+            </div>
             <div class="bg-[#141414] p-8 rounded-3xl border border-luxuryGold/30 shadow-2xl space-y-6 text-center">
               <div class="w-16 h-16 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center mx-auto">
                 ${getIconSvg('lock', 'w-8 h-8')}
@@ -2012,6 +2034,11 @@
             </div>
           </div>
         `;
+
+        const loginBackBtn = document.getElementById("admin-login-back-home");
+        if (loginBackBtn) {
+          loginBackBtn.onclick = () => { store.setPage("home"); };
+        }
 
         document.getElementById("admin-google-login-btn").onclick = async () => {
           const provider = new GoogleAuthProvider();
@@ -2041,6 +2068,12 @@
 
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="admin-panel-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+              ← Back to Home
+            </button>
+          </div>
           <div class="bg-[#141414] text-white p-8 rounded-3xl border border-luxuryGold/40 flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl">
             <div class="space-y-2">
               <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Executive Admin Workspace</span>
@@ -2078,6 +2111,11 @@
       document.getElementById("admin-add-product-btn").onclick = () => {
         store.openProductForm();
       };
+
+      const panelBackBtn = document.getElementById("admin-panel-back-home");
+      if (panelBackBtn) {
+        panelBackBtn.onclick = () => { store.setPage("home"); };
+      }
 
       document.querySelectorAll(".admin-tab-btn").forEach(btn => {
         btn.onclick = () => {
@@ -2606,7 +2644,8 @@
               <select name="gender" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-bold">
                 <option value="GIRLS STORE" ${currentNormalizedGender === "GIRLS STORE" ? "selected" : ""}>GIRLS STORE</option>
                 <option value="MEN STORE" ${currentNormalizedGender === "MEN STORE" ? "selected" : ""}>MEN STORE</option>
-                <option value="PACKS STORE" ${currentNormalizedGender === "PACKS STORE" ? "selected" : ""}>PACKS STORE</option>
+                <option value="PACKS MEN" ${currentNormalizedGender === "PACKS MEN" ? "selected" : ""}>PACKS MEN (MEN PACKS)</option>
+                <option value="PACKS GIRLS" ${currentNormalizedGender === "PACKS GIRLS" ? "selected" : ""}>PACKS GIRLS (GIRLS PACKS)</option>
               </select>
             </div>
             <div>
@@ -3420,22 +3459,16 @@
     };
 
     store.renderCartDrawer = function() {
-      const container = document.getElementById("cart-drawer-overlay");
+      // Keep renderCartDrawer for backwards-compatible state preservation but let it remain hidden when using pages.
+    };
+
+    store.renderCartPage = function() {
+      const container = document.getElementById("app-content");
       if (!container) return;
-      if (!this.cartOpen) {
-        container.classList.add("hidden");
-        return;
+
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'PageView', { page_path: '/cart' });
       }
-
-      const existingName = document.querySelector("input[name='customerName']")?.value;
-      const existingPhone = document.querySelector("input[name='phone']")?.value;
-      const existingAddress = document.querySelector("textarea[name='address']")?.value;
-      const existingCityId = document.getElementById("checkout-city-select")?.value;
-
-      if (existingName !== undefined) this.checkoutFormValues.customerName = existingName;
-      if (existingPhone !== undefined) this.checkoutFormValues.phone = existingPhone;
-      if (existingAddress !== undefined) this.checkoutFormValues.address = existingAddress;
-      if (existingCityId !== undefined) this.checkoutFormValues.cityId = existingCityId;
 
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
@@ -3448,9 +3481,9 @@
       let itemsMarkup = this.cart.map(item => {
         const cleanName = item.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
         return `
-          <div class="flex gap-4 p-3 bg-black/60 rounded-xl border border-luxuryGold/10 hover:border-luxuryGold/35 transition">
-            <img src="${item.imageURL || fallbackImage}" class="w-20 h-20 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
-            <div class="flex-1 flex flex-col justify-between">
+          <div class="flex gap-4 p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 hover:border-luxuryGold/55 transition">
+            <img src="${item.imageURL || fallbackImage}" class="w-20 h-20 object-cover rounded-xl border border-luxuryGold/20" loading="lazy">
+            <div class="flex-grow flex flex-col justify-between">
               <div>
                 <h4 class="font-serif text-sm text-white font-medium line-clamp-1">${cleanName}</h4>
                 <p class="text-xs text-luxuryGold font-semibold mt-0.5">${item.discountPrice || item.price} MAD</p>
@@ -3469,208 +3502,469 @@
       }).join('');
 
       container.innerHTML = `
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-xs transition-opacity" id="cart-drawer-backdrop"></div>
-        <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
-          <div class="w-screen max-w-md bg-black border-l border-luxuryGold/30 flex flex-col shadow-2xl text-white">
-            
-            <!-- Drawer Header Tabs -->
-            <div class="p-4 border-b border-luxuryGold/20 bg-[#141414] space-y-3">
-              <div class="flex justify-between items-center">
-                <h2 class="text-lg font-serif text-luxuryGold flex items-center gap-2">
-                  ${getIconSvg('shopping-bag', 'text-luxuryGold w-5 h-5')} Sovereign Space
-                </h2>
-                <button id="cart-drawer-close" class="p-2 hover:text-luxuryGold transition rounded-full hover:bg-white/5">✕</button>
-              </div>
+        <div class="max-w-4xl mx-auto px-4 py-12 space-y-8 min-h-screen">
+          
+          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="cart-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+              ← Back to Home
+            </button>
+          </div>
 
-              <!-- Cart vs Order History Toggle -->
-              <div class="grid grid-cols-2 gap-2 p-1 bg-black rounded-xl border border-luxuryGold/15 text-center text-xs">
-                <button id="tab-cart-btn" class="py-2 rounded-lg font-bold uppercase tracking-wider transition ${this.cartTab === 'cart' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
-                  My Cart (${cartCount})
-                </button>
-                <button id="tab-history-btn" class="py-2 rounded-lg font-bold uppercase tracking-wider transition ${this.cartTab === 'history' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
-                  My Orders ⚜️
-                </button>
-              </div>
-            </div>
+          <div class="text-center space-y-3 pt-8">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Your Selection</span>
+            <h1 class="text-3xl md:text-4xl font-serif text-white uppercase tracking-wider">Sovereign Cart ⚜️</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
+          </div>
 
-            <!-- Tab content rendering -->
-            <div class="flex-grow overflow-y-auto p-5 space-y-4">
+          <div class="max-w-md mx-auto grid grid-cols-2 gap-2 p-1.5 bg-[#141414] rounded-2xl border border-luxuryGold/15 text-center text-xs">
+            <button id="cart-page-tab-cart" class="py-2.5 rounded-xl font-bold uppercase tracking-wider transition ${this.cartTab === 'cart' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
+              My Cart (${cartCount})
+            </button>
+            <button id="cart-page-tab-history" class="py-2.5 rounded-xl font-bold uppercase tracking-wider transition ${this.cartTab === 'history' ? 'bg-luxuryGold text-black shadow-md' : 'text-gray-400 hover:text-white'}">
+              My Orders ⚜️
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div class="md:col-span-7 space-y-4">
               ${this.cartTab === 'cart' ? `
-                <!-- CART VIEW -->
                 ${cartCount === 0 ? `
-                  <div class="text-center py-12 space-y-4">
+                  <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10 space-y-4">
                     <div class="text-luxuryGold/30 animate-spin" style="animation-duration: 8s">${getIconSvg('flower', 'w-16 h-16 mx-auto')}</div>
                     <p class="font-serif text-lg text-luxuryGold">Your cart is empty</p>
-                    <button id="cart-drawer-shop-btn" class="mt-4 px-6 py-2 bg-luxuryGold text-black text-xs font-bold uppercase rounded-lg">Store</button>
+                    <button id="cart-page-shop-btn" class="mt-4 px-6 py-2.5 bg-luxuryGold text-black text-xs font-bold uppercase tracking-wider rounded-xl transition">Discover Atelier</button>
                   </div>
-                ` : itemsMarkup}
+                ` : `
+                  <div class="space-y-4">
+                    ${itemsMarkup}
+                  </div>
+                `}
               ` : `
-                <!-- HISTORY VIEW -->
-                ${this.loadingMyOrders ? `
-                  <!-- Luxury loading skeleton -->
-                  <div class="space-y-4 animate-pulse">
-                    ${[1, 2].map(() => `
-                      <div class="p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/10 space-y-3">
-                        <div class="flex justify-between">
-                          <div class="h-4 bg-luxuryGold/20 rounded w-1/3 animate-pulse"></div>
-                          <div class="h-4 bg-white/10 rounded w-1/4 animate-pulse"></div>
-                        </div>
-                        <div class="h-3 bg-white/5 rounded w-1/2"></div>
-                        <div class="h-10 bg-black/40 rounded-xl"></div>
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : this.myOrders.length === 0 ? `
-                  <div class="text-center py-16 space-y-4">
-                    <div class="text-luxuryGold/20">${getIconSvg('lock', 'w-14 h-14 mx-auto')}</div>
-                    <p class="font-serif text-md text-luxuryGold">No local orders found</p>
-                    <p class="text-[10px] text-gray-500 max-w-xs mx-auto">Orders placed on this device will automatically track here in real-time.</p>
-                    <button id="history-drawer-shop-btn" class="mt-2 px-6 py-2 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black text-xs font-bold uppercase rounded-lg transition">Discover Atelier</button>
-                  </div>
-                ` : this.myOrders.map(o => {
-                  const itemsCount = o.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
-                  const orderDateString = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
-                  const waText = encodeURIComponent("Hello SOVANEX, I would like to track my order code: " + o.orderId + ".");
-                  
-                  return `
-                    <div class="p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/20 shadow-lg space-y-3">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <p class="font-mono text-xs font-bold text-luxuryGold select-all">${o.orderId}</p>
-                          <p class="text-[9px] text-gray-400 mt-0.5">${orderDateString} — ${itemsCount} items</p>
-                        </div>
-                        <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border ${
-                          o.status === 'pending' ? 'bg-red-950/40 text-red-300 border-red-800' : 
-                          o.status === 'cancelled' ? 'bg-white/5 text-gray-500 border-white/10' : 
-                          'bg-emerald-950/40 text-emerald-300 border-emerald-800'
-                        }">${o.status || 'pending'}</span>
-                      </div>
-
-                      <div class="border-t border-b border-white/5 py-2 space-y-1">
-                        ${o.items?.map(item => `
-                          <div class="flex justify-between text-[10px]">
-                            <span class="text-gray-300 line-clamp-1">${item.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim()} <strong class="text-luxuryGold">x${item.quantity}</strong></span>
-                            <span class="text-luxuryGold font-medium">${item.price * item.quantity} MAD</span>
+                <div class="space-y-4">
+                  ${this.loadingMyOrders ? `
+                    <div class="space-y-4 animate-pulse">
+                      ${[1, 2].map(() => `
+                        <div class="p-4 bg-luxuryBeige rounded-2xl border border-luxuryGold/10 space-y-3">
+                          <div class="flex justify-between">
+                            <div class="h-4 bg-luxuryGold/20 rounded w-1/3"></div>
+                            <div class="h-4 bg-white/10 rounded w-1/4"></div>
                           </div>
-                        `).join('')}
-                      </div>
-
-                      <div class="flex justify-between items-center text-xs">
-                        <span class="text-gray-400">Total with shipping:</span>
-                        <span class="font-serif font-bold text-luxuryGold text-sm">${o.total} MAD</span>
-                      </div>
-
-                      <div class="pt-1">
-                        <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}?text=${waText}" target="_blank" class="w-full py-2 bg-emerald-600/15 hover:bg-emerald-600 border border-emerald-500/30 text-emerald-300 hover:text-white rounded-lg text-[10px] uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 transition">
-                          ${getIconSvg('message-circle', 'w-3.5 h-3.5')} Track on WhatsApp
-                        </a>
-                      </div>
+                          <div class="h-3 bg-white/5 rounded w-1/2"></div>
+                          <div class="h-10 bg-black/40 rounded-xl"></div>
+                        </div>
+                      `).join('')}
                     </div>
-                  `;
-                }).join('')}
+                  ` : this.myOrders.length === 0 ? `
+                    <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10 space-y-4">
+                      <div class="text-luxuryGold/20">${getIconSvg('lock', 'w-14 h-14 mx-auto')}</div>
+                      <p class="font-serif text-md text-luxuryGold">No local orders found</p>
+                      <p class="text-[10px] text-gray-500 max-w-xs mx-auto">Orders placed on this device will automatically track here in real-time.</p>
+                      <button id="cart-page-history-shop-btn" class="mt-2 px-6 py-2 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black text-xs font-bold uppercase rounded-lg transition">Discover Atelier</button>
+                    </div>
+                  ` : this.myOrders.map(o => {
+                    const itemsCount = o.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+                    const orderDateString = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+                    const waText = encodeURIComponent("Hello SOVANEX, I would like to track my order code: " + o.orderId + ".");
+                    
+                    return `
+                      <div class="p-5 bg-luxuryBeige rounded-3xl border border-luxuryGold/20 shadow-lg space-y-3">
+                        <div class="flex justify-between items-start">
+                          <div>
+                            <p class="font-mono text-xs font-bold text-luxuryGold select-all">${o.orderId}</p>
+                            <p class="text-[9px] text-gray-400 mt-0.5">${orderDateString} — ${itemsCount} items</p>
+                          </div>
+                          <span class="px-2.5 py-1 rounded-full text-[8px] font-bold uppercase border ${
+                            o.status === 'pending' ? 'bg-red-950/45 text-red-300 border-red-800' : 
+                            o.status === 'cancelled' ? 'bg-white/5 text-gray-500 border-white/10' : 
+                            'bg-emerald-950/45 text-emerald-300 border-emerald-800'
+                          }">${o.status || 'pending'}</span>
+                        </div>
+
+                        <div class="border-t border-b border-white/5 py-2 space-y-1">
+                          ${o.items?.map(item => `
+                            <div class="flex justify-between text-[10px]">
+                              <span class="text-gray-300 line-clamp-1">${item.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim()} <strong class="text-luxuryGold">x${item.quantity}</strong></span>
+                              <span class="text-luxuryGold font-medium">${item.price * item.quantity} MAD</span>
+                            </div>
+                          `).join('')}
+                        </div>
+
+                        <div class="flex justify-between items-center text-xs">
+                          <span class="text-gray-400">Total with shipping:</span>
+                          <span class="font-serif font-bold text-luxuryGold text-sm">${o.total} MAD</span>
+                        </div>
+
+                        <div class="pt-1">
+                          <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}?text=${waText}" target="_blank" class="w-full py-2 bg-emerald-600/15 hover:bg-emerald-600 border border-emerald-500/30 text-emerald-300 hover:text-white rounded-lg text-[10px] uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 transition">
+                            ${getIconSvg('message-circle', 'w-3.5 h-3.5')} Track on WhatsApp
+                          </a>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
               `}
             </div>
 
-            <!-- Active Cart Checkout Controls -->
-            ${this.cartTab === 'cart' && cartCount > 0 ? `
-              <div class="p-6 border-t border-luxuryGold/30 bg-[#141414] space-y-4">
-                <div class="flex justify-between items-center text-sm font-medium">
-                  <span class="text-gray-300">Subtotal</span>
-                  <span class="text-xl font-serif font-bold text-luxuryGold">${subtotal} MAD</span>
-                </div>
-
-                ${selectedCityId ? `
-                  <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
-                    <span class="text-gray-300">Delivery Fee</span>
-                    <span class="font-serif font-bold text-luxuryGold">${deliveryFee} MAD</span>
+            <div class="md:col-span-5">
+              ${this.cartTab === 'cart' && cartCount > 0 ? `
+                <div class="bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-xl space-y-4">
+                  <div class="flex justify-between items-center text-sm font-medium">
+                    <span class="text-gray-300">Subtotal</span>
+                    <span class="text-xl font-serif font-bold text-luxuryGold">${subtotal} MAD</span>
                   </div>
-                  <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
-                    <span class="text-gray-300">Total</span>
-                    <span class="text-xl font-serif font-bold text-luxuryGold">${total} MAD</span>
+
+                  ${selectedCityId ? `
+                    <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
+                      <span class="text-gray-300">Delivery Fee</span>
+                      <span class="font-serif font-bold text-luxuryGold">${deliveryFee} MAD</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
+                      <span class="text-gray-300">Total</span>
+                      <span class="text-xl font-serif font-bold text-luxuryGold">${total} MAD</span>
+                    </div>
+                  ` : ''}
+
+                  <div class="bg-black/40 p-4 rounded-xl border border-luxuryGold/20 space-y-3">
+                    <p class="text-xs font-semibold text-luxuryGold uppercase">Shipping Information</p>
+                    <form id="cart-page-checkout-form" class="space-y-3">
+                      <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                      <input type="tel" name="phone" required placeholder="Phone Number (e.g. 06...)" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                      
+                      <select id="cart-page-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
+                        <option value="" disabled ${!selectedCityId ? 'selected' : ''}>Select Delivery City</option>
+                        ${this.deliveryCities.filter(c => c.isActive).map(c => `
+                          <option value="${c.id}" ${selectedCityId === c.id ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
+                        `).join('')}
+                      </select>
+
+                      <textarea name="address" required placeholder="Delivery Address" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
+                      
+                      <button type="submit" id="cart-page-checkout-submit" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
+                        ${this.checkoutLoading ? "Processing Request..." : "Confirm Luxury Order"}
+                        ${getIconSvg('send', 'w-3.5 h-3.5')}
+                      </button>
+                    </form>
                   </div>
-                ` : ''}
-
-                <div class="bg-black/40 p-4 rounded-xl border border-luxuryGold/20">
-                  <p class="text-xs font-semibold text-luxuryGold mb-3 uppercase">Shipping Information</p>
-                  <form id="checkout-form" class="space-y-3">
-                    <input type="text" name="customerName" required placeholder="Full Name" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                    <input type="tel" name="phone" required placeholder="Phone Number (e.g. 06...)" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                    
-                    <select id="checkout-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                      <option value="" disabled ${!selectedCityId ? 'selected' : ''}>Select Delivery City</option>
-                      ${this.deliveryCities.filter(c => c.isActive).map(c => `
-                        <option value="${c.id}" ${selectedCityId === c.id ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
-                      `).join('')}
-                    </select>
-
-                    <textarea name="address" required placeholder="Delivery Address" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
-                    
-                    <button type="submit" id="checkout-submit-button" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
-                      ${this.checkoutLoading ? "Processing Request..." : "Confirm Luxury Order"}
-                      ${getIconSvg('send', 'w-3.5 h-3.5')}
-                    </button>
-                  </form>
                 </div>
-              </div>
-            ` : ''}
+              ` : ''}
+            </div>
           </div>
         </div>
       `;
 
-      document.getElementById("cart-drawer-backdrop").onclick = () => { store.cartOpen = false; store.renderCartDrawer(); };
-      document.getElementById("cart-drawer-close").onclick = () => { store.cartOpen = false; store.renderCartDrawer(); };
-      
-      const shopBtn = document.getElementById("cart-drawer-shop-btn");
-      if (shopBtn) {
-        shopBtn.onclick = () => { store.cartOpen = false; store.setPage("shop"); };
+      const shopBtn = document.getElementById("cart-page-shop-btn");
+      if (shopBtn) shopBtn.onclick = () => { this.setPage("shop"); };
+
+      const cartBackHome = document.getElementById("cart-back-home");
+      if (cartBackHome) {
+        cartBackHome.onclick = () => { this.setPage("home"); };
       }
 
-      // Tab selector bindings
-      const tabCartBtn = document.getElementById("tab-cart-btn");
-      if (tabCartBtn) {
-        tabCartBtn.onclick = () => {
-          store.cartTab = "cart";
-          store.renderCartDrawer();
-        };
-      }
+      const historyShopBtn = document.getElementById("cart-page-history-shop-btn");
+      if (historyShopBtn) historyShopBtn.onclick = () => { this.setPage("shop"); };
 
-      const tabHistoryBtn = document.getElementById("tab-history-btn");
-      if (tabHistoryBtn) {
-        tabHistoryBtn.onclick = () => {
-          store.cartTab = "history";
-          store.fetchMyOrders();
-        };
-      }
+      document.getElementById("cart-page-tab-cart").onclick = () => {
+        this.cartTab = "cart";
+        this.renderCartPage();
+      };
 
-      const historyShopBtn = document.getElementById("history-drawer-shop-btn");
-      if (historyShopBtn) {
-        historyShopBtn.onclick = () => {
-          store.cartOpen = false;
-          store.setPage("shop");
-        };
-      }
+      document.getElementById("cart-page-tab-history").onclick = () => {
+        this.cartTab = "history";
+        this.fetchMyOrdersOnPage();
+      };
 
       document.querySelectorAll(".cart-qty-minus").forEach(btn => {
-        btn.onclick = () => store.updateQty(btn.getAttribute("data-id"), -1);
+        btn.onclick = () => {
+          this.updateQty(btn.getAttribute("data-id"), -1);
+          this.renderCartPage();
+        };
       });
 
       document.querySelectorAll(".cart-qty-plus").forEach(btn => {
-        btn.onclick = () => store.updateQty(btn.getAttribute("data-id"), 1);
+        btn.onclick = () => {
+          this.updateQty(btn.getAttribute("data-id"), 1);
+          this.renderCartPage();
+        };
       });
 
       document.querySelectorAll(".cart-remove-item").forEach(btn => {
-        btn.onclick = () => store.removeFromCart(btn.getAttribute("data-id"));
+        btn.onclick = () => {
+          this.removeFromCart(btn.getAttribute("data-id"));
+          this.renderCartPage();
+        };
       });
 
-      const citySelect = document.getElementById("checkout-city-select");
+      const citySelect = document.getElementById("cart-page-city-select");
       if (citySelect) {
-        citySelect.onchange = () => store.renderCartDrawer();
+        citySelect.onchange = (e) => {
+          this.checkoutFormValues.cityId = e.target.value;
+          this.renderCartPage();
+        };
       }
 
-      const checkoutForm = document.getElementById("checkout-form");
+      const checkoutForm = document.getElementById("cart-page-checkout-form");
       if (checkoutForm) {
-        checkoutForm.onsubmit = (e) => store.processCheckout(e);
+        checkoutForm.onsubmit = (e) => {
+          e.preventDefault();
+          this.processCheckoutPage(e);
+        };
       }
+    };
+
+    store.fetchMyOrdersOnPage = async function() {
+      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+      if (localHistory.length === 0) {
+        this.myOrders = [];
+        this.loadingMyOrders = false;
+        this.renderCartPage();
+        return;
+      }
+
+      this.loadingMyOrders = true;
+      this.renderCartPage();
+
+      try {
+        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10)));
+        const snap = await getDocs(q);
+        const list = [];
+        snap.forEach(doc => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+
+        list.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB - dateA;
+        });
+
+        this.myOrders = list;
+      } catch (err) {
+        console.error("Order history fetch failed:", err);
+      }
+
+      this.loadingMyOrders = false;
+      this.renderCartPage();
+    };
+
+    store.processCheckoutPage = async function(e) {
+      const formEl = e.target;
+      const name = formEl.customerName.value;
+      const phone = formEl.phone.value;
+      const cityId = formEl.cityId.value;
+      const address = formEl.address.value;
+
+      if (!name || !phone || !cityId || !address) {
+        showToast("Please fill in all required delivery coordinates.", "error");
+        return;
+      }
+
+      this.checkoutLoading = true;
+      this.renderCartPage();
+
+      try {
+        const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+        const cityObj = this.deliveryCities.find(c => c.id === cityId);
+        const deliveryFee = cityObj ? cityObj.price : 0;
+        const cityName = cityObj ? cityObj.name : "Morocco";
+        const total = subtotal + deliveryFee;
+        const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
+
+        const orderItems = this.cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.discountPrice || item.price
+        }));
+
+        const newOrder = {
+          orderId,
+          items: orderItems,
+          total,
+          subtotal,
+          deliveryFee,
+          deliveryCity: cityName,
+          customerName: name,
+          phone,
+          address,
+          status: "pending",
+          paymentMethod: "Telegram Automated",
+          createdAt: new Date()
+        };
+
+        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+        await addDoc(ordersCol, newOrder);
+
+        const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+        localHistory.push(orderId);
+        localStorage.setItem("sovanex_order_history", JSON.stringify(localHistory));
+
+        const purchasedItemIds = this.cart.map(item => item.id);
+        localStorage.setItem("sovanex_last_purchased_ids", JSON.stringify(purchasedItemIds));
+
+        if (typeof fbq !== 'undefined') {
+          fbq('track', 'Purchase', {
+            value: total,
+            currency: 'MAD',
+            contents: orderItems.map(item => ({ id: item.id, quantity: item.quantity })),
+            content_type: 'product'
+          });
+        }
+
+        let productsMsg = "";
+        this.cart.forEach(item => {
+          productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
+        });
+
+        let msgText = this.telegramSettings.template
+          .replace(/{products}/g, productsMsg.trim())
+          .replace(/{subtotal}/g, subtotal)
+          .replace(/{city}/g, cityName)
+          .replace(/{delivery}/g, deliveryFee)
+          .replace(/{total}/g, total)
+          .replace(/{name}/g, name)
+          .replace(/{address}/g, address)
+          .replace(/{phone}/g, phone)
+          .replace(/{orderId}/g, orderId);
+
+        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
+          try {
+            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
+            await fetch(telegramUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: this.telegramSettings.chatId,
+                text: msgText,
+                parse_mode: "Markdown"
+              })
+            });
+          } catch (apiErr) {
+            console.error("Telegram delivery bypassed:", apiErr);
+          }
+        }
+
+        this.cart = [];
+        localStorage.setItem("bp_cart", JSON.stringify([]));
+        this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "" };
+        this.checkoutLoading = false;
+
+        this.setPage("order-confirmation");
+
+      } catch (err) {
+        console.error(err);
+        this.checkoutLoading = false;
+        showToast("Order checkout pipeline failed. Please try again.", "error");
+        this.renderCartPage();
+      }
+    };
+
+    store.renderOrderConfirmationPage = function() {
+      const container = document.getElementById("app-content");
+      if (!container) return;
+
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'PageView', { page_path: '/order-confirmation' });
+      }
+
+      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+      const orderId = localHistory.length > 0 ? localHistory[localHistory.length - 1] : "SOV-UNKNOWN";
+
+      const purchasedItemIds = JSON.parse(localStorage.getItem("sovanex_last_purchased_ids")) || [];
+      const recommendations = this.getRecommendations(purchasedItemIds);
+
+      let recommendationsMarkup = "";
+      if (recommendations.length > 0) {
+        recommendationsMarkup = `
+          <div class="mt-12 border-t border-luxuryGold/20 pt-10 space-y-8">
+            <div class="text-center space-y-2">
+              <p class="text-xs uppercase tracking-[0.25em] text-luxuryGold font-extrabold">⚜️ YOU MAY ALSO LIKE ⚜️</p>
+              <p class="text-[11px] text-gray-400 font-light max-w-md mx-auto">Selected signature pairings curated specifically to accompany your collection.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto px-4">
+              ${recommendations.map(rec => {
+                const cleanRecName = rec.name.replace(/\s*\(\s*(Les Hommes|Les Filles)\s*\)\s*/gi, "").trim();
+                return `
+                  <div class="bg-[#141414] p-4 rounded-2xl border border-luxuryGold/15 hover:border-luxuryGold transition duration-300 flex flex-col justify-between items-center text-center shadow-lg group">
+                    <div class="w-full h-44 overflow-hidden rounded-xl border border-luxuryGold/10 mb-3 relative">
+                      <img src="${rec.imageURL || fallbackImage}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    </div>
+                    <div class="flex-1 flex flex-col justify-between w-full space-y-3">
+                      <div>
+                        <p class="text-xs sm:text-sm font-bold text-white group-hover:text-luxuryGold transition line-clamp-1">${cleanRecName}</p>
+                        <p class="text-xs sm:text-sm text-luxuryGold font-semibold mt-1">${rec.price} MAD</p>
+                      </div>
+                      <button class="rec-view-product-btn w-full py-2 bg-luxuryGold/10 hover:bg-luxuryGold text-luxuryGold hover:text-black border border-luxuryGold/30 text-[10px] uppercase font-extrabold tracking-wider rounded-lg transition" data-id="${rec.id}">
+                        View Product
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="max-w-3xl mx-auto px-4 py-16 text-center space-y-8 min-h-screen">
+          
+          <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="conf-back-home" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+              ← Back to Home
+            </button>
+          </div>
+
+          <div class="w-16 h-16 bg-emerald-600/10 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-2xl animate-pulse">✓</div>
+          
+          <div class="space-y-2">
+            <span class="text-xs uppercase tracking-[0.2em] text-luxuryGold font-semibold">Order Placed Successfully</span>
+            <h1 class="text-3xl md:text-5xl font-serif text-white font-bold">Selection Confirmed</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto mt-4"></div>
+          </div>
+
+          <div class="bg-luxuryBeige p-6 rounded-3xl border border-luxuryGold/20 max-w-sm mx-auto shadow-2xl space-y-3">
+            <p class="text-[10px] uppercase tracking-wider text-gray-400">Order Code (ID)</p>
+            <span class="inline-block bg-black/80 text-luxuryGold font-mono text-lg font-bold px-5 py-2.5 rounded-xl border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">${orderId}</span>
+            <p class="text-[11px] text-gray-400 max-w-xs mx-auto pt-1 leading-relaxed">
+              Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.
+            </p>
+          </div>
+
+          ${recommendationsMarkup}
+
+          <div class="pt-6">
+            <button id="conf-continue-shopping-btn" class="px-8 py-4 bg-luxuryGold text-black hover:bg-luxuryGold/90 text-xs uppercase font-extrabold tracking-widest rounded-xl shadow-lg transition">
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      `;
+
+      const confBackHome = document.getElementById("conf-back-home");
+      if (confBackHome) {
+        confBackHome.onclick = () => { this.setPage("home"); };
+      }
+
+      document.getElementById("conf-continue-shopping-btn").onclick = () => {
+        this.setPage("shop");
+      };
+
+      document.querySelectorAll(".rec-view-product-btn").forEach(btn => {
+        btn.onclick = () => {
+          const recId = btn.getAttribute("data-id");
+          this.setPage("shop");
+          const targetProd = this.products.find(p => p.id === recId);
+          if (targetProd) {
+            setTimeout(() => {
+              this.openProductDetailsModal(targetProd);
+            }, 300);
+          }
+        };
+      });
     };
 
     store.openProductDetailsModal = function(product) {
@@ -3832,9 +4126,7 @@
           store.cart = [{ ...product, quantity: 1 }];
           localStorage.setItem("bp_cart", JSON.stringify(store.cart));
           closeModal();
-          store.cartOpen = true;
-          document.getElementById("cart-drawer-overlay").classList.remove("hidden");
-          store.renderCartDrawer();
+          store.setPage("cart");
         };
       };
 
@@ -3872,9 +4164,7 @@
       const stickyBtn = document.getElementById("sticky-mobile-checkout-btn");
       if (stickyBtn) {
         stickyBtn.onclick = () => {
-          store.cartOpen = true;
-          document.getElementById("cart-drawer-overlay").classList.remove("hidden");
-          store.renderCartDrawer();
+          store.setPage("cart");
         };
       }
     };
