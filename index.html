@@ -583,6 +583,12 @@
         heroImg1: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=400",
         heroImg2: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=400",
         heroImg3: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400",
+        heroProdId1: "prod-1",
+        heroProdId2: "prod-2",
+        heroProdId3: "prod-4",
+        heroProdName1: "Rose Empress Gold Chrono",
+        heroProdName2: "Oceanic Imperial Nautilus",
+        heroProdName3: "Sovereign Gold Carbon Ring",
         websiteDescription: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
         tagline: "The Sovereign Shop of Royal Watches, Accessories & Fine Leather Goods",
         instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
@@ -2047,21 +2053,30 @@
                   <!-- Artistic Product Floating Arrangement -->
                   
                   <!-- 1. Gold Empress Watch (Left/Back) -->
-                  <div class="absolute top-[10%] left-[5%] w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden animate-float-medium z-10 border border-luxuryGold/30 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium">
+                  <div id="hero-prod-slot-1" class="absolute top-[10%] left-[5%] w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden animate-float-medium z-10 border border-luxuryGold/30 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium cursor-pointer group/slot">
                     <img src="${this.settings.heroImg1 || 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=400'}" alt="Sovereign Watch Collection" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent"></div>
+                    <div class="absolute bottom-2 left-2 right-2 text-[9px] sm:text-[10px] text-center font-bold text-white tracking-wide truncate bg-black/75 px-1 py-1 sm:py-1.5 rounded border border-luxuryGold/20 group-hover/slot:text-luxuryGold group-hover/slot:border-luxuryGold transition-all duration-300">
+                      ${this.settings.heroProdName1 || 'Rose Empress Gold Chrono'}
+                    </div>
                   </div>
                   
                   <!-- 2. Imperial Nautilus (Right/Back) -->
-                  <div class="absolute top-[20%] right-[5%] w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden animate-float-fast z-10 border border-luxuryGold/30 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium" style="animation-delay: 1.5s;">
+                  <div id="hero-prod-slot-2" class="absolute top-[20%] right-[5%] w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden animate-float-fast z-10 border border-luxuryGold/30 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium cursor-pointer group/slot" style="animation-delay: 1.5s;">
                     <img src="${this.settings.heroImg2 || 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=400'}" alt="Nautilus Chrono Collection" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent"></div>
+                    <div class="absolute bottom-2 left-2 right-2 text-[9px] sm:text-[10px] text-center font-bold text-white tracking-wide truncate bg-black/75 px-1 py-1 sm:py-1.5 rounded border border-luxuryGold/20 group-hover/slot:text-luxuryGold group-hover/slot:border-luxuryGold transition-all duration-300">
+                      ${this.settings.heroProdName2 || 'Oceanic Imperial Nautilus'}
+                    </div>
                   </div>
 
                   <!-- 3. Premium Gilded Ring / Accessory (Center Foreground) -->
-                  <div class="absolute top-[42%] left-[30%] w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden animate-float-slow z-20 border-2 border-luxuryGold/40 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium" style="animation-delay: 3s;">
+                  <div id="hero-prod-slot-3" class="absolute top-[42%] left-[30%] w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden animate-float-slow z-20 border-2 border-luxuryGold/40 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium cursor-pointer group/slot" style="animation-delay: 3s;">
                     <img src="${this.settings.heroImg3 || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400'}" alt="Tungsten Signature Ring" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent"></div>
+                    <div class="absolute bottom-2 left-2 right-2 text-[9px] sm:text-[10px] text-center font-bold text-white tracking-wide truncate bg-black/75 px-1 py-1 sm:py-1.5 rounded border border-luxuryGold/20 group-hover/slot:text-luxuryGold group-hover/slot:border-luxuryGold transition-all duration-300">
+                      ${this.settings.heroProdName3 || 'Sovereign Gold Carbon Ring'}
+                    </div>
                   </div>
 
                   <!-- Glowing Gold Horizon Glass Base -->
@@ -2287,6 +2302,27 @@
       }
 
       this.bindProductCardClicks();
+
+      // Bind Hero Product Slots
+      for (let i = 1; i <= 3; i++) {
+        const slotBtn = document.getElementById(`hero-prod-slot-${i}`);
+        if (slotBtn) {
+          slotBtn.onclick = (e) => {
+            e.preventDefault();
+            const linkedProdId = this.settings[`heroProdId${i}`];
+            if (linkedProdId) {
+              const prod = this.products.find(p => p.id === linkedProdId);
+              if (prod) {
+                this.openProductDetailsModal(prod);
+              } else {
+                showToast("Product not found in current collections.", "error");
+              }
+            } else {
+              showToast("No product linked to this slot.", "error");
+            }
+          };
+        }
+      }
 
       // BIND IMMERSIVE MOUSE PARALLAX EFFECT ON THE PREMIUM HERO
       setTimeout(() => {
@@ -2621,7 +2657,7 @@
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "profit-calculator", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings"].map(tab => `
+            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -2666,8 +2702,8 @@
 
       if (this.adminView === "dashboard") {
         this.renderAdminDashboard(container);
-      } else if (this.adminView === "profit-calculator") {
-        this.renderAdminProfitCalculator(container);
+      } else if (this.adminView === "hero-products") {
+        this.renderAdminHeroProducts(container);
       } else if (this.adminView === "products") {
         this.renderAdminProducts(container);
       } else if (this.adminView === "orders") {
@@ -2744,340 +2780,114 @@
       this.renderAnalyticsChart();
     };
 
-    store.renderAdminProfitCalculator = function(container) {
-      const deliveredOrders = this.orders.filter(o => o.status === "processed");
-      const totalDeliveredRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-      const totalDeliveredCount = deliveredOrders.length || 1;
-      
-      const lifetimeAOV = Math.round(totalDeliveredRevenue / totalDeliveredCount) || 1100;
-
-      let totalItemsSold = 0;
-      deliveredOrders.forEach(o => {
-        if (o.items) {
-          o.items.forEach(item => {
-            totalItemsSold += (item.quantity || 0);
-          });
-        }
-      });
-      const avgPiecesPerOrder = Number((totalItemsSold / totalDeliveredCount).toFixed(2)) || 1.2;
-
+    store.renderAdminHeroProducts = function(container) {
       container.innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          <!-- SECTION 1: BREAKEVEN CALCULATOR -->
-          <div class="bg-[#141414] rounded-3xl p-6 sm:p-8 border border-luxuryGold/20 space-y-6 shadow-xl">
-            <div class="border-b border-luxuryGold/10 pb-4">
-              <h2 class="font-serif text-xl sm:text-2xl text-luxuryGold flex items-center gap-2">
-                ${getIconSvg('percent', 'w-6 h-6 text-luxuryGold')} Breakeven Simulator
-              </h2>
-              <p class="text-xs text-gray-400 mt-1">Determine critical performance indicators. Adjust your Selling Price and costs manually below.</p>
-            </div>
-
-            <!-- Suggested baseline database helper notes -->
-            <div class="grid grid-cols-3 gap-3 bg-black/30 p-3 rounded-xl border border-white/5 text-[10px] text-gray-400">
-              <div>
-                <span class="block uppercase tracking-wider text-gray-500 font-bold">Lifetime AOV (DB)</span>
-                <strong class="text-white">${lifetimeAOV} MAD</strong>
-              </div>
-              <div>
-                <span class="block uppercase tracking-wider text-gray-500 font-bold">Avg Pieces/Order (DB)</span>
-                <strong class="text-white">${avgPiecesPerOrder} pcs</strong>
-              </div>
-              <div class="border-l border-luxuryGold/20 pl-2">
-                <span class="block uppercase tracking-wider text-luxuryGold font-bold">Calculated Order AOV</span>
-                <strong id="lbl-calculated-aov" class="text-luxuryGold font-bold">0 MAD</strong>
-              </div>
-            </div>
-
-            <!-- Parameters Sliders Grid with custom Selling Price (AOV) -->
-            <div class="space-y-4 text-xs text-gray-300">
-              
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label class="font-semibold text-luxuryGold">Selling Price per Piece (Unit Price)</label>
-                  <span id="lbl-aov-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">950 MAD</span>
-                </div>
-                <input type="range" id="input-aov-bk" min="100" max="3000" step="10" value="950" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-                <p class="text-[9px] text-gray-500 mt-1">Selling price of a single unit. Calculated Order AOV will scale dynamically with pieces.</p>
-              </div>
-
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label class="font-semibold text-luxuryGold">Average Pieces per Order</label>
-                  <span id="lbl-pieces-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">${avgPiecesPerOrder}</span>
-                </div>
-                <input type="range" id="input-pieces-bk" min="1" max="5" step="0.1" value="${avgPiecesPerOrder}" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <label class="font-semibold text-luxuryGold">Number of Leads</label>
-                    <span id="lbl-leads-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">1,000</span>
-                  </div>
-                  <input type="range" id="input-leads-bk" min="100" max="10000" step="100" value="1000" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-                </div>
-
-                <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <label class="font-semibold text-luxuryGold">Cost Per Lead (CPL)</label>
-                    <span id="lbl-cpl-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">15 MAD</span>
-                  </div>
-                  <input type="range" id="input-cpl-bk" min="1" max="100" step="1" value="15" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <label class="font-semibold text-luxuryGold">Confirmation Rate (%)</label>
-                    <span id="lbl-confirm-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">50%</span>
-                  </div>
-                  <input type="range" id="input-confirm-bk" min="10" max="100" step="5" value="50" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-                </div>
-
-                <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <label class="font-semibold text-luxuryGold">Delivery Rate (%)</label>
-                    <span id="lbl-delivery-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">60%</span>
-                  </div>
-                  <input type="range" id="input-delivery-bk" min="10" max="100" step="5" value="60" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label class="font-semibold text-luxuryGold">Product Buying Cost / Piece</label>
-                  <span id="lbl-productcost-bk" class="font-mono text-white text-xs font-bold bg-black/50 px-2 py-0.5 rounded">120 MAD</span>
-                </div>
-                <input type="range" id="input-productcost-bk" min="10" max="500" step="5" value="120" class="w-full h-1 bg-black rounded-lg appearance-none cursor-pointer accent-luxuryGold focus:outline-none">
-              </div>
-
-            </div>
-
-            <!-- Calculated Metrics Highlight -->
-            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-luxuryGold/10">
-              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
-                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven CPL</p>
-                <p id="out-bk-cpl" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00 MAD</p>
-                <p class="text-[8px] text-gray-500 mt-1">Maximum cost allowed per lead</p>
-              </div>
-              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
-                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven Delivery</p>
-                <p id="out-bk-delivery" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00%</p>
-                <p class="text-[8px] text-gray-500 mt-1">Minimum delivery rate required</p>
-              </div>
-              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
-                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven Confirmation</p>
-                <p id="out-bk-confirm" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00%</p>
-                <p class="text-[8px] text-gray-500 mt-1">Minimum confirmation rate required</p>
-              </div>
-              <div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20">
-                <p class="text-[9px] uppercase tracking-wider text-luxuryGold font-bold">Breakeven AOV</p>
-                <p id="out-bk-aov" class="text-xl sm:text-2xl font-serif font-bold text-white mt-1">0.00 MAD</p>
-                <p class="text-[8px] text-gray-500 mt-1">Minimum basket value required</p>
-              </div>
-            </div>
-
-            <div class="bg-black/80 p-4 rounded-2xl border border-white/5 space-y-2 text-[10px] text-gray-400">
-              <p class="font-bold text-luxuryGold uppercase tracking-wider">Formula Explanations:</p>
-              <ul class="list-disc list-inside space-y-1 text-gray-400 font-light">
-                <li><strong class="text-gray-300">Logistics standard:</strong> 0 MAD delivery cost (paid by client), 0 MAD return cost (free returns).</li>
-                <li><strong class="text-gray-300">Product Cost (COGS):</strong> Calculated only on <span class="text-emerald-400 font-semibold">Delivered</span> orders because returned inventory is safely added back to stock.</li>
-                <li><strong class="text-gray-300">Formulas:</strong> All calculations dynamically adapt to your custom selling price (AOV) and product cost.</li>
-              </ul>
-            </div>
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold uppercase tracking-wider">Manage Featured Hero Products</h3>
+            <p class="text-xs text-gray-400">Directly swap products, override titles, and update hero showcase images.</p>
           </div>
 
-          <!-- SECTION 2: PROFIT SCALING CALCULATOR -->
-          <div class="bg-[#141414] rounded-3xl p-6 sm:p-8 border border-luxuryGold/20 space-y-6 shadow-xl flex flex-col justify-between">
-            <div class="space-y-6">
-              <div class="border-b border-luxuryGold/10 pb-4">
-                <h2 class="font-serif text-xl sm:text-2xl text-luxuryGold flex items-center gap-2">
-                  ${getIconSvg('shopping-cart', 'w-6 h-6 text-luxuryGold')} Profit Scaling Simulator
-                </h2>
-                <p class="text-xs text-gray-400 mt-1">Simulate expectations and operational budgets using your manual selling settings.</p>
-              </div>
-
-              <!-- Metrics Stats outputs -->
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Expected Revenue</p>
-                  <p id="out-sc-revenue" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+          <form id="hero-products-form" class="space-y-8">
+            <!-- Slot 1 -->
+            <div class="bg-black/40 p-5 rounded-2xl border border-luxuryGold/15 space-y-4">
+              <p class="text-xs font-bold text-luxuryGold uppercase tracking-wider">Slot 1 (Left Back Piece)</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Link with Store Product</label>
+                  <select name="heroProdId1" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                    <option value="">-- No Product Linked --</option>
+                    ${this.products.map(p => `<option value="${p.id}" ${this.settings.heroProdId1 === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                  </select>
                 </div>
-                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Total Ad Cost</p>
-                  <p id="out-sc-adcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Display Name (Override)</label>
+                  <input type="text" name="heroProdName1" value="${this.settings.heroProdName1 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
                 </div>
-                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Product Cost</p>
-                  <p id="out-sc-prodcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
-                </div>
-                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Delivery Cost</p>
-                  <p id="out-sc-delcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
-                </div>
-                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Return Cost</p>
-                  <p id="out-sc-retcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
-                </div>
-                <div class="bg-black/40 p-3.5 rounded-xl border border-white/5">
-                  <p class="text-[9px] uppercase tracking-wider text-gray-400">Total Costs</p>
-                  <p id="out-sc-totcost" class="text-sm font-serif font-bold text-white mt-1">0.00 MAD</p>
-                </div>
-              </div>
-
-              <!-- High Emphasis Key Stats Outputs -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-luxuryGold/10">
-                <div class="bg-black/60 p-4 rounded-xl border-2 border-luxuryGold">
-                  <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-extrabold">Estimated Net Profit</p>
-                  <p id="out-sc-netprofit" class="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">0.00 MAD</p>
-                  <p class="text-[9px] text-gray-400 mt-1">Final pocketed returns</p>
-                </div>
-                <div class="bg-black/60 p-4 rounded-xl border-2 border-luxuryGold">
-                  <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-extrabold">Net Profit Margin (%)</p>
-                  <p id="out-sc-margin" class="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">0.00%</p>
-                  <p class="text-[9px] text-gray-400 mt-1">Efficiency ratio on revenue</p>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Showcase Image URL</label>
+                  <input type="url" name="heroImg1" value="${this.settings.heroImg1 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
                 </div>
               </div>
             </div>
 
-            <!-- Orders Quantities Breakdown Metrics -->
-            <div class="bg-black/30 p-4 rounded-2xl border border-white/5 grid grid-cols-3 gap-2 text-center text-xs">
-              <div>
-                <p class="text-gray-400 text-[10px]">Confirmed</p>
-                <p id="out-sc-confirmedqty" class="text-base font-serif font-bold text-white mt-0.5">0</p>
-              </div>
-              <div>
-                <p class="text-gray-400 text-[10px]">Delivered</p>
-                <p id="out-sc-deliveredqty" class="text-base font-serif font-bold text-emerald-400 mt-0.5">0</p>
-              </div>
-              <div>
-                <p class="text-gray-400 text-[10px]">Returned</p>
-                <p id="out-sc-returnedqty" class="text-base font-serif font-bold text-red-400 mt-0.5">0</p>
+            <!-- Slot 2 -->
+            <div class="bg-black/40 p-5 rounded-2xl border border-luxuryGold/15 space-y-4">
+              <p class="text-xs font-bold text-luxuryGold uppercase tracking-wider">Slot 2 (Right Back Piece)</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Link with Store Product</label>
+                  <select name="heroProdId2" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                    <option value="">-- No Product Linked --</option>
+                    ${this.products.map(p => `<option value="${p.id}" ${this.settings.heroProdId2 === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Display Name (Override)</label>
+                  <input type="text" name="heroProdName2" value="${this.settings.heroProdName2 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Showcase Image URL</label>
+                  <input type="url" name="heroImg2" value="${this.settings.heroImg2 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                </div>
               </div>
             </div>
-          </div>
 
+            <!-- Slot 3 -->
+            <div class="bg-black/40 p-5 rounded-2xl border border-luxuryGold/15 space-y-4">
+              <p class="text-xs font-bold text-luxuryGold uppercase tracking-wider">Slot 3 (Center Foreground Piece)</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Link with Store Product</label>
+                  <select name="heroProdId3" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                    <option value="">-- No Product Linked --</option>
+                    ${this.products.map(p => `<option value="${p.id}" ${this.settings.heroProdId3 === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Display Name (Override)</label>
+                  <input type="text" name="heroProdName3" value="${this.settings.heroProdName3 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Showcase Image URL</label>
+                  <input type="url" name="heroImg3" value="${this.settings.heroImg3 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end border-t border-white/10 pt-4">
+              <button type="submit" class="px-6 py-2.5 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold hover:bg-luxuryGold/85 transition duration-300">Save Hero Configurations</button>
+            </div>
+          </form>
         </div>
       `;
 
-      const inLeads = document.getElementById("input-leads-bk");
-      const inCpl = document.getElementById("input-cpl-bk");
-      const inConfirm = document.getElementById("input-confirm-bk");
-      const inDelivery = document.getElementById("input-delivery-bk");
-      const inProdCost = document.getElementById("input-productcost-bk");
-      const inAov = document.getElementById("input-aov-bk");
-      const inPieces = document.getElementById("input-pieces-bk");
+      document.getElementById("hero-products-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        
+        const payload = {
+          heroProdId1: form.heroProdId1.value,
+          heroProdName1: form.heroProdName1.value,
+          heroImg1: form.heroImg1.value,
+          heroProdId2: form.heroProdId2.value,
+          heroProdName2: form.heroProdName2.value,
+          heroImg2: form.heroImg2.value,
+          heroProdId3: form.heroProdId3.value,
+          heroProdName3: form.heroProdName3.value,
+          heroImg3: form.heroImg3.value
+        };
 
-      const lblLeads = document.getElementById("lbl-leads-bk");
-      const lblCpl = document.getElementById("lbl-cpl-bk");
-      const lblConfirm = document.getElementById("lbl-confirm-bk");
-      const lblDelivery = document.getElementById("lbl-delivery-bk");
-      const lblProdCost = document.getElementById("lbl-productcost-bk");
-      const lblAov = document.getElementById("lbl-aov-bk");
-      const lblPieces = document.getElementById("lbl-pieces-bk");
+        store.settings = { ...store.settings, ...payload };
+        showToast("Featured Hero products settings saved.");
+        store.updateDOM();
 
-      const outBkCpl = document.getElementById("out-bk-cpl");
-      const outBkDelivery = document.getElementById("out-bk-delivery");
-      const outBkConfirm = document.getElementById("out-bk-confirm");
-      const outBkAov = document.getElementById("out-bk-aov");
-
-      const outScRevenue = document.getElementById("out-sc-revenue");
-      const outScAdcost = document.getElementById("out-sc-adcost");
-      const outScProdcost = document.getElementById("out-sc-prodcost");
-      const outScDelcost = document.getElementById("out-sc-delcost");
-      const outScRetcost = document.getElementById("out-sc-retcost");
-      const outScTotcost = document.getElementById("out-sc-totcost");
-      const outScNetprofit = document.getElementById("out-sc-netprofit");
-      const outScMargin = document.getElementById("out-sc-margin");
-
-      const outScConfirmedQty = document.getElementById("out-sc-confirmedqty");
-      const outScDeliveredQty = document.getElementById("out-sc-deliveredqty");
-      const outScReturnedQty = document.getElementById("out-sc-returnedqty");
-
-      const recalculateMetrics = () => {
-        const leads = Number(inLeads.value);
-        const cpl = Number(inCpl.value);
-        const confirmRate = Number(inConfirm.value) / 100;
-        const deliveryRate = Number(inDelivery.value) / 100;
-        const rawProductCost = Number(inProdCost.value);
-        const unitPrice = Number(inAov.value);
-        const pieces = Number(inPieces.value);
-
-        const calculatedAOV = unitPrice * pieces;
-        const productCostPerOrder = rawProductCost * pieces; // COGS = Cost per piece * average pieces per order
-
-        lblLeads.textContent = leads.toLocaleString('en-US');
-        lblCpl.textContent = cpl + " MAD";
-        lblConfirm.textContent = inConfirm.value + "%";
-        lblDelivery.textContent = inDelivery.value + "%";
-        lblProdCost.textContent = rawProductCost + " MAD";
-        lblAov.textContent = unitPrice + " MAD";
-        lblPieces.textContent = pieces;
-
-        const calcAovEl = document.getElementById("lbl-calculated-aov");
-        if (calcAovEl) {
-          calcAovEl.textContent = Math.round(calculatedAOV) + " MAD";
+        try {
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), payload, { merge: true });
+        } catch (err) {
+          console.warn("Cloud save failed, locally stored successfully.", err);
         }
-
-        const deliveryFee = 0; // Fully covered by client
-        const returnFee = 0;   // Free returns
-
-        const expectedConfirmed = leads * confirmRate;
-        const expectedDelivered = expectedConfirmed * deliveryRate;
-        const expectedReturned = expectedConfirmed * (1 - deliveryRate);
-
-        const scAdCost = leads * cpl;
-        const scRevenue = expectedDelivered * calculatedAOV;
-        
-        const scProductCost = expectedDelivered * productCostPerOrder; 
-        
-        const scDeliveryCost = expectedDelivered * deliveryFee;
-        const scReturnCost = expectedReturned * returnFee;
-
-        const scTotalCosts = scAdCost + scProductCost + scDeliveryCost + scReturnCost;
-        const scNetProfit = scRevenue - scTotalCosts;
-        const scMargin = scRevenue > 0 ? (scNetProfit / scRevenue) * 100 : 0;
-
-        outScRevenue.textContent = Math.round(scRevenue).toLocaleString('en-US') + " MAD";
-        outScAdcost.textContent = Math.round(scAdCost).toLocaleString('en-US') + " MAD";
-        outScProdcost.textContent = Math.round(scProductCost).toLocaleString('en-US') + " MAD";
-        outScDelcost.textContent = Math.round(scDeliveryCost).toLocaleString('en-US') + " MAD";
-        outScRetcost.textContent = Math.round(scReturnCost).toLocaleString('en-US') + " MAD";
-        outScTotcost.textContent = Math.round(scTotalCosts).toLocaleString('en-US') + " MAD";
-        
-        outScNetprofit.textContent = Math.round(scNetProfit).toLocaleString('en-US') + " MAD";
-        outScNetprofit.className = scNetProfit >= 0 ? "text-2xl sm:text-3xl font-serif font-bold text-emerald-400 mt-1" : "text-2xl sm:text-3xl font-serif font-bold text-red-400 mt-1";
-        
-        outScMargin.textContent = scMargin.toFixed(1) + "%";
-        outScMargin.className = scMargin >= 0 ? "text-2xl sm:text-3xl font-serif font-bold text-emerald-400 mt-1" : "text-2xl sm:text-3xl font-serif font-bold text-red-400 mt-1";
-
-        outScConfirmedQty.textContent = Math.round(expectedConfirmed).toLocaleString('en-US');
-        outScDeliveredQty.textContent = Math.round(expectedDelivered).toLocaleString('en-US');
-        outScReturnedQty.textContent = Math.round(expectedReturned).toLocaleString('en-US');
-
-        // New Breakeven formulas based on: Net Profit = CR * DR * (AOV - Cost_order) - CPL = 0
-        const profitMarginPerOrder = calculatedAOV - productCostPerOrder;
-
-        const bkCpl = confirmRate * deliveryRate * profitMarginPerOrder;
-        outBkCpl.textContent = bkCpl > 0 ? bkCpl.toFixed(1) + " MAD" : "Infeasible";
-
-        const bkDelivery = profitMarginPerOrder > 0 ? (cpl / (confirmRate * profitMarginPerOrder)) * 100 : 0;
-        outBkDelivery.textContent = (bkDelivery > 0 && bkDelivery <= 100) ? bkDelivery.toFixed(1) + "%" : "Infeasible";
-
-        const bkConfirm = profitMarginPerOrder > 0 ? (cpl / (deliveryRate * profitMarginPerOrder)) * 100 : 0;
-        outBkConfirm.textContent = (bkConfirm > 0 && bkConfirm <= 100) ? bkConfirm.toFixed(1) + "%" : "Infeasible";
-
-        const bkAov = (cpl / (confirmRate * deliveryRate)) + productCostPerOrder;
-        outBkAov.textContent = bkAov > 0 ? Math.round(bkAov) + " MAD" : "Infeasible";
       };
-
-      [inLeads, inCpl, inConfirm, inDelivery, inProdCost, inAov, inPieces].forEach(el => {
-        el.oninput = recalculateMetrics;
-      });
-
-      recalculateMetrics();
     };
 
     store.renderAdminProducts = function(container) {
