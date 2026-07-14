@@ -4613,15 +4613,26 @@
           if (Array.isArray(product.galleryImages)) {
             imagesArray = product.galleryImages;
           } else if (typeof product.galleryImages === 'string') {
-            imagesArray = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
+            // Robust base64-safe comma separation parser
+            let rawParts = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
+            let processed = [];
+            for (let i = 0; i < rawParts.length; i++) {
+              if (rawParts[i].startsWith('data:image') && i + 1 < rawParts.length) {
+                processed.push(rawParts[i] + ',' + rawParts[i+1]);
+                i++; // Skip the content part in rawParts
+              } else {
+                processed.push(rawParts[i]);
+              }
+            }
+            imagesArray = processed;
           }
         }
 
-        imagesArray.forEach((imgUrl) => {
+        imagesArray.forEach((imgUrl, idx) => {
           galleryMarkup += `
             <div class="w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-premium flex-shrink-0 relative ${
               this.activeImg === imgUrl ? 'border-luxuryGold scale-105' : 'border-transparent opacity-60'
-            }" data-url="${imgUrl}">
+            }" data-index="${idx}">
               <img src="${imgUrl}" class="w-full h-full object-cover">
             </div>
           `;
@@ -4716,10 +4727,13 @@
           };
         }
 
-        document.querySelectorAll("[data-url]").forEach(btn => {
+        document.querySelectorAll("[data-index]").forEach(btn => {
           btn.onclick = () => {
-            store.activeImg = btn.getAttribute("data-url");
-            renderInsideModal();
+            const idx = parseInt(btn.getAttribute("data-index"));
+            if (imagesArray[idx]) {
+              store.activeImg = imagesArray[idx];
+              renderInsideModal();
+            }
           };
         });
 
