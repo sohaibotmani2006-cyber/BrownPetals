@@ -171,6 +171,21 @@
     .marble-sheen {
       background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 50%, rgba(212,175,55,0.03) 100%);
     }
+
+    @keyframes modal-enter {
+      0% { opacity: 0; transform: scale(0.96) translateY(12px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes modal-leave {
+      0% { opacity: 1; transform: scale(1) translateY(0); }
+      100% { opacity: 0; transform: scale(0.96) translateY(12px); }
+    }
+    .animate-modal-enter {
+      animation: modal-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .animate-modal-leave {
+      animation: modal-leave 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
 <body class="font-sans antialiased overflow-x-hidden">
@@ -4598,179 +4613,226 @@
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
-      const renderInsideModal = () => {
-        let galleryMarkup = `
-          <div class="w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-premium flex-shrink-0 relative ${
-            this.activeImg === product.imageURL ? 'border-luxuryGold scale-105' : 'border-transparent opacity-60'
-          }" id="main-thumb-btn">
-            <img src="${product.imageURL || fallbackImage}" class="w-full h-full object-cover">
-          </div>
-        `;
+      // Build gallery thumbnails once to avoid re-rendering entire modal on image swap
+      let galleryMarkup = `
+        <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-luxuryGold scale-105" data-img="${product.imageURL || fallbackImage}">
+          <img src="${product.imageURL || fallbackImage}" class="w-full h-full object-cover">
+        </div>
+      `;
 
-        // Resolve either string array or raw array format robustly
-        let imagesArray = [];
-        if (product.galleryImages) {
-          if (Array.isArray(product.galleryImages)) {
-            imagesArray = product.galleryImages;
-          } else if (typeof product.galleryImages === 'string') {
-            // Robust base64-safe comma separation parser
-            let rawParts = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
-            let processed = [];
-            for (let i = 0; i < rawParts.length; i++) {
-              if (rawParts[i].startsWith('data:image') && i + 1 < rawParts.length) {
-                processed.push(rawParts[i] + ',' + rawParts[i+1]);
-                i++; // Skip the content part in rawParts
-              } else {
-                processed.push(rawParts[i]);
-              }
+      let imagesArray = [];
+      if (product.galleryImages) {
+        if (Array.isArray(product.galleryImages)) {
+          imagesArray = product.galleryImages;
+        } else if (typeof product.galleryImages === 'string') {
+          let rawParts = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
+          let processed = [];
+          for (let i = 0; i < rawParts.length; i++) {
+            if (rawParts[i].startsWith('data:image') && i + 1 < rawParts.length) {
+              processed.push(rawParts[i] + ',' + rawParts[i+1]);
+              i++; 
+            } else {
+              processed.push(rawParts[i]);
             }
-            imagesArray = processed;
           }
+          imagesArray = processed;
         }
+      }
 
-        imagesArray.forEach((imgUrl, idx) => {
-          galleryMarkup += `
-            <div class="w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-premium flex-shrink-0 relative ${
-              this.activeImg === imgUrl ? 'border-luxuryGold scale-105' : 'border-transparent opacity-60'
-            }" data-index="${idx}">
-              <img src="${imgUrl}" class="w-full h-full object-cover">
-            </div>
-          `;
-        });
-
-        const normalizedGender = getNormalizedGender(product.gender);
-
-        modal.innerHTML = `
-          <div class="fixed inset-0 bg-black/85 backdrop-blur-xs" id="product-modal-backdrop"></div>
-          <div class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-fade-in my-auto h-[82vh] md:h-auto md:max-h-[85vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
-            
-            <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
-
-            <!-- Image View Container -->
-            <div class="md:w-1/2 h-[35%] sm:h-[40%] md:h-auto relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in" id="zoom-img-btn">
-              <img src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-premium transform group-hover/main:scale-105">
-              ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
-              
-              <div class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
-                <span>${this.t('tapToZoom')}</span>
-              </div>
-
-              <div class="absolute inset-0 bg-black/35 opacity-0 group-hover/main:opacity-100 transition flex items-center justify-center">
-                <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">${this.t('quickView')}</span>
-              </div>
-            </div>
-
-            <!-- Details Container -->
-            <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-[65%] sm:h-[60%] md:h-auto">
-              <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                  <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
-                  ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
-                </div>
-                <h2 class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
-                
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-1">
-                    <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-                    <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
-                  </div>
-                  <button id="modal-share-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    ${this.t('shareLink')}
-                  </button>
-                </div>
-
-                <div class="flex items-baseline gap-3 pt-1">
-                  ${product.discountPrice ? `
-                    <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                    <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
-                  ` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
-                </div>
-
-                <div class="border-t border-b border-luxuryGold/20 py-3 space-y-2">
-                  <p class="text-[10px] font-semibold text-luxuryGold uppercase tracking-wider">Gallery</p>
-                  <div class="flex gap-2.5 overflow-x-auto py-1 hide-scrollbar">
-                    ${galleryMarkup}
-                  </div>
-                </div>
-
-                <p class="text-xs md:text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
-                <p class="text-[11px] font-medium text-gray-400">
-                  Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
-                </p>
-              </div>
-
-              <div class="space-y-3 pt-3 border-t border-white/5 flex-shrink-0">
-                <div class="grid grid-cols-2 gap-3">
-                  <button id="modal-add-to-cart-btn" class="py-2.5 md:py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition shadow-xs">${this.t('addToCart')}</button>
-                  <button id="modal-order-now-btn" class="py-2.5 md:py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition transform hover:scale-[1.02]">${this.t('orderNow')}</button>
-                </div>
-                <p class="text-[9px] md:text-[10px] text-center text-gray-500">${this.t('customCardTip')}</p>
-              </div>
-            </div>
+      imagesArray.forEach((imgUrl) => {
+        galleryMarkup += `
+          <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-img="${imgUrl}">
+            <img src="${imgUrl}" class="w-full h-full object-cover">
           </div>
         `;
+      });
 
-        const closeModal = () => {
+      const normalizedGender = getNormalizedGender(product.gender);
+
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/85 backdrop-blur-xs transition-opacity duration-300 opacity-0" id="product-modal-backdrop"></div>
+        <div id="product-modal-content" class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-modal-enter my-auto h-[82vh] md:h-auto md:max-h-[85vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+          
+          <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
+
+          <!-- Image View Container -->
+          <div class="md:w-1/2 h-[35%] sm:h-[40%] md:h-auto relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in" id="zoom-img-btn">
+            <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-300 ease-in-out transform group-hover/main:scale-105">
+            ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
+            
+            <div class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
+              <span>${this.t('tapToZoom')}</span>
+            </div>
+
+            <div class="absolute inset-0 bg-black/35 opacity-0 group-hover/main:opacity-100 transition duration-300 flex items-center justify-center">
+              <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">${this.t('quickView')}</span>
+            </div>
+          </div>
+
+          <!-- Details Container -->
+          <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-[65%] sm:h-[60%] md:h-auto">
+            <div class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
+                ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
+              </div>
+              <h2 class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
+              
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1">
+                  <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
+                  <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
+                </div>
+                <button id="modal-share-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                  ${this.t('shareLink')}
+                </button>
+              </div>
+
+              <div class="flex items-baseline gap-3 pt-1">
+                ${product.discountPrice ? `
+                  <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                  <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
+                ` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
+              </div>
+
+              <div class="border-t border-b border-luxuryGold/20 py-3 space-y-2">
+                <p class="text-[10px] font-semibold text-luxuryGold uppercase tracking-wider">Gallery</p>
+                <div class="flex gap-2.5 overflow-x-auto py-1 hide-scrollbar" id="modal-gallery-container">
+                  ${galleryMarkup}
+                </div>
+              </div>
+
+              <p class="text-xs md:text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
+              <p class="text-[11px] font-medium text-gray-400">
+                Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
+              </p>
+            </div>
+
+            <div class="space-y-3 pt-3 border-t border-white/5 flex-shrink-0">
+              <div class="grid grid-cols-2 gap-3">
+                <button id="modal-add-to-cart-btn" class="py-2.5 md:py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition shadow-xs">${this.t('addToCart')}</button>
+                <button id="modal-order-now-btn" class="py-2.5 md:py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition transform hover:scale-[1.02]">${this.t('orderNow')}</button>
+              </div>
+              <p class="text-[9px] md:text-[10px] text-center text-gray-500">${this.t('customCardTip')}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const closeModal = () => {
+        const modalBg = document.getElementById("product-modal-backdrop");
+        const modalContent = document.getElementById("product-modal-content");
+        if (modalBg) modalBg.classList.replace("opacity-100", "opacity-0");
+        if (modalContent) {
+          modalContent.classList.remove("animate-modal-enter");
+          modalContent.classList.add("animate-modal-leave");
+        }
+        setTimeout(() => {
           modal.classList.add("hidden");
           window.location.hash = '#/' + store.currentPage;
-        };
-
-        document.getElementById("product-modal-backdrop").onclick = closeModal;
-        document.getElementById("product-modal-close").onclick = closeModal;
-
-        const mainThumb = document.getElementById("main-thumb-btn");
-        if (mainThumb) {
-          mainThumb.onclick = () => {
-            store.activeImg = product.imageURL;
-            renderInsideModal();
-          };
-        }
-
-        document.querySelectorAll("[data-index]").forEach(btn => {
-          btn.onclick = () => {
-            const idx = parseInt(btn.getAttribute("data-index"));
-            if (imagesArray[idx]) {
-              store.activeImg = imagesArray[idx];
-              renderInsideModal();
-            }
-          };
-        });
-
-        document.getElementById("zoom-img-btn").onclick = () => {
-          const lightbox = document.getElementById("lightbox-container");
-          if (!lightbox) return;
-          lightbox.innerHTML = `
-            <button id="lightbox-close" class="absolute top-6 right-6 z-50 p-3 text-white bg-white/10 hover:bg-white/20 rounded-full transition-premium">✕</button>
-            <div class="max-w-4xl w-full h-full max-h-[85vh] flex items-center justify-center p-4">
-              <img src="${store.activeImg || fallbackImage}" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border-2 border-luxuryGold/30">
-            </div>
-          `;
-          lightbox.classList.remove("hidden");
-          document.getElementById("lightbox-close").onclick = () => lightbox.classList.add("hidden");
-        };
-
-        document.getElementById("modal-share-btn").onclick = (e) => {
-          e.stopPropagation();
-          const shareUrl = window.location.origin + window.location.pathname + '#/product/' + product.id;
-          store.copyTextToClipboard(shareUrl);
-        };
-
-        document.getElementById("modal-add-to-cart-btn").onclick = () => {
-          store.addToCart(product);
-          closeModal();
-        };
-
-        document.getElementById("modal-order-now-btn").onclick = () => {
-          store.cart = [{ ...product, quantity: 1 }];
-          localStorage.setItem("bp_cart", JSON.stringify(store.cart));
-          closeModal();
-          store.setPage("cart");
-        };
+        }, 300); // 300ms matches CSS exit duration
       };
 
-      renderInsideModal();
+      document.getElementById("product-modal-backdrop").onclick = closeModal;
+      document.getElementById("product-modal-close").onclick = closeModal;
+
+      const mainImg = document.getElementById("main-product-image");
+      document.querySelectorAll(".gallery-thumb").forEach(btn => {
+        btn.onclick = () => {
+          const newImgSrc = btn.getAttribute("data-img");
+          if (store.activeImg === newImgSrc) return;
+          
+          // Smooth crossfade logic
+          mainImg.style.opacity = '0';
+          setTimeout(() => {
+            store.activeImg = newImgSrc;
+            mainImg.src = newImgSrc;
+            mainImg.style.opacity = '1';
+            
+            // Update active thumbnail border states
+            document.querySelectorAll(".gallery-thumb").forEach(t => {
+              t.classList.remove("border-luxuryGold", "scale-105");
+              t.classList.add("border-transparent", "opacity-60");
+            });
+            btn.classList.remove("border-transparent", "opacity-60");
+            btn.classList.add("border-luxuryGold", "scale-105");
+          }, 150);
+        };
+      });
+
+      document.getElementById("zoom-img-btn").onclick = () => {
+        const lightbox = document.getElementById("lightbox-container");
+        if (!lightbox) return;
+        lightbox.innerHTML = `
+          <div class="fixed inset-0 bg-black/95 backdrop-blur-md transition-opacity duration-300 opacity-0" id="lightbox-backdrop"></div>
+          <button id="lightbox-close" class="absolute top-6 right-6 z-50 p-3 text-white bg-white/10 hover:bg-white/20 rounded-full transition-premium opacity-0 transition-opacity duration-500">✕</button>
+          <div class="relative z-10 max-w-4xl w-full h-full max-h-[85vh] flex items-center justify-center p-4">
+            <img id="lightbox-img" src="${store.activeImg || fallbackImage}" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border-2 border-luxuryGold/30 transform scale-95 opacity-0 transition-all duration-300">
+          </div>
+        `;
+        lightbox.classList.remove("hidden");
+        
+        // Trigger smooth scale & fade-in entrance for the lightbox components
+        requestAnimationFrame(() => {
+          const lbBg = document.getElementById("lightbox-backdrop");
+          const lbImg = document.getElementById("lightbox-img");
+          const lbClose = document.getElementById("lightbox-close");
+          if (lbBg) lbBg.classList.replace("opacity-0", "opacity-100");
+          if (lbImg) {
+            lbImg.classList.replace("scale-95", "scale-100");
+            lbImg.classList.replace("opacity-0", "opacity-100");
+          }
+          if (lbClose) lbClose.classList.replace("opacity-0", "opacity-100");
+        });
+
+        const closeLightbox = () => {
+          const lbBg = document.getElementById("lightbox-backdrop");
+          const lbImg = document.getElementById("lightbox-img");
+          const lbClose = document.getElementById("lightbox-close");
+          if (lbBg) lbBg.classList.replace("opacity-100", "opacity-0");
+          if (lbImg) {
+            lbImg.classList.replace("scale-100", "scale-95");
+            lbImg.classList.replace("opacity-100", "opacity-0");
+          }
+          if (lbClose) lbClose.classList.replace("opacity-100", "opacity-0");
+          
+          setTimeout(() => {
+            lightbox.classList.add("hidden");
+          }, 300);
+        };
+
+        document.getElementById("lightbox-backdrop").onclick = closeLightbox;
+        document.getElementById("lightbox-close").onclick = closeLightbox;
+      };
+
+      document.getElementById("modal-share-btn").onclick = (e) => {
+        e.stopPropagation();
+        const shareUrl = window.location.origin + window.location.pathname + '#/product/' + product.id;
+        store.copyTextToClipboard(shareUrl);
+      };
+
+      document.getElementById("modal-add-to-cart-btn").onclick = () => {
+        store.addToCart(product);
+        closeModal();
+      };
+
+      document.getElementById("modal-order-now-btn").onclick = () => {
+        store.cart = [{ ...product, quantity: 1 }];
+        localStorage.setItem("bp_cart", JSON.stringify(store.cart));
+        closeModal();
+        store.setPage("cart");
+      };
+
       modal.classList.remove("hidden");
+      
+      // Trigger backdrop fade-in sequence gracefully
+      requestAnimationFrame(() => {
+        const modalBg = document.getElementById("product-modal-backdrop");
+        if (modalBg) {
+          modalBg.classList.replace("opacity-0", "opacity-100");
+        }
+      });
     };
 
     store.renderFloatingActions = function() {
