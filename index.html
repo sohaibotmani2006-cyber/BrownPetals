@@ -840,12 +840,6 @@
                 🌐 ${this.language === 'en' ? 'العربية' : 'EN'}
               </button>
 
-              <!-- Search Bar -->
-              <div class="relative hidden lg:block">
-                <input id="nav-search-input" type="text" placeholder="${this.t('search')}" value="${this.searchQuery}" class="pl-9 pr-4 py-2 text-[10px] uppercase tracking-wider rounded-xl border border-luxuryGold/30 bg-black/50 focus:outline-none focus:border-luxuryGold text-white transition-premium w-44">
-                <div class="absolute left-3 top-2.5 text-luxuryGold">${getIconSvg('search', 'w-3.5 h-3.5')}</div>
-              </div>
-
               <!-- Cart Button -->
               <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group" title="Open Cart">
                 ${getIconSvg('shopping-bag', 'w-4 h-4')}
@@ -896,26 +890,6 @@
     document.getElementById("nav-cart-btn").onclick = () => {
       this.setPage("cart");
     };
-
-    const searchInput = document.getElementById("nav-search-input");
-      if (searchInput) {
-        searchInput.oninput = (e) => {
-          this.searchQuery = e.target.value;
-          if (this.currentPage !== "shop") {
-            this.currentPage = "shop";
-            this.updateDOM();
-            const newSearch = document.getElementById("nav-search-input");
-            if (newSearch) {
-              newSearch.focus();
-              newSearch.setSelectionRange(newSearch.value.length, newSearch.value.length);
-            }
-          } else {
-            const shopSearch = document.getElementById("shop-search-input");
-            if (shopSearch) shopSearch.value = e.target.value;
-            this.renderShopPage();
-          }
-        };
-      }
     };
 
     store.renderMobileMenu = function() {
@@ -2487,8 +2461,22 @@
       let productsGrid = "";
       if (this.loadingProducts && filtered.length === 0) {
         productsGrid = Array(6).fill(this.createSkeletonCardMarkup()).join('');
+      } else if (filtered.length === 0) {
+        productsGrid = `
+          <div class="col-span-full text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10 w-full">
+            <p class="text-sm text-gray-400 italic">${this.t('noProductsFound')}</p>
+          </div>
+        `;
       } else {
         productsGrid = filtered.map(p => this.createProductCardMarkup(p)).join('');
+      }
+
+      // Check if products grid container is already rendered in the DOM to keep input focus intact
+      const existingGridContainer = document.getElementById("shop-products-grid-container");
+      if (existingGridContainer) {
+        existingGridContainer.innerHTML = productsGrid;
+        this.bindProductCardClicks();
+        return;
       }
 
       const genderSelectorTabs = `
@@ -2563,15 +2551,9 @@
             </div>
 
             <div class="lg:col-span-3">
-              ${filtered.length === 0 ? `
-                <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10">
-                  <p class="text-sm text-gray-400 italic">${this.t('noProductsFound')}</p>
-                </div>
-              ` : `
-                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
-                  ${productsGrid}
-                </div>
-              `}
+              <div id="shop-products-grid-container" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
+                ${productsGrid}
+              </div>
             </div>
           </div>
         </div>
@@ -2583,8 +2565,6 @@
       if (shopSearch) {
         shopSearch.oninput = (e) => {
           store.searchQuery = e.target.value;
-          const headerSearch = document.getElementById("nav-search-input");
-          if (headerSearch) headerSearch.value = e.target.value;
           store.renderShopPage();
         };
       }
@@ -2592,14 +2572,19 @@
       document.querySelectorAll(".gender-section-btn").forEach(btn => {
         btn.onclick = () => {
           store.selectedGenderSection = btn.getAttribute("data-gender");
+          // Remove the grid container ID dynamically to force a clean full layout re-render with active classes
+          const grid = document.getElementById("shop-products-grid-container");
+          if (grid) grid.removeAttribute("id");
           store.renderShopPage();
-          store.updateDOM(); // Rerender completely to shift dynamic body theme seamlessly!
+          store.updateDOM();
         };
       });
 
       document.querySelectorAll(".category-filter-btn").forEach(btn => {
         btn.onclick = () => {
           store.selectedCategory = btn.getAttribute("data-name");
+          const grid = document.getElementById("shop-products-grid-container");
+          if (grid) grid.removeAttribute("id");
           store.renderShopPage();
         };
       });
@@ -4622,19 +4607,25 @@
           </div>
         `;
 
+        // Resolve either string array or raw array format robustly
+        let imagesArray = [];
         if (product.galleryImages) {
-          galleryMarkup += product.galleryImages.split(',').map((imgUrl) => {
-            const cleanUrl = imgUrl.trim();
-            if (!cleanUrl) return '';
-            return `
-              <div class="w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-premium flex-shrink-0 relative ${
-                this.activeImg === cleanUrl ? 'border-luxuryGold scale-105' : 'border-transparent opacity-60'
-              }" data-url="${cleanUrl}">
-                <img src="${cleanUrl}" class="w-full h-full object-cover">
-              </div>
-            `;
-          }).join('');
+          if (Array.isArray(product.galleryImages)) {
+            imagesArray = product.galleryImages;
+          } else if (typeof product.galleryImages === 'string') {
+            imagesArray = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
+          }
         }
+
+        imagesArray.forEach((imgUrl) => {
+          galleryMarkup += `
+            <div class="w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-premium flex-shrink-0 relative ${
+              this.activeImg === imgUrl ? 'border-luxuryGold scale-105' : 'border-transparent opacity-60'
+            }" data-url="${imgUrl}">
+              <img src="${imgUrl}" class="w-full h-full object-cover">
+            </div>
+          `;
+        });
 
         const normalizedGender = getNormalizedGender(product.gender);
 
