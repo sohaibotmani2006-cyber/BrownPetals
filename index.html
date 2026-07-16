@@ -4789,12 +4789,12 @@
 
       modal.innerHTML = `
         <div class="fixed inset-0 bg-black/85 backdrop-blur-xs transition-opacity duration-300 opacity-0" id="product-modal-backdrop"></div>
-        <div id="product-modal-content" class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-3xl md:max-w-4xl rounded-3xl overflow-y-auto md:overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row md:items-stretch text-white animate-modal-enter my-auto h-auto max-h-[92vh] md:max-h-[88vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+        <div id="product-modal-content" class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-3xl md:max-w-5xl rounded-3xl overflow-y-auto md:overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row md:items-stretch text-white animate-modal-enter my-auto h-auto max-h-[92vh] md:max-h-[88vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
-          <!-- Fully Covered Image Container - Edge-to-edge luxurious cover styling with absolutely no blank side margins -->
-          <div class="md:w-1/2 relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black min-h-[350px] md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl flex items-center justify-center" id="zoom-img-btn">
+          <!-- Fully Covered Image Container - Expanded to 58% on desktop for complete wide view without truncation -->
+          <div class="md:w-[58%] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black min-h-[350px] md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl flex items-center justify-center" id="zoom-img-btn">
             <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-500 ease-in-out transform group-hover/main:scale-105" alt="${cleanName}">
             ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
             
@@ -4803,8 +4803,8 @@
             </div>
           </div>
 
-          <!-- Details Container -->
-          <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-auto md:h-auto md:max-h-[85vh]">
+          <!-- Details Container - Scaled to 42% for a sleek balance with the larger picture -->
+          <div class="md:w-[42%] p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-auto md:h-auto md:max-h-[85vh]">
             <div class="space-y-4">
               <div class="flex justify-between items-center">
                 <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
