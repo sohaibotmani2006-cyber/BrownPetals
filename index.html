@@ -1295,55 +1295,183 @@
       }, (err) => console.error("Admin orders error:", err));
     };
 
-    store.addToCart = function(product, selectedVariant = null) {
-      const cartItem = this.getCartItemForProduct(product, selectedVariant);
-      const match = this.cart.find(item => item.id === cartItem.id);
+    store.addToCart = function(product) {
+      const match = this.cart.find(item => item.id === product.id);
       if (match) {
-        const maxStock = selectedVariant && selectedVariant.stock !== undefined ? selectedVariant.stock : product.stock;
-        if (maxStock && match.quantity >= maxStock) {
-          showToast("Only " + maxStock + " " + this.t('onlyItemsLeft'), "error");
+        if (product.stock && match.quantity >= product.stock) {
+          showToast("Only " + product.stock + " " + this.t('onlyItemsLeft'), "error");
           return;
         }
         match.quantity += 1;
       } else {
-        this.cart.push(cartItem);
+        this.cart.push({ ...product, quantity: 1 });
       }
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
-      showToast('"' + cartItem.name + '" added to cart.');
+      showToast('"' + product.name + '" added to cart.');
       this.updateDOM();
     };
 
-    store.getCartItemForProduct = function(product, selectedVariant = null) {
-      if (selectedVariant) {
-        const cleanParentName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
-        const variantPrice = selectedVariant.price || product.price;
-        const variantDiscount = selectedVariant.discountPrice !== undefined && selectedVariant.discountPrice !== null ? selectedVariant.discountPrice : (selectedVariant.price ? null : product.discountPrice);
-        return {
-          id: product.id + "_" + selectedVariant.id,
-          name: cleanParentName + " - " + selectedVariant.name,
-          category: product.category,
-          gender: product.gender,
-          price: variantPrice,
-          discountPrice: variantDiscount,
-          imageURL: selectedVariant.imageURL || product.imageURL,
-          stock: selectedVariant.stock !== undefined ? selectedVariant.stock : product.stock,
-          quantity: 1,
-          parentId: product.id,
-          variantId: selectedVariant.id
-        };
-      } else {
-        return {
-          id: product.id,
-          name: product.name,
-          category: product.category,
-          gender: product.gender,
-          price: product.price,
-          discountPrice: product.discountPrice,
-          imageURL: product.imageURL,
-          stock: product.stock,
-          quantity: 1
-        };
+    store.fetchMyOrders = async function() {
+      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+      if (localHistory.length === 0) {
+        this.myOrders = [];
+        this.loadingMyOrders = false;
+        this.renderCartDrawer();
+        return;
       }
+
+      this.loadingMyOrders = true;
+      this.renderCartDrawer();
+
+      try {
+        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10))); // Securely get secure logs
+        const snap = await getDocs(q);
+        const list = [];
+        snap.forEach(doc => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Sort descending
+        list.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB - dateA;
+        });
+
+        this.myOrders = list;
+      } catch (err) {
+        console.error("Could not fetch secure telemetry:", err);
+      }
+
+      this.loadingMyOrders = false;
+      this.renderCartDrawer();
+    };
+
+    store.updateQty = function(id, delta) {
+      const match = this.cart.find(item => item.id === id);
+      if (!match) return;
+      match.quantity += delta;
+      if (match.quantity <= 0) {
+        this.cart = this.cart.filter(item => item.id !== id);
+      }
+      localStorage.setItem("bp_cart", JSON.stringify(this.cart));
+      this.updateDOM();
+    };
+
+    store.getRecommendations = function(purchasedItemIds) {
+      const purchasedItems = store.products.filter(p => purchasedItemIds.includes(p.id));
+      const purchasedCategories = [...new Set(purchasedItems.map(p => p.category))];
+      const purchasedGenders = [...new Set(purchasedItems.map(p => getNormalizedGender(p.gender)))];
+
+      let candidates = store.products.filter(p => !purchasedItemIds.includes(p.id));
+
+      candidates = candidates.map(p => {
+        let score = 0;
+        if (purchasedCategories.includes(p.category)) score += 3;
+        if (purchasedGenders.includes(getNormalizedGender(p.gender))) score += 2;
+        if (p.isBestSeller) score += 1;
+        return { product: p, score };
+      });
+
+      candidates.sort((a, b) => b.score - a.score);
+
+      return candidates.slice(0, 3).map(c => c.product);
+    };
+
+    store.removeFromCart = function(id) {
+      this.cart = this.cart.filter(item => item.id !== id);
+      localStorage.setItem("bp_cart", JSON.stringify(this.cart));
+      this.updateDOM();
+    };
+
+    // Chart.js Lazy Loader
+    let chartLoaderPromise = null;
+    const loadChartLibrary = () => {
+      if (chartLoaderPromise) return chartLoaderPromise;
+      chartLoaderPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+        script.onload = () => resolve(window.Chart);
+        script.onerror = () => reject(new Error("Analytics Engine Load Failure"));
+        document.head.appendChild(script);
+      });
+      return chartLoaderPromise;
+    };
+
+    store.renderAnalyticsChart = function() {
+      const canvas = document.getElementById("analyticsChart");
+      if (!canvas) return;
+
+      loadChartLibrary().then((Chart) => {
+        const nonCancelled = store.orders.filter(o => o.status !== 'cancelled');
+        const dailySales = {};
+        const labels = [];
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dateString = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const dayLabel = dayNames[d.getDay()] + " (" + dateString + ")";
+          labels.push(dayLabel);
+          dailySales[dateString] = 0;
+        }
+
+        nonCancelled.forEach(order => {
+          if (order.createdAt) {
+            const orderDate = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+            const dateKey = orderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (dailySales[dateKey] !== undefined) {
+              dailySales[dateKey] += order.total;
+            }
+          }
+        });
+
+        const dataset = Object.keys(dailySales).map(key => dailySales[key]);
+
+        if (window.analyticsChartInstance) {
+          window.analyticsChartInstance.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+        gradient.addColorStop(0, 'rgba(212, 175, 55, 0.45)');
+        gradient.addColorStop(1, 'rgba(10, 10, 10, 0.05)');
+
+        window.analyticsChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Daily Revenue (MAD)',
+              data: dataset,
+              borderColor: 'var(--accent-color)',
+              borderWidth: 3,
+              backgroundColor: gradient,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#000000',
+              pointBorderColor: 'var(--accent-color)',
+              pointRadius: 6,
+              pointHoverRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { 
+                grid: { color: 'rgba(212, 175, 55, 0.08)' },
+                min: 0,
+                beginAtZero: true
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }).catch(err => console.error(err));
     };
 
     store.processCheckout = async function(e) {
@@ -1506,7 +1634,13 @@
               const recId = btn.getAttribute("data-id");
               const modalConfirm = document.getElementById("confirm-modal-container");
               if (modalConfirm) modalConfirm.classList.add("hidden");
-              window.location.hash = '#/product/' + recId;
+              store.setPage("shop");
+              const targetProd = store.products.find(p => p.id === recId);
+              if (targetProd) {
+                setTimeout(() => {
+                  store.openProductDetailsModal(targetProd);
+                }, 300);
+              }
             };
           });
 
@@ -2198,7 +2332,12 @@
             e.preventDefault();
             const linkedProdId = this.settings[`heroProdId${i}`];
             if (linkedProdId) {
-              window.location.hash = '#/product/' + linkedProdId;
+              const prod = this.products.find(p => p.id === linkedProdId);
+              if (prod) {
+                this.openProductDetailsModal(prod);
+              } else {
+                showToast("Product not found in current collections.", "error");
+              }
             } else {
               showToast("No product linked to this slot.", "error");
             }
@@ -2293,7 +2432,8 @@
       document.querySelectorAll(".card-img-trigger, .card-title-trigger").forEach(el => {
         el.onclick = () => {
           const id = el.getAttribute("data-id");
-          window.location.hash = '#/product/' + id;
+          const prod = store.products.find(p => p.id === id);
+          if (prod) store.openProductDetailsModal(prod);
         };
       });
 
@@ -2312,8 +2452,7 @@
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
           if (prod) {
-            const cartItem = store.getCartItemForProduct(prod, null);
-            store.cart = [cartItem];
+            store.cart = [{ ...prod, quantity: 1 }];
             localStorage.setItem("bp_cart", JSON.stringify(store.cart));
             store.setPage("cart");
           }
@@ -2924,7 +3063,7 @@
       const currentNormalizedGender = product ? getNormalizedGender(product.gender) : "Women";
 
       container.innerHTML = `
-        <div class="absolute inset-0 bg-black/85 backdrop-blur-xs"></div>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-xs"></div>
         <form id="product-edit-form" class="relative bg-[#141414] w-full max-w-lg rounded-3xl p-8 border border-luxuryGold/30 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto">
           <h3 class="font-serif text-2xl text-luxuryGold mb-4 border-b border-luxuryGold/20 pb-2">${product ? "Edit Luxury Piece" : "Add New Piece"}</h3>
           
@@ -2934,18 +3073,14 @@
               <input type="text" name="name" required value="${product ? product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim() : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
             <div>
-              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Default Option Label (e.g. Silver Steel)</label>
-              <input type="text" name="defaultOptionLabel" value="${product && product.defaultOptionLabel ? product.defaultOptionLabel : 'Main'}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white" placeholder="Main">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
               <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Category</label>
               <select name="category" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
                 ${this.categories.map(c => `<option value="${c.name}" ${product && product.category === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
               </select>
             </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Gender / Segment</label>
               <select name="gender" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white font-bold">
@@ -2955,10 +3090,8 @@
                 <option value="Women's Packs" ${currentNormalizedGender === "Women's Packs" ? "selected" : ""}>Women's Packs</option>
               </select>
             </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Retail Price (MAD)</label>
+            <div>
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Retail Price (MAD)</label>
               <input type="number" name="price" required value="${product ? product.price : 350}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
           </div>
@@ -3019,19 +3152,6 @@
             </label>
           </div>
 
-          <!-- Product Variants Builder Section -->
-          <div class="border-t border-luxuryGold/20 pt-4 space-y-4">
-            <div class="flex justify-between items-center">
-              <label class="block text-[10px] font-semibold text-luxuryGold uppercase">Product Variants / Options (e.g. Colors, Sizes, Styles)</label>
-              <button type="button" id="form-add-variant-btn" class="px-3 py-1 bg-luxuryGold/10 border border-luxuryGold hover:bg-luxuryGold hover:text-black text-[9px] uppercase font-bold rounded-lg transition">
-                + Add Variant
-              </button>
-            </div>
-            <div id="form-variants-container" class="space-y-3">
-              <!-- Variants rows will be dynamically appended here -->
-            </div>
-          </div>
-
           <div class="flex gap-3 justify-end pt-4 border-t border-luxuryGold/20">
             <button type="button" id="form-cancel-btn" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs font-bold uppercase border border-white/10">Cancel</button>
             <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs font-bold uppercase">Save</button>
@@ -3039,90 +3159,6 @@
         </form>
       `;
       container.classList.remove("hidden");
-
-      const renderVariantRow = (variant = null) => {
-        const variantsContainer = document.getElementById("form-variants-container");
-        if (!variantsContainer) return;
-        
-        const uniqueId = "v-" + Math.random().toString(36).substr(2, 9);
-        const vName = variant ? variant.name : "";
-        const vImg = variant ? variant.imageURL : "";
-        const vPrice = variant && variant.price ? variant.price : "";
-        const vDisc = variant && variant.discountPrice ? variant.discountPrice : "";
-        const vStock = variant && variant.stock !== undefined ? variant.stock : "";
-        const vId = variant ? variant.id : "vid-" + Math.random().toString(36).substr(2, 9);
-
-        const rowHtml = `
-          <div id="${uniqueId}" class="variant-row bg-black/30 p-3 rounded-xl border border-white/5 space-y-2 relative animate-fade-in" data-variant-id="${vId}">
-            <button type="button" class="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs font-bold remove-variant-row-btn" data-row-id="${uniqueId}">✕</button>
-            
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Variant Name</label>
-                <input type="text" name="v_name" placeholder="e.g. Gold Edition" value="${vName}" required class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
-              </div>
-              <div>
-                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Image URL / Base64</label>
-                <div class="flex gap-1.5">
-                  <input type="text" id="url-${uniqueId}" name="v_imageURL" placeholder="https://..." value="${vImg}" required class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
-                  <label class="cursor-pointer bg-luxuryGold/10 border border-luxuryGold/30 text-luxuryGold text-[8px] uppercase font-bold px-2.5 py-1.5 rounded-lg flex items-center justify-center shrink-0 hover:bg-luxuryGold hover:text-black transition">
-                    Upload
-                    <input type="file" accept="image/*" class="hidden variant-file-uploader" data-target-url-id="url-${uniqueId}">
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Price Override (MAD)</label>
-                <input type="number" name="v_price" placeholder="Default" value="${vPrice}" class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
-              </div>
-              <div>
-                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Discount Override (MAD)</label>
-                <input type="number" name="v_discountPrice" placeholder="None" value="${vDisc}" class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
-              </div>
-              <div>
-                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Stock Override</label>
-                <input type="number" name="v_stock" placeholder="Default" value="${vStock}" class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
-              </div>
-            </div>
-          </div>
-        `;
-        variantsContainer.insertAdjacentHTML("beforeend", rowHtml);
-
-        const rowEl = document.getElementById(uniqueId);
-        rowEl.querySelector(".remove-variant-row-btn").onclick = () => {
-          rowEl.remove();
-        };
-
-        rowEl.querySelector(".variant-file-uploader").onchange = (e) => {
-          const file = e.target.files[0];
-          const targetId = e.target.getAttribute("data-target-url-id");
-          if (file) {
-            window.compressImageFile(file, (base64) => {
-              const targetInput = document.getElementById(targetId);
-              if (targetInput) {
-                targetInput.value = base64;
-                showToast("Variant image compressed & uploaded!");
-              }
-            });
-          }
-        };
-      };
-
-      const formAddVariantBtn = document.getElementById("form-add-variant-btn");
-      if (formAddVariantBtn) {
-        formAddVariantBtn.onclick = () => {
-          renderVariantRow();
-        };
-      }
-
-      if (product && product.variants && product.variants.length > 0) {
-        product.variants.forEach(v => {
-          renderVariantRow(v);
-        });
-      }
 
       // Bind Local PC File Upload Actions for Product Form
       const mainImgFileInput = document.getElementById("prod-form-img-file");
@@ -3163,31 +3199,9 @@
       document.getElementById("product-edit-form").onsubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
-
-        const variantRows = document.querySelectorAll(".variant-row");
-        const variantsList = [];
-        variantRows.forEach(row => {
-          const vId = row.getAttribute("data-variant-id");
-          const nameVal = row.querySelector("[name='v_name']").value;
-          const imageVal = row.querySelector("[name='v_imageURL']").value;
-          const priceVal = row.querySelector("[name='v_price']").value;
-          const discountVal = row.querySelector("[name='v_discountPrice']").value;
-          const stockVal = row.querySelector("[name='v_stock']").value;
-
-          variantsList.push({
-            id: vId,
-            name: nameVal,
-            imageURL: imageVal,
-            price: priceVal ? Number(priceVal) : null,
-            discountPrice: discountVal ? Number(discountVal) : null,
-            stock: stockVal !== "" ? Number(stockVal) : undefined
-          });
-        });
-
         const payload = {
           name: form.name.value,
           category: form.category.value,
-          defaultOptionLabel: form.defaultOptionLabel.value || 'Main',
           gender: form.gender.value,
           price: Number(form.price.value),
           discountPrice: form.discountPrice.value ? Number(form.discountPrice.value) : null,
@@ -3199,7 +3213,6 @@
           isPromotion: form.isPromotion.checked,
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
-          variants: variantsList,
           updatedAt: new Date()
         };
 
@@ -4577,7 +4590,13 @@
       document.querySelectorAll(".rec-view-product-btn").forEach(btn => {
         btn.onclick = () => {
           const recId = btn.getAttribute("data-id");
-          window.location.hash = '#/product/' + recId;
+          this.setPage("shop");
+          const targetProd = this.products.find(p => p.id === recId);
+          if (targetProd) {
+            setTimeout(() => {
+              this.openProductDetailsModal(targetProd);
+            }, 300);
+          }
         };
       });
     };
@@ -4585,15 +4604,7 @@
     store.openProductDetailsModal = function(product) {
       const modal = document.getElementById("product-detail-container");
       if (!modal) return;
-      
-      // Guard Check: Prevents rendering the identical modal twice, eliminating flickering and layout lag!
-      if (modal.getAttribute("data-active-product") === product.id && !modal.classList.contains("hidden")) {
-        return; 
-      }
-      modal.setAttribute("data-active-product", product.id);
-
       this.activeImg = product.imageURL;
-      this.selectedVariant = null; // Reset variant tracker
 
       const productHash = '#/product/' + product.id;
       if (window.location.hash !== productHash) {
@@ -4602,24 +4613,12 @@
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
-      // Build gallery thumbnails. We prioritize variants as thumbnails first, then pure extra gallery images.
+      // Build gallery thumbnails once to avoid re-rendering entire modal on image swap
       let galleryMarkup = `
-        <div class="gallery-thumb w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-luxuryGold scale-105 shadow-lg" data-variant-idx="parent" data-img="${product.imageURL || fallbackImage}">
+        <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-luxuryGold scale-105" data-img="${product.imageURL || fallbackImage}">
           <img src="${product.imageURL || fallbackImage}" class="w-full h-full object-cover">
-          <span class="absolute bottom-0 inset-x-0 bg-black/80 text-[9px] sm:text-[10px] text-white font-extrabold text-center py-1 truncate">${product.defaultOptionLabel || 'Main'}</span>
         </div>
       `;
-
-      if (product.variants && product.variants.length > 0) {
-        product.variants.forEach((v, idx) => {
-          galleryMarkup += `
-            <div class="gallery-thumb w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100 shadow-md" data-variant-idx="${idx}" data-img="${v.imageURL || fallbackImage}">
-              <img src="${v.imageURL || fallbackImage}" class="w-full h-full object-cover">
-              <span class="absolute bottom-0 inset-x-0 bg-black/85 text-[9px] sm:text-[10px] text-luxuryGold font-extrabold text-center py-1 truncate">${v.name}</span>
-            </div>
-          `;
-        });
-      }
 
       let imagesArray = [];
       if (product.galleryImages) {
@@ -4642,7 +4641,7 @@
 
       imagesArray.forEach((imgUrl) => {
         galleryMarkup += `
-          <div class="gallery-thumb w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100 shadow-md" data-variant-idx="gallery" data-img="${imgUrl}">
+          <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-img="${imgUrl}">
             <img src="${imgUrl}" class="w-full h-full object-cover">
           </div>
         `;
@@ -4656,8 +4655,8 @@
           
           <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
-          <!-- Main image container that perfectly wraps the image with no background letterboxing -->
-          <div class="md:w-[52%] h-[40%] sm:h-[45%] md:h-[600px] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in border-b md:border-b-0 md:border-r border-luxuryGold/15" id="zoom-img-btn">
+          <!-- Image View Container -->
+          <div class="md:w-1/2 h-[35%] sm:h-[40%] md:h-auto relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in" id="zoom-img-btn">
             <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-300 ease-in-out transform group-hover/main:scale-105">
             ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
             
@@ -4670,14 +4669,14 @@
             </div>
           </div>
 
-          <!-- Description and actions details section slightly narrower to balance enlarged viewport -->
-          <div class="md:w-[48%] p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-[60%] sm:h-[55%] md:h-[600px]">
+          <!-- Details Container -->
+          <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-[65%] sm:h-[60%] md:h-auto">
             <div class="space-y-4">
               <div class="flex justify-between items-center">
                 <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
                 ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
               </div>
-              <h2 id="modal-product-title" class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
+              <h2 class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
               
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1">
@@ -4690,24 +4689,22 @@
                 </button>
               </div>
 
-              <div id="modal-product-price" class="flex items-baseline gap-3 pt-1">
+              <div class="flex items-baseline gap-3 pt-1">
                 ${product.discountPrice ? `
                   <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
                   <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
                 ` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
               </div>
 
-              <div class="border-t border-b border-luxuryGold/20 py-4 space-y-3">
-                <p class="text-[10px] sm:text-xs font-bold text-luxuryGold uppercase tracking-wider font-extrabold flex items-center gap-1.5">
-                  <span>⚜️</span> Select Style / Options (اختر الشكل / اللون)
-                </p>
-                <div class="flex gap-3 overflow-x-auto py-2.5 hide-scrollbar" id="modal-gallery-container">
+              <div class="border-t border-b border-luxuryGold/20 py-3 space-y-2">
+                <p class="text-[10px] font-semibold text-luxuryGold uppercase tracking-wider">Gallery</p>
+                <div class="flex gap-2.5 overflow-x-auto py-1 hide-scrollbar" id="modal-gallery-container">
                   ${galleryMarkup}
                 </div>
               </div>
 
               <p class="text-xs md:text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
-              <p id="modal-product-stock" class="text-[11px] font-medium text-gray-400">
+              <p class="text-[11px] font-medium text-gray-400">
                 Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
               </p>
             </div>
@@ -4734,90 +4731,32 @@
         setTimeout(() => {
           modal.classList.add("hidden");
           window.location.hash = '#/' + store.currentPage;
-        }, 300);
+        }, 300); // 300ms matches CSS exit duration
       };
 
       document.getElementById("product-modal-backdrop").onclick = closeModal;
       document.getElementById("product-modal-close").onclick = closeModal;
 
       const mainImg = document.getElementById("main-product-image");
-      const titleEl = document.getElementById("modal-product-title");
-      const priceEl = document.getElementById("modal-product-price");
-      const stockEl = document.getElementById("modal-product-stock");
-
-      const updateModalDetails = (variant) => {
-        if (variant) {
-          this.selectedVariant = variant;
-          this.activeImg = variant.imageURL || product.imageURL;
-          if (mainImg) mainImg.src = this.activeImg;
-          if (titleEl) titleEl.innerText = `${cleanName} - ${variant.name}`;
-          
-          const activePrice = variant.price || product.price;
-          const activeDiscount = variant.discountPrice !== undefined && variant.discountPrice !== null ? variant.discountPrice : (variant.price ? null : product.discountPrice);
-          
-          if (priceEl) {
-            if (activeDiscount) {
-              priceEl.innerHTML = `
-                <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${activeDiscount} MAD</span>
-                <span class="text-xs line-through text-gray-500">${activePrice} MAD</span>
-              `;
-            } else {
-              priceEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-white">${activePrice} MAD</span>`;
-            }
-          }
-          
-          if (stockEl) {
-            const activeStock = variant.stock !== undefined ? variant.stock : product.stock;
-            stockEl.innerHTML = `Stock Status: ${activeStock <= 3 ? `<span class="text-red-400 font-bold">Limited Reserve (${activeStock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}`;
-          }
-        } else {
-          this.selectedVariant = null;
-          this.activeImg = product.imageURL;
-          if (mainImg) mainImg.src = this.activeImg;
-          if (titleEl) titleEl.innerText = cleanName;
-          
-          if (priceEl) {
-            if (product.discountPrice) {
-              priceEl.innerHTML = `
-                <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
-              `;
-            } else {
-              priceEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`;
-            }
-          }
-          
-          if (stockEl) {
-            stockEl.innerHTML = `Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}`;
-          }
-        }
-      };
-
       document.querySelectorAll(".gallery-thumb").forEach(btn => {
         btn.onclick = () => {
-          const variantIdx = btn.getAttribute("data-variant-idx");
           const newImgSrc = btn.getAttribute("data-img");
-          if (store.activeImg === newImgSrc && variantIdx === "gallery") return;
+          if (store.activeImg === newImgSrc) return;
           
-          document.querySelectorAll(".gallery-thumb").forEach(t => {
-            t.classList.remove("border-luxuryGold", "scale-105");
-            t.classList.add("border-transparent", "opacity-60");
-          });
-          btn.classList.remove("border-transparent", "opacity-60");
-          btn.classList.add("border-luxuryGold", "scale-105");
-
+          // Smooth crossfade logic
           mainImg.style.opacity = '0';
           setTimeout(() => {
-            if (variantIdx === "parent") {
-              updateModalDetails(null);
-            } else if (variantIdx === "gallery") {
-              store.activeImg = newImgSrc;
-              mainImg.src = newImgSrc;
-            } else {
-              const variantObj = product.variants[parseInt(variantIdx)];
-              updateModalDetails(variantObj);
-            }
+            store.activeImg = newImgSrc;
+            mainImg.src = newImgSrc;
             mainImg.style.opacity = '1';
+            
+            // Update active thumbnail border states
+            document.querySelectorAll(".gallery-thumb").forEach(t => {
+              t.classList.remove("border-luxuryGold", "scale-105");
+              t.classList.add("border-transparent", "opacity-60");
+            });
+            btn.classList.remove("border-transparent", "opacity-60");
+            btn.classList.add("border-luxuryGold", "scale-105");
           }, 150);
         };
       });
@@ -4834,6 +4773,7 @@
         `;
         lightbox.classList.remove("hidden");
         
+        // Trigger smooth scale & fade-in entrance for the lightbox components
         requestAnimationFrame(() => {
           const lbBg = document.getElementById("lightbox-backdrop");
           const lbImg = document.getElementById("lightbox-img");
@@ -4873,13 +4813,12 @@
       };
 
       document.getElementById("modal-add-to-cart-btn").onclick = () => {
-        store.addToCart(product, this.selectedVariant);
+        store.addToCart(product);
         closeModal();
       };
 
       document.getElementById("modal-order-now-btn").onclick = () => {
-        const cartItem = store.getCartItemForProduct(product, this.selectedVariant);
-        store.cart = [cartItem];
+        store.cart = [{ ...product, quantity: 1 }];
         localStorage.setItem("bp_cart", JSON.stringify(store.cart));
         closeModal();
         store.setPage("cart");
@@ -4887,6 +4826,7 @@
 
       modal.classList.remove("hidden");
       
+      // Trigger backdrop fade-in sequence gracefully
       requestAnimationFrame(() => {
         const modalBg = document.getElementById("product-modal-backdrop");
         if (modalBg) {
