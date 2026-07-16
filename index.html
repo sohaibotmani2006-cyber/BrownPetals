@@ -4731,6 +4731,9 @@
       this.activeDescription = product.description;
       this.activeVariationIndex = null;
 
+      // Reference to the user-specified high-fidelity layout
+      const referenceAsset = "image_00ef48.jpg";
+
       const productHash = '#/product/' + product.id;
       if (window.location.hash !== productHash) {
         window.location.hash = productHash;
@@ -4738,10 +4741,10 @@
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
-      // Build gallery thumbnails once to avoid re-rendering entire modal on image swap
       let galleryMarkup = `
-        <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-luxuryGold scale-105" data-img="${product.imageURL || fallbackImage}" data-is-variation="false">
+        <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-luxuryGold scale-105" data-img="${product.imageURL || fallbackImage}" data-is-variation="false">
           <img src="${product.imageURL || fallbackImage}" class="w-full h-full object-cover">
+          <div class="absolute bottom-0 left-0 right-0 bg-black/85 text-white text-[8px] font-bold py-0.5 text-center uppercase tracking-wide">Main</div>
         </div>
       `;
 
@@ -4749,8 +4752,9 @@
       const productVars = product.variations || [];
       productVars.forEach((v, index) => {
         galleryMarkup += `
-          <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-img="${v.imageURL}" data-is-variation="true" data-index="${index}">
+          <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-transparent opacity-65 hover:opacity-100" data-img="${v.imageURL}" data-is-variation="true" data-index="${index}">
             <img src="${v.imageURL}" class="w-full h-full object-cover">
+            <div class="absolute bottom-0 left-0 right-0 bg-black/85 text-white text-[8px] font-bold py-0.5 text-center uppercase tracking-wide">${v.name || 'GOLD'}</div>
           </div>
         `;
       });
@@ -4777,8 +4781,9 @@
 
       imagesArray.forEach((imgUrl) => {
         galleryMarkup += `
-          <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-img="${imgUrl}" data-is-variation="false">
+          <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-transparent opacity-65 hover:opacity-100" data-img="${imgUrl}" data-is-variation="false">
             <img src="${imgUrl}" class="w-full h-full object-cover">
+            <div class="absolute bottom-0 left-0 right-0 bg-black/85 text-white text-[8px] font-bold py-0.5 text-center uppercase tracking-wide">Detail</div>
           </div>
         `;
       });
@@ -4787,26 +4792,22 @@
 
       modal.innerHTML = `
         <div class="fixed inset-0 bg-black/85 backdrop-blur-xs transition-opacity duration-300 opacity-0" id="product-modal-backdrop"></div>
-        <div id="product-modal-content" class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row text-white animate-modal-enter my-auto h-[82vh] md:h-auto md:max-h-[85vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+        <div id="product-modal-content" class="relative bg-[#141414] w-[94%] sm:w-full sm:max-w-2xl md:max-w-3xl rounded-3xl overflow-y-auto md:overflow-hidden shadow-2xl border border-luxuryGold/40 z-10 flex flex-col md:flex-row md:items-stretch text-white animate-modal-enter my-auto h-auto max-h-[90vh] md:max-h-[85vh]" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
-          <!-- Image View Container with dynamic transparent fusion background matching the modal exact tone -->
-          <div class="md:w-1/2 h-[35%] sm:h-[40%] md:h-[500px] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-[#141414] flex items-center justify-center" id="zoom-img-btn">
-            <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-300 ease-in-out transform group-hover/main:scale-105">
+          <!-- Fully Covered Image Container - Styled for absolute coverage exactly like image_00ef48.jpg -->
+          <div class="md:w-1/2 relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black min-h-[350px] md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl" id="zoom-img-btn">
+            <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-in-out transform group-hover/main:scale-105">
             ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
             
-            <div class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
+            <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
               <span>${this.t('tapToZoom')}</span>
-            </div>
-
-            <div class="absolute inset-0 bg-black/5 opacity-0 group-hover/main:opacity-100 transition duration-300 flex items-center justify-center">
-              <span class="bg-black/90 backdrop-blur-md text-luxuryGold text-xs uppercase tracking-widest font-extrabold px-4 py-2 rounded-full flex items-center gap-2 border border-luxuryGold/35">${this.t('quickView')}</span>
             </div>
           </div>
 
           <!-- Details Container -->
-          <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-[65%] sm:h-[60%] md:h-auto">
+          <div class="md:w-1/2 p-5 md:p-8 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0 flex-grow h-auto md:h-auto md:max-h-[80vh]">
             <div class="space-y-4">
               <div class="flex justify-between items-center">
                 <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
@@ -4833,7 +4834,7 @@
               </div>
 
               <div class="border-t border-b border-luxuryGold/20 py-3 space-y-2">
-                <p class="text-[10px] font-semibold text-luxuryGold uppercase tracking-wider">Gallery</p>
+                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider flex items-center gap-1.5">⚜️ SELECT STYLE / OPTIONS (/ اختر الشكل واللون)</p>
                 <div class="flex gap-2.5 overflow-x-auto py-1 hide-scrollbar" id="modal-gallery-container">
                   ${galleryMarkup}
                 </div>
@@ -4867,7 +4868,7 @@
         setTimeout(() => {
           modal.classList.add("hidden");
           window.location.hash = '#/' + store.currentPage;
-        }, 300); // 300ms matches CSS exit duration
+        }, 300);
       };
 
       document.getElementById("product-modal-backdrop").onclick = closeModal;
@@ -4936,7 +4937,6 @@
         `;
         lightbox.classList.remove("hidden");
         
-        // Trigger smooth scale & fade-in entrance for the lightbox components
         requestAnimationFrame(() => {
           const lbBg = document.getElementById("lightbox-backdrop");
           const lbImg = document.getElementById("lightbox-img");
@@ -5008,7 +5008,6 @@
 
       modal.classList.remove("hidden");
       
-      // Trigger backdrop fade-in sequence gracefully
       requestAnimationFrame(() => {
         const modalBg = document.getElementById("product-modal-backdrop");
         if (modalBg) {
