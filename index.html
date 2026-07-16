@@ -352,9 +352,6 @@
       loadingCategories: true,
       checkoutLoading: false,
 
-      // Track active variant selection on modal
-      currentSelectedVariant: null,
-
       // Private User Tracking State
       cartTab: "cart", // "cart" or "history"
       myOrders: [],
@@ -1076,10 +1073,6 @@
               isPromotion: true,
               isBestSeller: true,
               limitedStock: true,
-              variants: [
-                { name: "Ruby Red Leather", price: 1100, stock: 4, imageURL: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&q=80&w=600" },
-                { name: "Emerald Green Steel", price: 1300, stock: 3, imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600" }
-              ],
               createdAt: new Date()
             },
             {
@@ -1096,10 +1089,6 @@
               isPromotion: false,
               isBestSeller: true,
               limitedStock: true,
-              variants: [
-                { name: "Oceanic Blue Dial", price: 1500, stock: 5, imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600" },
-                { name: "Obsidian Black Dial", price: 1650, stock: 2, imageURL: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=400" }
-              ],
               createdAt: new Date()
             },
             {
@@ -1116,7 +1105,6 @@
               isPromotion: false,
               isBestSeller: false,
               limitedStock: false,
-              variants: [],
               createdAt: new Date()
             },
             {
@@ -1133,7 +1121,6 @@
               isPromotion: true,
               isBestSeller: false,
               limitedStock: false,
-              variants: [],
               createdAt: new Date()
             }
           ];
@@ -1293,35 +1280,70 @@
               { name: "Oceanic Imperial Nautilus", quantity: 1, price: 1500 }
             ],
             subtotal: 1500,
-    store.addToCart = function(product, selectedVariant = null) {
-      let cartItem = { ...product };
-      
-      // If a specific variant style is selected, override key attributes seamlessly
-      if (selectedVariant) {
-        cartItem.id = product.id + "-" + selectedVariant.name.replace(/\s+/g, '-').toLowerCase();
-        cartItem.name = product.name + " (" + selectedVariant.name + ")";
-        cartItem.price = selectedVariant.price || product.price;
-        cartItem.discountPrice = selectedVariant.discountPrice || null;
-        cartItem.imageURL = selectedVariant.imageURL || product.imageURL;
-        cartItem.stock = selectedVariant.stock || product.stock;
-        
-        // Remove variants nested arrays to optimize localStorage footprints
-        delete cartItem.variants;
-      }
+            deliveryFee: 20,
+            total: 1520,
+            paymentMethod: "Telegram Automated",
+            createdAt: new Date()
+          };
+          addDoc(ordersRef, sampleOrder).catch(e => console.error("Initial orders seeding write bypassed:", e));
+        }
 
+        store.updateDOM();
+        if (store.currentPage === "admin" && store.adminView === "dashboard") {
+          store.renderAnalyticsChart();
+        }
+      }, (err) => console.error("Admin orders error:", err));
+    };
+
+    store.addToCart = function(product, selectedVariant = null) {
+      const cartItem = this.getCartItemForProduct(product, selectedVariant);
       const match = this.cart.find(item => item.id === cartItem.id);
       if (match) {
-        if (cartItem.stock && match.quantity >= cartItem.stock) {
-          showToast("Only " + cartItem.stock + " " + this.t('onlyItemsLeft'), "error");
+        const maxStock = selectedVariant && selectedVariant.stock !== undefined ? selectedVariant.stock : product.stock;
+        if (maxStock && match.quantity >= maxStock) {
+          showToast("Only " + maxStock + " " + this.t('onlyItemsLeft'), "error");
           return;
         }
         match.quantity += 1;
       } else {
-        this.cart.push({ ...cartItem, quantity: 1 });
+        this.cart.push(cartItem);
       }
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
       showToast('"' + cartItem.name + '" added to cart.');
       this.updateDOM();
+    };
+
+    store.getCartItemForProduct = function(product, selectedVariant = null) {
+      if (selectedVariant) {
+        const cleanParentName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
+        const variantPrice = selectedVariant.price || product.price;
+        const variantDiscount = selectedVariant.discountPrice !== undefined && selectedVariant.discountPrice !== null ? selectedVariant.discountPrice : (selectedVariant.price ? null : product.discountPrice);
+        return {
+          id: product.id + "_" + selectedVariant.id,
+          name: cleanParentName + " - " + selectedVariant.name,
+          category: product.category,
+          gender: product.gender,
+          price: variantPrice,
+          discountPrice: variantDiscount,
+          imageURL: selectedVariant.imageURL || product.imageURL,
+          stock: selectedVariant.stock !== undefined ? selectedVariant.stock : product.stock,
+          quantity: 1,
+          parentId: product.id,
+          variantId: selectedVariant.id
+        };
+      } else {
+        return {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          gender: product.gender,
+          price: product.price,
+          discountPrice: product.discountPrice,
+          imageURL: product.imageURL,
+          stock: product.stock,
+          quantity: 1
+        };
+      }
     };
 
     store.fetchMyOrders = async function() {
@@ -2465,7 +2487,8 @@
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
           if (prod) {
-            store.cart = [{ ...prod, quantity: 1 }];
+            const cartItem = store.getCartItemForProduct(prod, null);
+            store.cart = [cartItem];
             localStorage.setItem("bp_cart", JSON.stringify(store.cart));
             store.setPage("cart");
           }
@@ -3075,9 +3098,6 @@
       
       const currentNormalizedGender = product ? getNormalizedGender(product.gender) : "Women";
 
-      // Keep variants state in memory for active form edits
-      window.formVariantsState = product && product.variants ? [...product.variants] : [];
-
       container.innerHTML = `
         <div class="absolute inset-0 bg-black/80 backdrop-blur-xs"></div>
         <form id="product-edit-form" class="relative bg-[#141414] w-full max-w-lg rounded-3xl p-8 border border-luxuryGold/30 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -3140,15 +3160,6 @@
             </div>
           </div>
 
-          <!-- DYNAMIC STYLE/COLOR VARIANTS SECTION -->
-          <div class="border-t border-luxuryGold/20 pt-4 space-y-3">
-            <div class="flex justify-between items-center">
-              <label class="block text-[10px] font-semibold text-luxuryGold uppercase">Product Variants (Interactive Gallery Shapes)</label>
-              <button type="button" id="form-add-variant-btn" class="px-3 py-1 bg-luxuryGold hover:bg-luxuryGold/80 text-black rounded text-[9px] uppercase font-bold">+ Add Variant</button>
-            </div>
-            <div id="form-variants-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
-          </div>
-
           <div>
             <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Item Description</label>
             <textarea name="description" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-20 resize-none">${product ? product.description : ''}</textarea>
@@ -3177,6 +3188,19 @@
             </label>
           </div>
 
+          <!-- Product Variants Builder Section -->
+          <div class="border-t border-luxuryGold/20 pt-4 space-y-4">
+            <div class="flex justify-between items-center">
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase">Product Variants / Options (e.g. Colors, Sizes, Styles)</label>
+              <button type="button" id="form-add-variant-btn" class="px-3 py-1 bg-luxuryGold/10 border border-luxuryGold hover:bg-luxuryGold hover:text-black text-[9px] uppercase font-bold rounded-lg transition">
+                + Add Variant
+              </button>
+            </div>
+            <div id="form-variants-container" class="space-y-3">
+              <!-- Variants rows will be dynamically appended here -->
+            </div>
+          </div>
+
           <div class="flex gap-3 justify-end pt-4 border-t border-luxuryGold/20">
             <button type="button" id="form-cancel-btn" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs font-bold uppercase border border-white/10">Cancel</button>
             <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs font-bold uppercase">Save</button>
@@ -3185,110 +3209,89 @@
       `;
       container.classList.remove("hidden");
 
-      // Render Admin Form Variants Handler
-      const renderFormVariants = () => {
-        const containerEl = document.getElementById("form-variants-container");
-        if (!containerEl) return;
+      const renderVariantRow = (variant = null) => {
+        const variantsContainer = document.getElementById("form-variants-container");
+        if (!variantsContainer) return;
         
-        if (window.formVariantsState.length === 0) {
-          containerEl.innerHTML = `<p class="text-[10px] text-gray-500 italic">No custom variants defined yet. Click + Add Variant.</p>`;
-          return;
-        }
+        const uniqueId = "v-" + Math.random().toString(36).substr(2, 9);
+        const vName = variant ? variant.name : "";
+        const vImg = variant ? variant.imageURL : "";
+        const vPrice = variant && variant.price ? variant.price : "";
+        const vDisc = variant && variant.discountPrice ? variant.discountPrice : "";
+        const vStock = variant && variant.stock !== undefined ? variant.stock : "";
+        const vId = variant ? variant.id : "vid-" + Math.random().toString(36).substr(2, 9);
 
-        containerEl.innerHTML = window.formVariantsState.map((v, idx) => `
-          <div class="bg-black/50 p-3 rounded-xl border border-white/5 space-y-2 relative">
-            <button type="button" class="form-del-variant-btn absolute top-2 right-2 text-red-400 hover:text-red-600 font-bold text-xs" data-idx="${idx}">✕</button>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[8px] uppercase text-gray-400">Variant Name / Style</label>
-                <input type="text" placeholder="e.g. Blue Emerald" value="${v.name || ''}" class="v-name-input w-full px-2 py-1 text-[10px] rounded bg-black border border-white/10 text-white" data-idx="${idx}">
-              </div>
-              <div>
-                <label class="block text-[8px] uppercase text-gray-400">Price (Override MAD)</label>
-                <input type="number" placeholder="Defaults to parent" value="${v.price || ''}" class="v-price-input w-full px-2 py-1 text-[10px] rounded bg-black border border-white/10 text-white" data-idx="${idx}">
-              </div>
-            </div>
+        const rowHtml = `
+          <div id="${uniqueId}" class="variant-row bg-black/30 p-3 rounded-xl border border-white/5 space-y-2 relative animate-fade-in" data-variant-id="${vId}">
+            <button type="button" class="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs font-bold remove-variant-row-btn" data-row-id="${uniqueId}">✕</button>
             
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[8px] uppercase text-gray-400">Image URL</label>
-                <div class="flex gap-1">
-                  <input type="text" value="${v.imageURL || ''}" class="v-img-input w-full px-2 py-1 text-[10px] rounded bg-black border border-white/10 text-white" id="v-img-${idx}" data-idx="${idx}">
-                  <label class="cursor-pointer bg-luxuryGold text-black text-[9px] px-2 py-1 rounded flex items-center shrink-0 font-bold">
-                    Up
-                    <input type="file" accept="image/*" class="hidden v-file-uploader" data-idx="${idx}">
+                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Variant Name</label>
+                <input type="text" name="v_name" placeholder="e.g. Gold Edition" value="${vName}" required class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
+              </div>
+              <div>
+                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Image URL / Base64</label>
+                <div class="flex gap-1.5">
+                  <input type="text" id="url-${uniqueId}" name="v_imageURL" placeholder="https://..." value="${vImg}" required class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
+                  <label class="cursor-pointer bg-luxuryGold/10 border border-luxuryGold/30 text-luxuryGold text-[8px] uppercase font-bold px-2.5 py-1.5 rounded-lg flex items-center justify-center shrink-0 hover:bg-luxuryGold hover:text-black transition">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden variant-file-uploader" data-target-url-id="url-${uniqueId}">
                   </label>
                 </div>
               </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
               <div>
-                <label class="block text-[8px] uppercase text-gray-400">Stock Override</label>
-                <input type="number" placeholder="Available pieces" value="${v.stock || ''}" class="v-stock-input w-full px-2 py-1 text-[10px] rounded bg-black border border-white/10 text-white" data-idx="${idx}">
+                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Price Override (MAD)</label>
+                <input type="number" name="v_price" placeholder="Default" value="${vPrice}" class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
+              </div>
+              <div>
+                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Discount Override (MAD)</label>
+                <input type="number" name="v_discountPrice" placeholder="None" value="${vDisc}" class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
+              </div>
+              <div>
+                <label class="block text-[8px] text-gray-400 uppercase font-bold mb-0.5">Stock Override</label>
+                <input type="number" name="v_stock" placeholder="Default" value="${vStock}" class="w-full px-2.5 py-1.5 text-[10px] rounded-lg border border-luxuryGold/15 bg-black text-white">
               </div>
             </div>
           </div>
-        `).join('');
+        `;
+        variantsContainer.insertAdjacentHTML("beforeend", rowHtml);
 
-        // Bind value change monitors to state
-        document.querySelectorAll(".v-name-input").forEach(inp => {
-          inp.onchange = (e) => {
-            const idx = Number(inp.getAttribute("data-idx"));
-            window.formVariantsState[idx].name = e.target.value;
-          };
-        });
+        const rowEl = document.getElementById(uniqueId);
+        rowEl.querySelector(".remove-variant-row-btn").onclick = () => {
+          rowEl.remove();
+        };
 
-        document.querySelectorAll(".v-price-input").forEach(inp => {
-          inp.onchange = (e) => {
-            const idx = Number(inp.getAttribute("data-idx"));
-            window.formVariantsState[idx].price = e.target.value ? Number(e.target.value) : null;
-          };
-        });
-
-        document.querySelectorAll(".v-img-input").forEach(inp => {
-          inp.onchange = (e) => {
-            const idx = Number(inp.getAttribute("data-idx"));
-            window.formVariantsState[idx].imageURL = e.target.value;
-          };
-        });
-
-        document.querySelectorAll(".v-stock-input").forEach(inp => {
-          inp.onchange = (e) => {
-            const idx = Number(inp.getAttribute("data-idx"));
-            window.formVariantsState[idx].stock = e.target.value ? Number(e.target.value) : null;
-          };
-        });
-
-        document.querySelectorAll(".v-file-uploader").forEach(uploader => {
-          uploader.onchange = (e) => {
-            const idx = Number(uploader.getAttribute("data-idx"));
-            const file = e.target.files[0];
-            if (file) {
-              window.compressImageFile(file, (base64) => {
-                window.formVariantsState[idx].imageURL = base64;
-                const urlInp = document.getElementById(`v-img-${idx}`);
-                if (urlInp) urlInp.value = base64;
-                showToast(`Variant ${idx + 1} image uploaded.`);
-              });
-            }
-          };
-        });
-
-        document.querySelectorAll(".form-del-variant-btn").forEach(btn => {
-          btn.onclick = () => {
-            const idx = Number(btn.getAttribute("data-idx"));
-            window.formVariantsState.splice(idx, 1);
-            renderFormVariants();
-          };
-        });
+        rowEl.querySelector(".variant-file-uploader").onchange = (e) => {
+          const file = e.target.files[0];
+          const targetId = e.target.getAttribute("data-target-url-id");
+          if (file) {
+            window.compressImageFile(file, (base64) => {
+              const targetInput = document.getElementById(targetId);
+              if (targetInput) {
+                targetInput.value = base64;
+                showToast("Variant image compressed & uploaded!");
+              }
+            });
+          }
+        };
       };
 
-      // Add variant click trigger
-      document.getElementById("form-add-variant-btn").onclick = () => {
-        window.formVariantsState.push({ name: "", price: null, imageURL: "", stock: null });
-        renderFormVariants();
-      };
+      const formAddVariantBtn = document.getElementById("form-add-variant-btn");
+      if (formAddVariantBtn) {
+        formAddVariantBtn.onclick = () => {
+          renderVariantRow();
+        };
+      }
 
-      // Initialize render
-      renderFormVariants();
+      if (product && product.variants && product.variants.length > 0) {
+        product.variants.forEach(v => {
+          renderVariantRow(v);
+        });
+      }
 
       // Bind Local PC File Upload Actions for Product Form
       const mainImgFileInput = document.getElementById("prod-form-img-file");
@@ -3329,9 +3332,26 @@
       document.getElementById("product-edit-form").onsubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
-        
-        // Clean out blank variants
-        const variantsPayload = window.formVariantsState.filter(v => v.name && v.imageURL);
+
+        const variantRows = document.querySelectorAll(".variant-row");
+        const variantsList = [];
+        variantRows.forEach(row => {
+          const vId = row.getAttribute("data-variant-id");
+          const nameVal = row.querySelector("[name='v_name']").value;
+          const imageVal = row.querySelector("[name='v_imageURL']").value;
+          const priceVal = row.querySelector("[name='v_price']").value;
+          const discountVal = row.querySelector("[name='v_discountPrice']").value;
+          const stockVal = row.querySelector("[name='v_stock']").value;
+
+          variantsList.push({
+            id: vId,
+            name: nameVal,
+            imageURL: imageVal,
+            price: priceVal ? Number(priceVal) : null,
+            discountPrice: discountVal ? Number(discountVal) : null,
+            stock: stockVal !== "" ? Number(stockVal) : undefined
+          });
+        });
 
         const payload = {
           name: form.name.value,
@@ -3341,13 +3361,13 @@
           discountPrice: form.discountPrice.value ? Number(form.discountPrice.value) : null,
           imageURL: form.imageURL.value,
           galleryImages: form.galleryImages.value,
-          variants: variantsPayload,
           description: form.description.value,
           stock: Number(form.stock.value),
           rating: Number(form.rating.value),
           isPromotion: form.isPromotion.checked,
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
+          variants: variantsList,
           updatedAt: new Date()
         };
 
@@ -4740,9 +4760,7 @@
       const modal = document.getElementById("product-detail-container");
       if (!modal) return;
       this.activeImg = product.imageURL;
-      
-      // Default selection is parent product
-      store.currentSelectedVariant = null;
+      this.selectedVariant = null; // Reset variant tracker
 
       const productHash = '#/product/' + product.id;
       if (window.location.hash !== productHash) {
@@ -4751,53 +4769,51 @@
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
-      // Build gallery thumbnails. We will always render the parent image as thumbnail 1
+      // Build gallery thumbnails. We prioritize variants as thumbnails first, then pure extra gallery images.
       let galleryMarkup = `
-        <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-luxuryGold scale-105" data-variant-idx="-1" data-img="${product.imageURL || fallbackImage}">
+        <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-luxuryGold scale-105" data-variant-idx="parent" data-img="${product.imageURL || fallbackImage}">
           <img src="${product.imageURL || fallbackImage}" class="w-full h-full object-cover">
-          <span class="absolute bottom-0 inset-x-0 bg-black/75 text-[7px] text-center text-gray-300 py-0.5 truncate">Parent</span>
+          <span class="absolute bottom-0 inset-x-0 bg-black/80 text-[7px] text-white font-extrabold text-center py-0.5 truncate">Main</span>
         </div>
       `;
 
-      // If product has distinct style/color variants, we display them as interactive thumbnails
       if (product.variants && product.variants.length > 0) {
         product.variants.forEach((v, idx) => {
           galleryMarkup += `
-            <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-65 hover:opacity-100" data-variant-idx="${idx}" data-img="${v.imageURL}">
-              <img src="${v.imageURL}" class="w-full h-full object-cover">
-              <span class="absolute bottom-0 inset-x-0 bg-[#141414]/90 text-[7px] font-semibold text-center text-luxuryGold py-0.5 truncate">${v.name}</span>
-            </div>
-          `;
-        });
-      } else {
-        // Fallback to standard legacy comma-separated gallery list if no variants are set
-        let imagesArray = [];
-        if (product.galleryImages) {
-          if (Array.isArray(product.galleryImages)) {
-            imagesArray = product.galleryImages;
-          } else if (typeof product.galleryImages === 'string') {
-            let rawParts = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
-            let processed = [];
-            for (let i = 0; i < rawParts.length; i++) {
-              if (rawParts[i].startsWith('data:image') && i + 1 < rawParts.length) {
-                processed.push(rawParts[i] + ',' + rawParts[i+1]);
-                i++; 
-              } else {
-                processed.push(rawParts[i]);
-              }
-            }
-            imagesArray = processed;
-          }
-        }
-
-        imagesArray.forEach((imgUrl, idx) => {
-          galleryMarkup += `
-            <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-variant-idx="-1" data-img="${imgUrl}">
-              <img src="${imgUrl}" class="w-full h-full object-cover">
+            <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-variant-idx="${idx}" data-img="${v.imageURL || fallbackImage}">
+              <img src="${v.imageURL || fallbackImage}" class="w-full h-full object-cover">
+              <span class="absolute bottom-0 inset-x-0 bg-black/85 text-[7px] text-luxuryGold font-extrabold text-center py-0.5 truncate">${v.name}</span>
             </div>
           `;
         });
       }
+
+      let imagesArray = [];
+      if (product.galleryImages) {
+        if (Array.isArray(product.galleryImages)) {
+          imagesArray = product.galleryImages;
+        } else if (typeof product.galleryImages === 'string') {
+          let rawParts = product.galleryImages.split(',').map(s => s.trim()).filter(Boolean);
+          let processed = [];
+          for (let i = 0; i < rawParts.length; i++) {
+            if (rawParts[i].startsWith('data:image') && i + 1 < rawParts.length) {
+              processed.push(rawParts[i] + ',' + rawParts[i+1]);
+              i++; 
+            } else {
+              processed.push(rawParts[i]);
+            }
+          }
+          imagesArray = processed;
+        }
+      }
+
+      imagesArray.forEach((imgUrl) => {
+        galleryMarkup += `
+          <div class="gallery-thumb w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 relative border-transparent opacity-60 hover:opacity-100" data-variant-idx="gallery" data-img="${imgUrl}">
+            <img src="${imgUrl}" class="w-full h-full object-cover">
+          </div>
+        `;
+      });
 
       const normalizedGender = getNormalizedGender(product.gender);
 
@@ -4828,8 +4844,6 @@
                 <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
                 ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
               </div>
-              
-              <!-- DYNAMIC TARGET ELEMENTS (Updating instantaneously when variants are tapped!) -->
               <h2 id="modal-product-title" class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
               
               <div class="flex items-center justify-between">
@@ -4843,25 +4857,24 @@
                 </button>
               </div>
 
-              <div id="modal-product-price-container" class="flex items-baseline gap-3 pt-1">
+              <div id="modal-product-price" class="flex items-baseline gap-3 pt-1">
                 ${product.discountPrice ? `
-                  <span id="modal-price-val" class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                  <span id="modal-price-discount-val" class="text-xs line-through text-gray-500">${product.price} MAD</span>
-                ` : `<span id="modal-price-val" class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
+                  <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                  <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
+                ` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
               </div>
 
               <div class="border-t border-b border-luxuryGold/20 py-3 space-y-2">
-                <p class="text-[10px] font-semibold text-luxuryGold uppercase tracking-wider">Collections Shapes & Colors</p>
+                <p class="text-[10px] font-semibold text-luxuryGold uppercase tracking-wider font-extrabold">Select Style / Options</p>
                 <div class="flex gap-2.5 overflow-x-auto py-1 hide-scrollbar" id="modal-gallery-container">
                   ${galleryMarkup}
                 </div>
               </div>
 
               <p class="text-xs md:text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
-              
-              <div id="modal-product-stock" class="text-[11px] font-medium text-gray-400">
+              <p id="modal-product-stock" class="text-[11px] font-medium text-gray-400">
                 Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
-              </div>
+              </p>
             </div>
 
             <div class="space-y-3 pt-3 border-t border-white/5 flex-shrink-0">
@@ -4893,55 +4906,83 @@
       document.getElementById("product-modal-close").onclick = closeModal;
 
       const mainImg = document.getElementById("main-product-image");
-      
-      // Bind Swapper logic to each thumbnail
+      const titleEl = document.getElementById("modal-product-title");
+      const priceEl = document.getElementById("modal-product-price");
+      const stockEl = document.getElementById("modal-product-stock");
+
+      const updateModalDetails = (variant) => {
+        if (variant) {
+          this.selectedVariant = variant;
+          this.activeImg = variant.imageURL || product.imageURL;
+          if (mainImg) mainImg.src = this.activeImg;
+          if (titleEl) titleEl.innerText = `${cleanName} - ${variant.name}`;
+          
+          const activePrice = variant.price || product.price;
+          const activeDiscount = variant.discountPrice !== undefined && variant.discountPrice !== null ? variant.discountPrice : (variant.price ? null : product.discountPrice);
+          
+          if (priceEl) {
+            if (activeDiscount) {
+              priceEl.innerHTML = `
+                <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${activeDiscount} MAD</span>
+                <span class="text-xs line-through text-gray-500">${activePrice} MAD</span>
+              `;
+            } else {
+              priceEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-white">${activePrice} MAD</span>`;
+            }
+          }
+          
+          if (stockEl) {
+            const activeStock = variant.stock !== undefined ? variant.stock : product.stock;
+            stockEl.innerHTML = `Stock Status: ${activeStock <= 3 ? `<span class="text-red-400 font-bold">Limited Reserve (${activeStock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}`;
+          }
+        } else {
+          this.selectedVariant = null;
+          this.activeImg = product.imageURL;
+          if (mainImg) mainImg.src = this.activeImg;
+          if (titleEl) titleEl.innerText = cleanName;
+          
+          if (priceEl) {
+            if (product.discountPrice) {
+              priceEl.innerHTML = `
+                <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
+              `;
+            } else {
+              priceEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`;
+            }
+          }
+          
+          if (stockEl) {
+            stockEl.innerHTML = `Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}`;
+          }
+        }
+      };
+
       document.querySelectorAll(".gallery-thumb").forEach(btn => {
         btn.onclick = () => {
+          const variantIdx = btn.getAttribute("data-variant-idx");
           const newImgSrc = btn.getAttribute("data-img");
-          const variantIdx = Number(btn.getAttribute("data-variant-idx"));
+          if (store.activeImg === newImgSrc && variantIdx === "gallery") return;
           
+          document.querySelectorAll(".gallery-thumb").forEach(t => {
+            t.classList.remove("border-luxuryGold", "scale-105");
+            t.classList.add("border-transparent", "opacity-60");
+          });
+          btn.classList.remove("border-transparent", "opacity-60");
+          btn.classList.add("border-luxuryGold", "scale-105");
+
           mainImg.style.opacity = '0';
           setTimeout(() => {
-            store.activeImg = newImgSrc;
-            mainImg.src = newImgSrc;
-            mainImg.style.opacity = '1';
-            
-            // Adjust borders active visual ring
-            document.querySelectorAll(".gallery-thumb").forEach(t => {
-              t.classList.remove("border-luxuryGold", "scale-105");
-              t.classList.add("border-transparent", "opacity-65");
-            });
-            btn.classList.remove("border-transparent", "opacity-65");
-            btn.classList.add("border-luxuryGold", "scale-105");
-
-            // SWAP INFO TRIGGER SECTION
-            const titleEl = document.getElementById("modal-product-title");
-            const priceContainerEl = document.getElementById("modal-product-price-container");
-            const stockEl = document.getElementById("modal-product-stock");
-
-            if (variantIdx === -1) {
-              // Restore parent base characteristics
-              store.currentSelectedVariant = null;
-              titleEl.innerText = cleanName;
-              
-              priceContainerEl.innerHTML = product.discountPrice ? `
-                <span id="modal-price-val" class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                <span id="modal-price-discount-val" class="text-xs line-through text-gray-500">${product.price} MAD</span>
-              ` : `<span id="modal-price-val" class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`;
-              
-              stockEl.innerHTML = `Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}`;
+            if (variantIdx === "parent") {
+              updateModalDetails(null);
+            } else if (variantIdx === "gallery") {
+              store.activeImg = newImgSrc;
+              mainImg.src = newImgSrc;
             } else {
-              // Apply dynamic sub-variant attributes override
-              const variant = product.variants[variantIdx];
-              store.currentSelectedVariant = variant;
-              
-              titleEl.innerText = cleanName + " — " + variant.name;
-              
-              priceContainerEl.innerHTML = `<span id="modal-price-val" class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${variant.price || product.price} MAD</span>`;
-              
-              const vStock = variant.stock !== null ? variant.stock : product.stock;
-              stockEl.innerHTML = `Stock Status: <span class="text-amber-400 font-bold">Exclusive Design (${vStock} left)</span>`;
+              const variantObj = product.variants[parseInt(variantIdx)];
+              updateModalDetails(variantObj);
             }
+            mainImg.style.opacity = '1';
           }, 150);
         };
       });
@@ -4997,23 +5038,13 @@
       };
 
       document.getElementById("modal-add-to-cart-btn").onclick = () => {
-        store.addToCart(product, store.currentSelectedVariant);
+        store.addToCart(product, this.selectedVariant);
         closeModal();
       };
 
       document.getElementById("modal-order-now-btn").onclick = () => {
-        let cartItem = { ...product };
-        if (store.currentSelectedVariant) {
-          const sv = store.currentSelectedVariant;
-          cartItem.id = product.id + "-" + sv.name.replace(/\s+/g, '-').toLowerCase();
-          cartItem.name = product.name + " (" + sv.name + ")";
-          cartItem.price = sv.price || product.price;
-          cartItem.discountPrice = null;
-          cartItem.imageURL = sv.imageURL || product.imageURL;
-          cartItem.stock = sv.stock || product.stock;
-        }
-        
-        store.cart = [{ ...cartItem, quantity: 1 }];
+        const cartItem = store.getCartItemForProduct(product, this.selectedVariant);
+        store.cart = [cartItem];
         localStorage.setItem("bp_cart", JSON.stringify(store.cart));
         closeModal();
         store.setPage("cart");
