@@ -2420,6 +2420,7 @@
               <div class="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition"></div>
               
               <div class="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1">
+                ${product.isPinned ? `<span class="bg-[#D4AF37] text-black text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg flex items-center gap-1">📌 Pinned</span>` : ''}
                 ${product.isPromotion ? `<span class="bg-red-700 text-white text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">${this.t('saleBadge')}</span>` : ''}
                 ${product.isBestSeller ? `<span class="bg-[#000000] border border-luxuryGold/45 text-luxuryGold text-[7px] sm:text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-lg">${this.t('bestBadge')}</span>` : ''}
               </div>
@@ -2509,6 +2510,15 @@
         const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                               p.description.toLowerCase().includes(this.searchQuery.toLowerCase());
         return matchesGender && matchesCategory && matchesSearch;
+      }).sort((a, b) => {
+        const aPinned = a.isPinned ? 1 : 0;
+        const bPinned = b.isPinned ? 1 : 0;
+        if (bPinned !== aPinned) {
+          return bPinned - aPinned; // Pinned items always go first
+        }
+        const aTime = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const bTime = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return bTime - aTime; // Newest secondary sort
       });
 
       let productsGrid = "";
@@ -3050,7 +3060,10 @@
                       <td class="p-4 flex items-center gap-3">
                         <img src="${p.imageURL || fallbackImage}" class="w-12 h-12 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
                         <div>
-                          <p class="font-semibold text-white">${cleanName}</p>
+                          <p class="font-semibold text-white flex items-center gap-1.5">
+                            ${p.isPinned ? `<span class="text-xs text-luxuryGold" title="Pinned to top">📌</span>` : ''}
+                            ${cleanName}
+                          </p>
                           <p class="text-[10px] text-gray-400">Rating: ${p.rating} ★</p>
                         </div>
                       </td>
@@ -3187,14 +3200,17 @@
             </div>
           </div>
 
-          <div class="flex gap-4 p-3 bg-black/50 rounded-xl border border-luxuryGold/10">
-            <label class="flex items-center gap-2 text-xs">
+          <div class="flex flex-wrap gap-4 p-3 bg-black/50 rounded-xl border border-luxuryGold/10">
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="checkbox" name="isPinned" ${product && product.isPinned ? 'checked' : ''} class="rounded text-luxuryGold"> Pin to Top 📌
+            </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="isPromotion" ${product && product.isPromotion ? 'checked' : ''} class="rounded text-luxuryGold"> Promotion
             </label>
-            <label class="flex items-center gap-2 text-xs">
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="isBestSeller" ${product && product.isBestSeller ? 'checked' : ''} class="rounded text-luxuryGold"> Bestseller
             </label>
-            <label class="flex items-center gap-2 text-xs">
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="limitedStock" ${product && product.limitedStock ? 'checked' : ''} class="rounded text-luxuryGold"> Limited Stock
             </label>
           </div>
@@ -3338,6 +3354,7 @@
           description: form.description.value,
           stock: Number(form.stock.value),
           rating: Number(form.rating.value),
+          isPinned: form.isPinned.checked,
           isPromotion: form.isPromotion.checked,
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
