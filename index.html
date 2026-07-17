@@ -366,6 +366,9 @@
       cartTab: "cart", // "cart" or "history"
       myOrders: [],
       loadingMyOrders: false,
+      
+      // Tracking open state to prevent double rendering lag
+      currentlyOpenProductId: null,
 
       // Translation dictionary
       language: localStorage.getItem("sovanex_lang") || "en",
@@ -651,10 +654,15 @@
 
         if (hash.startsWith("#/product/")) {
           const prodId = hash.replace("#/product/", "");
+          let targetPage = this.currentPage;
           if (this.currentPage === "admin") {
-            this.currentPage = "shop";
+            targetPage = "shop";
           }
-          this.updateDOM();
+          const pageChanged = (this.currentPage !== targetPage);
+          if (pageChanged) {
+            this.currentPage = targetPage;
+            this.updateDOM();
+          }
           
           if (this.products.length > 0) {
             const prod = this.products.find(p => p.id === prodId);
@@ -4725,6 +4733,12 @@
       const modal = document.getElementById("product-detail-container");
       if (!modal) return;
 
+      // Prevent duplicate rendering and lag if modal is already open for this product
+      if (store.currentlyOpenProductId === product.id && !modal.classList.contains("hidden")) {
+        return;
+      }
+      store.currentlyOpenProductId = product.id;
+
       this.activeImg = product.imageURL;
       this.activeName = product.name;
       this.activePrice = product.discountPrice || product.price;
@@ -4793,8 +4807,8 @@
           
           <button id="product-modal-close" class="absolute top-4 right-4 z-50 p-2 text-white bg-black/75 backdrop-blur-md border border-white/10 rounded-full hover:bg-luxuryGold hover:text-black transition-premium shadow-lg flex items-center justify-center w-9 h-9 font-bold" aria-label="Close details">✕</button>
 
-          <!-- Fully Covered Image Container - Expanded to 58% on desktop for complete wide view without truncation -->
-          <div class="md:w-[58%] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black min-h-[350px] md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl flex items-center justify-center" id="zoom-img-btn">
+          <!-- Fully Covered Image Container - Compact on mobile (220px) to prevent covering titles, wide on PC (58%) -->
+          <div class="w-full md:w-[58%] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black h-[220px] sm:h-[300px] md:h-auto md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl flex items-center justify-center" id="zoom-img-btn">
             <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-500 ease-in-out transform group-hover/main:scale-105" alt="${cleanName}">
             ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
             
@@ -4865,6 +4879,7 @@
         }
         setTimeout(() => {
           modal.classList.add("hidden");
+          store.currentlyOpenProductId = null; // Reset open product state
           window.location.hash = '#/' + store.currentPage;
         }, 300);
       };
