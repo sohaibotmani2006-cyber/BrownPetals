@@ -642,55 +642,61 @@
       },
 
       setPage(page) {
-        window.location.hash = '#/' + page;
+        const path = (page === 'home') ? '/' : '/' + page;
+        try {
+          if (window.location.pathname !== path) {
+            history.pushState({ page }, '', path);
+          }
+        } catch (e) {
+          console.warn('History API not available, fallback to location assign', e);
+          window.location.pathname = path;
+        }
+        this.currentPage = page;
+        this.updateDOM();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
 
       handleRouting() {
-        const hash = window.location.hash;
-        if (!hash || hash === "#" || hash === "#/") {
-          window.location.hash = "#/home";
-          return;
-        }
+        const pathname = window.location.pathname || '/';
 
-        if (hash.startsWith("#/product/")) {
-          const prodId = hash.replace("#/product/", "");
+        // Product modal route
+        if (pathname.startsWith('/product/')) {
+          const prodId = pathname.replace('/product/', '');
           let targetPage = this.currentPage;
-          if (this.currentPage === "admin") {
-            targetPage = "shop";
-          }
+          if (this.currentPage === 'admin') targetPage = 'shop';
           const pageChanged = (this.currentPage !== targetPage);
           if (pageChanged) {
             this.currentPage = targetPage;
             this.updateDOM();
           }
-          
           if (this.products.length > 0) {
             const prod = this.products.find(p => p.id === prodId);
-            if (prod) {
-              this.openProductDetailsModal(prod);
-            }
+            if (prod) this.openProductDetailsModal(prod);
           }
           return;
         }
 
-        const page = hash.replace("#/", "");
-        const validPages = ["home", "shop", "contact", "policies", "admin", "cart", "order-confirmation"];
+        // Normalize path to page key
+        const raw = pathname.replace(/^\/+/, '');
+        const page = raw === '' ? 'home' : raw;
+        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'order-confirmation'];
         if (validPages.includes(page)) {
           const pageChanged = (this.currentPage !== page);
           this.currentPage = page;
-          if (page === "admin" && this.isAdmin) {
-            this.initAdminSubscriptions();
-          }
-          const modal = document.getElementById("product-detail-container");
-          if (modal) modal.classList.add("hidden");
-
+          if (page === 'admin' && this.isAdmin) this.initAdminSubscriptions();
+          const modal = document.getElementById('product-detail-container');
+          if (modal) modal.classList.add('hidden');
           if (pageChanged) {
             this.updateDOM();
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }
-        } else {
-          window.location.hash = "#/home";
+          return;
         }
+
+        // Fallback to home
+        try { history.replaceState({}, '', '/'); } catch (e) {}
+        this.currentPage = 'home';
+        this.updateDOM();
       },
 
       copyTextToClipboard(text) {
@@ -1151,7 +1157,7 @@
         store.loadingProducts = false;
         store.updateDOM();
 
-        if (window.location.hash.startsWith("#/product/")) {
+        if (window.location.pathname.startsWith('/product/')) {
           store.handleRouting();
         }
       }, (err) => {
@@ -4765,9 +4771,9 @@
       // Reference to the user-specified high-fidelity layout
       const referenceAsset = "image_00ef48.jpg";
 
-      const productHash = '#/product/' + product.id;
-      if (window.location.hash !== productHash) {
-        window.location.hash = productHash;
+      const productPath = '/product/' + product.id;
+      if (window.location.pathname !== productPath) {
+        try { history.pushState({ productId: product.id }, '', productPath); } catch (e) { window.location.pathname = productPath; }
       }
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
@@ -4894,10 +4900,11 @@
           modalContent.classList.remove("animate-modal-enter");
           modalContent.classList.add("animate-modal-leave");
         }
-        setTimeout(() => {
+          setTimeout(() => {
           modal.classList.add("hidden");
           store.currentlyOpenProductId = null; // Reset open product state
-          window.location.hash = '#/' + store.currentPage;
+          const pagePath = store.currentPage === 'home' ? '/' : '/' + store.currentPage;
+          try { history.pushState({}, '', pagePath); } catch (e) { window.location.pathname = pagePath; }
         }, 300);
       };
 
@@ -5001,7 +5008,7 @@
 
       document.getElementById("modal-share-btn").onclick = (e) => {
         e.stopPropagation();
-        const shareUrl = window.location.origin + window.location.pathname + '#/product/' + product.id;
+        const shareUrl = window.location.origin + '/product/' + product.id;
         store.copyTextToClipboard(shareUrl);
       };
 
@@ -5148,7 +5155,7 @@
         store.handleRouting();
       });
 
-      window.addEventListener("hashchange", () => {
+      window.addEventListener("popstate", () => {
         store.handleRouting();
       });
 
