@@ -1614,33 +1614,23 @@
           productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
         });
 
-        let msgText = this.telegramSettings.template
-          .replace(/{products}/g, productsMsg.trim())
-          .replace(/{subtotal}/g, subtotal)
-          .replace(/{city}/g, cityName)
-          .replace(/{delivery}/g, deliveryFee)
-          .replace(/{total}/g, total)
-          .replace(/{name}/g, name)
-          .replace(/{address}/g, address)
-          .replace(/{phone}/g, phone)
-          .replace(/{orderId}/g, orderId);
+        const msgText = this.buildTelegramOrderMessage({
+          orderId,
+          items: this.cart.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.discountPrice || item.price
+          })),
+          subtotal,
+          city: cityName,
+          deliveryFee,
+          total,
+          name,
+          address,
+          phone
+        });
 
-        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
-          try {
-            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
-            await fetch(telegramUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: this.telegramSettings.chatId,
-                text: msgText,
-                parse_mode: "Markdown"
-              })
-            });
-          } catch (apiErr) {
-            console.error("Direct Telegram bot execution failed.", apiErr);
-          }
-        }
+        await this.sendTelegramMessage(msgText);
 
         const purchasedItemIds = this.cart.map(item => item.id);
         const recommendations = store.getRecommendations(purchasedItemIds);
@@ -1774,6 +1764,70 @@
 
     store.getActiveBanks = function() {
       return this.banks.filter(bank => bank && bank.isActive !== false && bank.name);
+    };
+
+    store.buildTelegramOrderMessage = function(orderData, extraLines = []) {
+      const products = (orderData.items || []).map(item => {
+        const price = Number(item.price || 0);
+        return `• *${item.name || 'Item'}* x${item.quantity || 1} (${price} MAD)`;
+      }).join('\n');
+
+      let msgText = (this.telegramSettings && this.telegramSettings.template
+        ? this.telegramSettings.template
+        : "🌸 *New Order Received (SOVANEX)!* 🌸\n\n*Order ID:* {orderId}\n*Customer Name:* {name}\n*Phone:* {phone}\n*City:* {city}\n*Address:* {address}\n\n*Items Purchased:*\n{products}\n\n*Subtotal:* {subtotal} MAD\n*Delivery Fee:* {delivery} MAD\n*Total Amount:* {total} MAD\n\n_Thank you for choosing SOVANEX!_"
+      )
+        .replace(/{products}/g, (products || 'No items').trim())
+        .replace(/{subtotal}/g, Number(orderData.subtotal || 0))
+        .replace(/{city}/g, orderData.city || orderData.cityName || 'Morocco')
+        .replace(/{delivery}/g, Number(orderData.deliveryFee || 0))
+        .replace(/{total}/g, Number(orderData.total || 0))
+        .replace(/{name}/g, orderData.name || orderData.customerName || '')
+        .replace(/{address}/g, orderData.address || '')
+        .replace(/{phone}/g, orderData.phone || '')
+        .replace(/{orderId}/g, orderData.orderId || 'SOV-000000');
+
+      if (extraLines.length) {
+        msgText += '\n\n' + extraLines.join('\n');
+      }
+
+      return msgText;
+    };
+
+    store.sendTelegramMessage = async function(messageText, photoUrl = null) {
+      const telegramSettings = this.telegramSettings || {};
+      if (!telegramSettings.botEnabled || !telegramSettings.botToken || !telegramSettings.chatId || !messageText) {
+        return;
+      }
+
+      try {
+        const messageUrl = 'https://api.telegram.org/bot' + telegramSettings.botToken + '/sendMessage';
+        await fetch(messageUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: telegramSettings.chatId,
+            text: messageText,
+            parse_mode: 'Markdown'
+          })
+        });
+
+        if (photoUrl) {
+          try {
+            const formData = new FormData();
+            formData.append('chat_id', telegramSettings.chatId);
+            formData.append('photo', photoUrl);
+            formData.append('caption', 'Payment proof attached');
+            await fetch('https://api.telegram.org/bot' + telegramSettings.botToken + '/sendPhoto', {
+              method: 'POST',
+              body: formData
+            });
+          } catch (photoErr) {
+            console.warn('Telegram photo send fallback skipped:', photoErr);
+          }
+        }
+      } catch (err) {
+        console.warn('Telegram notification failed:', err);
+      }
     };
 
     store.beginBankTransferFlow = function() {
@@ -1922,65 +1976,30 @@
         this.checkoutFormValues = { customerName: '', phone: '', cityId: '', address: '', paymentMethod: 'cash_on_delivery' };
         localStorage.removeItem('sovanex_bank_transfer_draft');
 
-        const telegramText = [
-          '🛒 NEW BANK TRANSFER ORDER',
-          '',
-          'Order #: #' + orderId,
-          'Customer:',
-          draft.customerName || this.checkoutFormValues.customerName,
-          '',
-          'Phone:',
-          draft.phone || this.checkoutFormValues.phone,
-          '',
-          'Total:',
-          (draft.total || this.paymentSummary.total) + ' DH',
-          '',
-          'Payment Method:',
-          'Bank Transfer',
-          '',
-          'Bank:',
-          selectedBank.name,
-          '',
-          'Beneficiary:',
-          selectedBank.beneficiary || 'SOHAIB OTMANI',
-          '',
-          'Payment Status:',
-          'Pending Verification',
-          '',
-          'Payment Proof:',
-          proofUrl
-        ].join('\n');
+        const telegramText = this.buildTelegramOrderMessage({
+          orderId,
+          items: (draft.items || this.cart.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.discountPrice || item.price
+          }))),
+          subtotal: draft.subtotal || this.paymentSummary.subtotal || 0,
+          city: draft.cityName || 'Morocco',
+          deliveryFee: draft.deliveryFee || this.paymentSummary.deliveryFee || 0,
+          total: draft.total || this.paymentSummary.total || 0,
+          name: draft.customerName || this.checkoutFormValues.customerName,
+          address: draft.address || this.checkoutFormValues.address,
+          phone: draft.phone || this.checkoutFormValues.phone
+        }, [
+          '🚨 *PAYMENT PROOF SUBMITTED*',
+          'Payment Method: *Bank Transfer*',
+          'Bank: *' + selectedBank.name + '*',
+          'Beneficiary: *' + (selectedBank.beneficiary || 'SOHAIB OTMANI') + '*',
+          'Status: *Pending Verification*',
+          'Proof URL: ' + proofUrl
+        ]);
 
-        const telegramSettings = this.telegramSettings || {};
-        if (telegramSettings.botEnabled && telegramSettings.botToken && telegramSettings.chatId) {
-          try {
-            const messageUrl = 'https://api.telegram.org/bot' + telegramSettings.botToken + '/sendMessage';
-            await fetch(messageUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: telegramSettings.chatId,
-                text: telegramText,
-                parse_mode: 'Markdown'
-              })
-            });
-
-            try {
-              const formData = new FormData();
-              formData.append('chat_id', telegramSettings.chatId);
-              formData.append('photo', proofUrl);
-              formData.append('caption', 'Payment proof for order #' + orderId);
-              await fetch('https://api.telegram.org/bot' + telegramSettings.botToken + '/sendPhoto', {
-                method: 'POST',
-                body: formData
-              });
-            } catch (photoErr) {
-              console.warn('Telegram photo send fallback skipped:', photoErr);
-            }
-          } catch (err) {
-            console.warn('Telegram bank transfer notification failed:', err);
-          }
-        }
+        await this.sendTelegramMessage(telegramText, proofUrl);
 
         this.currentPage = 'payment-proof-submitted';
         this.bankTransferDraft = { selectedBankId: '', proofFile: null, proofPreview: '', proofUploading: false, uploadError: '' };
@@ -5462,33 +5481,23 @@
           productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
         });
 
-        let msgText = this.telegramSettings.template
-          .replace(/{products}/g, productsMsg.trim())
-          .replace(/{subtotal}/g, subtotal)
-          .replace(/{city}/g, cityName)
-          .replace(/{delivery}/g, deliveryFee)
-          .replace(/{total}/g, total)
-          .replace(/{name}/g, name)
-          .replace(/{address}/g, address)
-          .replace(/{phone}/g, phone)
-          .replace(/{orderId}/g, orderId);
+        const msgText = this.buildTelegramOrderMessage({
+          orderId,
+          items: this.cart.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.discountPrice || item.price
+          })),
+          subtotal,
+          city: cityName,
+          deliveryFee,
+          total,
+          name,
+          address,
+          phone
+        });
 
-        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
-          try {
-            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
-            await fetch(telegramUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: this.telegramSettings.chatId,
-                text: msgText,
-                parse_mode: "Markdown"
-              })
-            });
-          } catch (apiErr) {
-            console.error("Telegram delivery bypassed:", apiErr);
-          }
-        }
+        await this.sendTelegramMessage(msgText);
 
         this.cart = [];
         localStorage.setItem("bp_cart", JSON.stringify([]));
