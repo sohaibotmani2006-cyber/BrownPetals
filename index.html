@@ -44,8 +44,7 @@
       "imports": {
         "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
-        "firebase/storage": "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js"
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"
       }
     }
   </script>
@@ -251,7 +250,6 @@
     import { initializeApp } from "firebase/app";
     import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment, where } from "firebase/firestore";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
     // Global application namespace
     const appId = "sovanex";
@@ -271,7 +269,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const storage = getStorage(app);
     const fallbackImage = "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=800";
 
     // Global Fallback Logo Handler to prevent broken image icons and provide a luxurious SVG alternative
@@ -634,23 +631,7 @@
         customerName: "",
         phone: "",
         cityId: "",
-        address: "",
-        paymentMethod: "cash_on_delivery"
-      },
-
-      banks: [],
-      bankTransferDraft: {
-        selectedBankId: "",
-        proofFile: null,
-        proofPreview: "",
-        proofUploading: false,
-        uploadError: ""
-      },
-
-      paymentSummary: {
-        subtotal: 0,
-        deliveryFee: 0,
-        total: 0
+        address: ""
       },
       
       telegramSettings: {
@@ -698,7 +679,7 @@
         // Normalize path to page key
         const raw = pathname.replace(/^\/+/, '');
         const page = raw === '' ? 'home' : raw;
-        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'order-confirmation', 'bank-transfer', 'payment-proof-submitted'];
+        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'order-confirmation'];
         if (validPages.includes(page)) {
           const pageChanged = (this.currentPage !== page);
           this.currentPage = page;
@@ -1057,9 +1038,7 @@
         document.getElementById("confirm-cancel-btn").onclick = () => modal.classList.add("hidden");
       }
       document.getElementById("confirm-submit-btn").onclick = () => {
-        if (typeof onConfirmCallback === "function") {
-          onConfirmCallback();
-        }
+        onConfirmCallback();
         modal.classList.add("hidden");
       };
     };
@@ -1276,29 +1255,6 @@
       };
       if (store.isAdmin) onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err));
       else getDoc(botConfigDoc).then(handleTelegram).catch(err => console.warn(err));
-
-      const banksRef = collection(db, 'artifacts', appId, 'public', 'data', 'banks');
-      const handleBanks = (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        store.banks = list.filter(bank => bank && bank.name);
-        if (store.banks.length === 0 && store.isAdmin) {
-          const defaultBanks = [
-            { name: 'CIH Bank', beneficiary: 'SOHAIB OTMANI', rib: '000000000123456789012345', logoURL: '', isActive: true },
-            { name: 'Attijariwafa Bank', beneficiary: 'SOHAIB OTMANI', rib: '000000000987654321098765', logoURL: '', isActive: true },
-            { name: 'Banque Populaire', beneficiary: 'SOHAIB OTMANI', rib: '000000000456789012345678', logoURL: '', isActive: true },
-            { name: 'Bank of Africa', beneficiary: 'SOHAIB OTMANI', rib: '000000000654321098765432', logoURL: '', isActive: true }
-          ];
-          defaultBanks.forEach(async (bank) => {
-            await addDoc(banksRef, { ...bank, createdAt: new Date(), updatedAt: new Date() });
-          });
-        }
-        if (store.currentPage === 'bank-transfer' || store.currentPage === 'card-payment') {
-          store.updateDOM();
-        }
-      };
-      if (store.isAdmin) onSnapshot(banksRef, handleBanks, (err) => console.warn(err));
-      else getDocs(banksRef).then(handleBanks).catch(err => console.warn(err));
 
       const revRef = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
       const revQuery = query(revRef, orderBy("createdAt", "desc"), limit(store.isAdmin ? 100 : 20));
@@ -1614,23 +1570,33 @@
           productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
         });
 
-        const msgText = this.buildTelegramOrderMessage({
-          orderId,
-          items: this.cart.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.discountPrice || item.price
-          })),
-          subtotal,
-          city: cityName,
-          deliveryFee,
-          total,
-          name,
-          address,
-          phone
-        });
+        let msgText = this.telegramSettings.template
+          .replace(/{products}/g, productsMsg.trim())
+          .replace(/{subtotal}/g, subtotal)
+          .replace(/{city}/g, cityName)
+          .replace(/{delivery}/g, deliveryFee)
+          .replace(/{total}/g, total)
+          .replace(/{name}/g, name)
+          .replace(/{address}/g, address)
+          .replace(/{phone}/g, phone)
+          .replace(/{orderId}/g, orderId);
 
-        await this.sendTelegramMessage(msgText);
+        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
+          try {
+            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
+            await fetch(telegramUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: this.telegramSettings.chatId,
+                text: msgText,
+                parse_mode: "Markdown"
+              })
+            });
+          } catch (apiErr) {
+            console.error("Direct Telegram bot execution failed.", apiErr);
+          }
+        }
 
         const purchasedItemIds = this.cart.map(item => item.id);
         const recommendations = store.getRecommendations(purchasedItemIds);
@@ -1746,582 +1712,7 @@
         this.renderCartPage();
       } else if (this.currentPage === "order-confirmation") {
         this.renderOrderConfirmationPage();
-      } else if (this.currentPage === "bank-transfer") {
-        this.renderBankTransferPage();
-      } else if (this.currentPage === "payment-proof-submitted") {
-        this.renderPaymentProofSubmittedPage();
       }
-    };
-
-    store.buildCheckoutTotals = function() {
-      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
-      const cityObj = this.deliveryCities.find(c => c.id === this.checkoutFormValues.cityId);
-      const deliveryFee = cityObj ? cityObj.price : 0;
-      const total = subtotal + deliveryFee;
-      this.paymentSummary = { subtotal, deliveryFee, total };
-      return this.paymentSummary;
-    };
-
-    store.getActiveBanks = function() {
-      return this.banks.filter(bank => bank && bank.isActive !== false && bank.name);
-    };
-
-    store.buildTelegramOrderMessage = function(orderData, extraLines = []) {
-      const products = (orderData.items || []).map(item => {
-        const price = Number(item.price || 0);
-        return `• *${item.name || 'Item'}* x${item.quantity || 1} (${price} MAD)`;
-      }).join('\n');
-
-      let msgText = (this.telegramSettings && this.telegramSettings.template
-        ? this.telegramSettings.template
-        : "🌸 *New Order Received (SOVANEX)!* 🌸\n\n*Order ID:* {orderId}\n*Customer Name:* {name}\n*Phone:* {phone}\n*City:* {city}\n*Address:* {address}\n\n*Items Purchased:*\n{products}\n\n*Subtotal:* {subtotal} MAD\n*Delivery Fee:* {delivery} MAD\n*Total Amount:* {total} MAD\n\n_Thank you for choosing SOVANEX!_"
-      )
-        .replace(/{products}/g, (products || 'No items').trim())
-        .replace(/{subtotal}/g, Number(orderData.subtotal || 0))
-        .replace(/{city}/g, orderData.city || orderData.cityName || 'Morocco')
-        .replace(/{delivery}/g, Number(orderData.deliveryFee || 0))
-        .replace(/{total}/g, Number(orderData.total || 0))
-        .replace(/{name}/g, orderData.name || orderData.customerName || '')
-        .replace(/{address}/g, orderData.address || '')
-        .replace(/{phone}/g, orderData.phone || '')
-        .replace(/{orderId}/g, orderData.orderId || 'SOV-000000');
-
-      if (extraLines.length) {
-        msgText += '\n\n' + extraLines.join('\n');
-      }
-
-      return msgText;
-    };
-
-    store.sendTelegramMessage = async function(messageText, photoUrl = null) {
-      const telegramSettings = this.telegramSettings || {};
-      if (!telegramSettings.botEnabled || !telegramSettings.botToken || !telegramSettings.chatId || !messageText) {
-        return;
-      }
-
-      try {
-        const messageUrl = 'https://api.telegram.org/bot' + telegramSettings.botToken + '/sendMessage';
-        await fetch(messageUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: telegramSettings.chatId,
-            text: messageText,
-            parse_mode: 'Markdown'
-          })
-        });
-
-        if (photoUrl) {
-          try {
-            const formData = new FormData();
-            formData.append('chat_id', telegramSettings.chatId);
-            formData.append('photo', photoUrl);
-            formData.append('caption', 'Payment proof attached');
-            await fetch('https://api.telegram.org/bot' + telegramSettings.botToken + '/sendPhoto', {
-              method: 'POST',
-              body: formData
-            });
-          } catch (photoErr) {
-            console.warn('Telegram photo send fallback skipped:', photoErr);
-          }
-        }
-      } catch (err) {
-        console.warn('Telegram notification failed:', err);
-      }
-    };
-
-    store.beginBankTransferFlow = function() {
-      if (!this.cart.length) {
-        showToast('Your cart is empty.', 'error');
-        return;
-      }
-
-      const name = (this.checkoutFormValues.customerName || '').trim();
-      const phone = (this.checkoutFormValues.phone || '').trim();
-      const cityId = this.checkoutFormValues.cityId;
-      const address = (this.checkoutFormValues.address || '').trim();
-
-      if (!name || !phone || !cityId || !address) {
-        showToast('Please fill in all required delivery coordinates.', 'error');
-        return;
-      }
-
-      const totals = this.buildCheckoutTotals();
-      const city = this.deliveryCities.find(c => c.id === cityId);
-      const draft = {
-        orderId: 'SOV-' + Math.floor(100000 + Math.random() * 900000),
-        customerName: name,
-        phone,
-        cityId,
-        cityName: city ? city.name : 'Morocco',
-        address,
-        items: this.cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.discountPrice || item.price
-        })),
-        subtotal: totals.subtotal,
-        deliveryFee: totals.deliveryFee,
-        total: totals.total,
-        paymentMethod: 'Bank Transfer',
-        createdAt: new Date().toISOString()
-      };
-
-      localStorage.setItem('sovanex_bank_transfer_draft', JSON.stringify(draft));
-      this.currentPage = 'bank-transfer';
-      this.bankTransferDraft = {
-        selectedBankId: '',
-        proofFile: null,
-        proofPreview: '',
-        proofUploading: false,
-        uploadError: ''
-      };
-      this.updateDOM();
-    };
-
-    store.beginCardPaymentFlow = function() {
-      if (!this.cart.length) {
-        showToast('Your cart is empty.', 'error');
-        return;
-      }
-
-      const name = (this.checkoutFormValues.customerName || '').trim();
-      const phone = (this.checkoutFormValues.phone || '').trim();
-      const cityId = this.checkoutFormValues.cityId;
-      const address = (this.checkoutFormValues.address || '').trim();
-
-      if (!name || !phone || !cityId || !address) {
-        showToast('Please fill in all required delivery coordinates.', 'error');
-        return;
-      }
-
-      const totals = this.buildCheckoutTotals();
-      const city = this.deliveryCities.find(c => c.id === cityId);
-      const draft = {
-        customerName: name,
-        phone,
-        cityId,
-        cityName: city ? city.name : 'Morocco',
-        address,
-        subtotal: totals.subtotal,
-        deliveryFee: totals.deliveryFee,
-        total: totals.total,
-        paymentMethod: 'Card Payment'
-      };
-
-      localStorage.setItem('sovanex_card_payment_draft', JSON.stringify(draft));
-      this.currentPage = 'card-payment';
-      this.updateDOM();
-    };
-
-    store.uploadProofToFirebase = async function(file) {
-      if (!file) return '';
-      const storageRef = ref(storage, `payment-proofs/${Date.now()}-${file.name.replace(/\s+/g, '-')}`);
-      await uploadBytes(storageRef, file);
-      return await getDownloadURL(storageRef);
-    };
-
-    store.submitBankTransferProof = async function() {
-      const selectedBank = this.getActiveBanks().find(bank => bank.id === this.bankTransferDraft.selectedBankId);
-      if (!selectedBank) {
-        showToast('Please select a bank before confirming your payment.', 'error');
-        return;
-      }
-
-      if (!this.bankTransferDraft.proofFile) {
-        showToast('Please upload your payment proof before confirming your payment.', 'error');
-        return;
-      }
-
-      try {
-        this.bankTransferDraft.proofUploading = true;
-        this.updateDOM();
-
-        const draft = JSON.parse(localStorage.getItem('sovanex_bank_transfer_draft') || '{}');
-        const orderId = draft.orderId || 'SOV-' + Math.floor(100000 + Math.random() * 900000);
-        const proofUrl = await this.uploadProofToFirebase(this.bankTransferDraft.proofFile);
-
-        const orderPayload = {
-          orderId,
-          items: draft.items || this.cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.discountPrice || item.price })),
-          total: draft.total || this.paymentSummary.total || 0,
-          subtotal: draft.subtotal || this.paymentSummary.subtotal || 0,
-          deliveryFee: draft.deliveryFee || this.paymentSummary.deliveryFee || 0,
-          deliveryCity: draft.cityName || 'Morocco',
-          customerName: draft.customerName || this.checkoutFormValues.customerName,
-          phone: draft.phone || this.checkoutFormValues.phone,
-          address: draft.address || this.checkoutFormValues.address,
-          status: 'pending',
-          paymentMethod: 'Bank Transfer',
-          paymentStatus: 'Pending Verification',
-          paymentProofURL: proofUrl,
-          paymentProofUploadTimestamp: new Date(),
-          selectedBank: selectedBank.name,
-          bankName: selectedBank.name,
-          beneficiary: selectedBank.beneficiary || 'SOHAIB OTMANI',
-          rib: selectedBank.rib || '',
-          createdAt: new Date()
-        };
-
-        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        await addDoc(ordersCol, orderPayload);
-
-        const localHistory = JSON.parse(localStorage.getItem('sovanex_order_history')) || [];
-        localHistory.push(orderId);
-        localStorage.setItem('sovanex_order_history', JSON.stringify(localHistory));
-
-        this.cart = [];
-        localStorage.setItem('bp_cart', JSON.stringify([]));
-        this.checkoutFormValues = { customerName: '', phone: '', cityId: '', address: '', paymentMethod: 'cash_on_delivery' };
-        localStorage.removeItem('sovanex_bank_transfer_draft');
-
-        const telegramText = this.buildTelegramOrderMessage({
-          orderId,
-          items: (draft.items || this.cart.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.discountPrice || item.price
-          }))),
-          subtotal: draft.subtotal || this.paymentSummary.subtotal || 0,
-          city: draft.cityName || 'Morocco',
-          deliveryFee: draft.deliveryFee || this.paymentSummary.deliveryFee || 0,
-          total: draft.total || this.paymentSummary.total || 0,
-          name: draft.customerName || this.checkoutFormValues.customerName,
-          address: draft.address || this.checkoutFormValues.address,
-          phone: draft.phone || this.checkoutFormValues.phone
-        }, [
-          '🚨 *PAYMENT PROOF SUBMITTED*',
-          'Payment Method: *Bank Transfer*',
-          'Bank: *' + selectedBank.name + '*',
-          'Beneficiary: *' + (selectedBank.beneficiary || 'SOHAIB OTMANI') + '*',
-          'Status: *Pending Verification*',
-          'Proof URL: ' + proofUrl
-        ]);
-
-        await this.sendTelegramMessage(telegramText, proofUrl);
-
-        this.currentPage = 'payment-proof-submitted';
-        this.bankTransferDraft = { selectedBankId: '', proofFile: null, proofPreview: '', proofUploading: false, uploadError: '' };
-        this.updateDOM();
-      } catch (error) {
-        console.error('Bank transfer submission failed:', error);
-        showToast('Payment proof could not be uploaded. Please try again.', 'error');
-      } finally {
-        this.bankTransferDraft.proofUploading = false;
-      }
-    };
-
-    store.renderBankTransferPage = function() {
-      const container = document.getElementById('app-content');
-      if (!container) return;
-
-      const draft = JSON.parse(localStorage.getItem('sovanex_bank_transfer_draft') || '{}');
-      const amount = Number(draft.total || this.paymentSummary.total || 0);
-      const activeBanks = this.getActiveBanks();
-      const selectedBank = activeBanks.find(bank => bank.id === this.bankTransferDraft.selectedBankId) || activeBanks[0] || null;
-      const selectedBankId = this.bankTransferDraft.selectedBankId || (selectedBank ? selectedBank.id : '');
-      const selectedBankInfo = selectedBank ? `${selectedBank.name}` : 'No bank selected';
-
-      container.innerHTML = `
-        <div class="max-w-6xl mx-auto px-4 py-10 md:py-12 space-y-6" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
-          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
-            <button id="bank-transfer-back-btn" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Checkout
-            </button>
-          </div>
-
-          <div class="bg-[#141414] border border-luxuryGold/25 rounded-3xl p-5 md:p-8 shadow-2xl">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-5 border-b border-luxuryGold/20">
-              <div>
-                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Payment Summary</p>
-                <h1 class="font-serif text-2xl md:text-3xl text-white mt-2">Bank Transfer</h1>
-              </div>
-              <div class="text-left md:text-right bg-black/40 border border-luxuryGold/20 rounded-2xl px-4 py-3 min-w-[180px]">
-                <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Order #</p>
-                <p class="font-mono text-lg text-luxuryGold font-bold">${draft.orderId || 'SOV-000000'}</p>
-                <p class="text-xs text-gray-300 mt-2">Amount to Pay: <strong class="text-luxuryGold">${amount} DH</strong></p>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6 mt-6">
-              <div class="space-y-6">
-                <div class="bg-black/40 border border-luxuryGold/20 rounded-2xl p-4 md:p-5">
-                  <h2 class="text-sm uppercase tracking-[0.2em] text-luxuryGold font-bold mb-4">Choose Your Bank</h2>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    ${activeBanks.length === 0 ? '<div class="col-span-full text-sm text-gray-400">No active banks are available yet.</div>' : activeBanks.map(bank => `
-                      <button type="button" class="bank-select-btn text-left p-4 rounded-2xl border transition ${selectedBankId === bank.id ? 'border-luxuryGold bg-luxuryGold/10 shadow-lg shadow-luxuryGold/10' : 'border-white/10 bg-[#101010] hover:border-luxuryGold/50'}" data-bank-id="${bank.id}">
-                        <div class="flex items-center gap-3">
-                          <div class="w-14 h-14 rounded-xl overflow-hidden border border-luxuryGold/20 bg-white/5 flex items-center justify-center">
-                            <img src="${bank.logoURL || fallbackImage}" alt="${bank.name} logo" class="w-full h-full object-cover" onerror="this.src='${fallbackImage}'">
-                          </div>
-                          <div>
-                            <div class="font-serif text-lg text-white">${bank.name}</div>
-                            <div class="text-[10px] uppercase tracking-[0.18em] text-gray-400">${selectedBankId === bank.id ? 'Selected' : 'Available'}</div>
-                          </div>
-                        </div>
-                      </button>
-                    `).join('')}
-                  </div>
-                </div>
-
-                ${selectedBank ? `
-                  <div class="bg-black/40 border border-luxuryGold/20 rounded-2xl p-4 md:p-5">
-                    <h2 class="text-sm uppercase tracking-[0.2em] text-luxuryGold font-bold mb-4">Bank Details</h2>
-                    <div class="space-y-3 text-sm text-gray-300">
-                      <div class="flex justify-between gap-4 border-b border-white/5 pb-2"><span>Bank:</span><span class="font-semibold text-white">${selectedBank.name}</span></div>
-                      <div class="flex justify-between gap-4 border-b border-white/5 pb-2"><span>Beneficiary:</span><span class="font-semibold text-white">${selectedBank.beneficiary || 'SOHAIB OTMANI'}</span></div>
-                      <div class="flex justify-between gap-4 border-b border-white/5 pb-2"><span>RIB:</span><span class="font-mono text-white">${selectedBank.rib || 'N/A'}</span></div>
-                      <div class="flex justify-between gap-4"><span>Amount to Pay:</span><span class="font-semibold text-luxuryGold">${amount} DH</span></div>
-                    </div>
-                    <div class="mt-4 flex justify-end">
-                      <button type="button" id="copy-rib-btn" class="px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold tracking-wider">Copy RIB</button>
-                    </div>
-                  </div>
-                ` : ''}
-              </div>
-
-              <div class="space-y-5">
-                <div class="bg-black/40 border border-luxuryGold/20 rounded-2xl p-4 md:p-5">
-                  <h2 class="text-sm uppercase tracking-[0.2em] text-luxuryGold font-bold mb-4">Payment Instructions</h2>
-                  <div class="space-y-4 text-sm text-gray-200 leading-relaxed">
-                    <div class="bg-[#111] border border-luxuryGold/15 rounded-xl p-4 space-y-2">
-                      <p class="font-semibold text-white">English</p>
-                      <p><strong>Please transfer the exact amount shown above to the selected bank account.</strong></p>
-                      <p><strong>After completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.</strong></p>
-                    </div>
-                    <div class="bg-[#111] border border-luxuryGold/15 rounded-xl p-4 space-y-2">
-                      <p class="font-semibold text-white">Darija</p>
-                      <p><strong>من فضلك دوز نفس المبلغ بالضبط للحساب البنكي اللي اخترتي.</strong></p>
-                      <p><strong>من بعد ما تكمل الـvirement، خاصك ترفع screenshot ديال preuve de paiement هنا باش نراجعو التحويل ونأكدو الطلب ديالك.</strong></p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="bg-black/40 border border-luxuryGold/20 rounded-2xl p-4 md:p-5">
-                  <h2 class="text-sm uppercase tracking-[0.2em] text-luxuryGold font-bold mb-3">Upload Payment Proof</h2>
-                  <label id="bank-proof-upload-label" class="block cursor-pointer border-2 border-dashed border-luxuryGold/40 rounded-2xl p-5 bg-[#111] hover:border-luxuryGold transition text-center">
-                    <input id="bank-proof-file-input" type="file" accept="image/jpeg,image/png,image/jpg" class="hidden">
-                    <div class="space-y-3">
-                      <div class="mx-auto w-12 h-12 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">${getIconSvg('upload', 'w-5 h-5')}</div>
-                      <p class="text-xs uppercase tracking-[0.2em] text-luxuryGold font-bold">Upload a screenshot of your bank transfer confirmation</p>
-                      <p class="text-[10px] text-gray-400">JPG • JPEG • PNG</p>
-                    </div>
-                  </label>
-
-                  ${this.bankTransferDraft.proofPreview ? `
-                    <div class="mt-4 rounded-2xl overflow-hidden border border-luxuryGold/20 bg-[#111]">
-                      <img src="${this.bankTransferDraft.proofPreview}" class="w-full h-56 object-cover" alt="Payment proof preview">
-                      <div class="flex justify-between items-center p-3">
-                        <span class="text-[10px] text-gray-300 uppercase tracking-[0.18em]">Preview</span>
-                        <button type="button" id="remove-proof-btn" class="text-[10px] uppercase tracking-[0.15em] text-red-400">Remove</button>
-                      </div>
-                    </div>
-                  ` : ''}
-
-                  <button id="submit-bank-proof-btn" type="button" class="mt-5 w-full py-3 bg-luxuryGold text-black rounded-xl text-xs uppercase font-bold tracking-[0.18em] transition ${this.bankTransferDraft.proofUploading ? 'opacity-70 cursor-not-allowed' : ''}">
-                    ${this.bankTransferDraft.proofUploading ? 'Uploading...' : 'Submit Payment Proof'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('bank-transfer-back-btn').onclick = () => {
-        this.currentPage = 'cart';
-        this.updateDOM();
-      };
-
-      document.querySelectorAll('.bank-select-btn').forEach(btn => {
-        btn.onclick = () => {
-          this.bankTransferDraft.selectedBankId = btn.getAttribute('data-bank-id');
-          this.renderBankTransferPage();
-        };
-      });
-
-      const ribCopyBtn = document.getElementById('copy-rib-btn');
-      if (ribCopyBtn) {
-        ribCopyBtn.onclick = async () => {
-          const selected = this.getActiveBanks().find(bank => bank.id === this.bankTransferDraft.selectedBankId);
-          const body = selected ? selected.rib || '' : '';
-          if (!body) {
-            showToast('No RIB available for this bank.', 'error');
-            return;
-          }
-          try {
-            await navigator.clipboard.writeText(body);
-            showToast('RIB copied successfully.');
-          } catch (error) {
-            showToast('Unable to copy RIB automatically.', 'error');
-          }
-        };
-      }
-
-      const proofInput = document.getElementById('bank-proof-file-input');
-      const proofLabel = document.getElementById('bank-proof-upload-label');
-      if (proofInput) {
-        proofInput.onchange = (e) => {
-          const file = e.target.files && e.target.files[0];
-          if (!file) return;
-          const valid = ['image/jpeg', 'image/jpg', 'image/png'].includes(file.type);
-          if (!valid) {
-            showToast('Please upload a JPG or PNG image.', 'error');
-            return;
-          }
-          const previewUrl = URL.createObjectURL(file);
-          this.bankTransferDraft.proofFile = file;
-          this.bankTransferDraft.proofPreview = previewUrl;
-          this.renderBankTransferPage();
-        };
-      }
-
-      const removeProofBtn = document.getElementById('remove-proof-btn');
-      if (removeProofBtn) {
-        removeProofBtn.onclick = () => {
-          this.bankTransferDraft.proofFile = null;
-          this.bankTransferDraft.proofPreview = '';
-          this.renderBankTransferPage();
-        };
-      }
-
-      const submitBankProofBtn = document.getElementById('submit-bank-proof-btn');
-      if (submitBankProofBtn) {
-        submitBankProofBtn.onclick = async () => {
-          if (!this.bankTransferDraft.selectedBankId) {
-            showToast('Please choose a bank before submitting.', 'error');
-            return;
-          }
-          await this.submitBankTransferProof();
-        };
-      }
-    };
-
-    store.renderCardPaymentPage = function() {
-      const container = document.getElementById('app-content');
-      if (!container) return;
-
-      const draft = JSON.parse(localStorage.getItem('sovanex_card_payment_draft') || '{}');
-      const amount = Number(draft.total || this.paymentSummary.total || 0);
-      const activeBanks = this.getActiveBanks();
-      const selectedBank = activeBanks.find(bank => bank.id === this.bankTransferDraft.selectedBankId) || activeBanks[0] || null;
-
-      container.innerHTML = `
-        <div class="max-w-5xl mx-auto px-4 py-12 space-y-6" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
-          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
-            <button id="card-payment-back-btn" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
-              ← Back to Checkout
-            </button>
-          </div>
-
-          <div class="bg-[#141414] border border-luxuryGold/20 rounded-3xl p-6 md:p-8 shadow-2xl">
-            <div class="flex items-center justify-between gap-4 border-b border-luxuryGold/20 pb-5">
-              <div>
-                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Card Payment</p>
-                <h1 class="font-serif text-3xl text-white mt-2">Pay by Card</h1>
-              </div>
-              <div class="text-right bg-black/40 border border-luxuryGold/20 rounded-2xl px-4 py-3 min-w-[180px]">
-                <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Order Total</p>
-                <p class="font-serif text-2xl text-luxuryGold font-bold">${amount} DH</p>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              <div class="bg-black/40 border border-luxuryGold/20 rounded-2xl p-4 md:p-5">
-                <h2 class="text-sm uppercase tracking-[0.2em] text-luxuryGold font-bold mb-4">Select Your Bank</h2>
-                <div class="space-y-3">
-                  ${activeBanks.length === 0 ? '<div class="text-sm text-gray-400">No active card partners are configured yet.</div>' : activeBanks.map(bank => `
-                    <button type="button" class="w-full bank-card-select-btn flex items-center gap-3 p-4 rounded-2xl border ${selectedBank && selectedBank.id === bank.id ? 'border-luxuryGold bg-luxuryGold/10' : 'border-white/10 bg-[#101010]'}" data-bank-id="${bank.id}">
-                      <div class="w-14 h-14 rounded-xl overflow-hidden border border-luxuryGold/20 bg-white/5 flex items-center justify-center">
-                        <img src="${bank.logoURL || fallbackImage}" alt="${bank.name}" class="w-full h-full object-cover" onerror="this.src='${fallbackImage}'">
-                      </div>
-                      <div class="text-left">
-                        <div class="font-serif text-lg text-white">${bank.name}</div>
-                        <div class="text-[10px] uppercase tracking-[0.18em] text-gray-400">${selectedBank && selectedBank.id === bank.id ? 'Selected' : 'Available'}</div>
-                      </div>
-                    </button>
-                  `).join('')}
-                </div>
-              </div>
-
-              <div class="bg-black/40 border border-luxuryGold/20 rounded-2xl p-4 md:p-5 flex flex-col justify-between">
-                <div>
-                  <h2 class="text-sm uppercase tracking-[0.2em] text-luxuryGold font-bold mb-4">Secure Card UI</h2>
-                  <p class="text-sm text-gray-300 leading-relaxed">This card payment interface is prepared for the website’s future payment integration. No real transaction is completed here until a live gateway is connected.</p>
-                </div>
-                <div class="mt-6 rounded-2xl border border-luxuryGold/20 bg-[#111] p-4 space-y-3">
-                  <div class="flex justify-between text-sm"><span class="text-gray-400">Order</span><span class="text-white font-semibold">#${draft.orderId || 'Pending'}</span></div>
-                  <div class="flex justify-between text-sm"><span class="text-gray-400">Selected Bank</span><span class="text-white font-semibold">${selectedBank ? selectedBank.name : 'Not selected'}</span></div>
-                  <div class="flex justify-between text-sm"><span class="text-gray-400">Total</span><span class="text-luxuryGold font-semibold">${amount} DH</span></div>
-                </div>
-                <button type="button" id="card-payment-setup-btn" class="mt-6 w-full py-3 bg-luxuryGold text-black rounded-xl text-xs uppercase font-bold tracking-[0.18em]">Card Payment Setup</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('card-payment-back-btn').onclick = () => {
-        this.currentPage = 'cart';
-        this.updateDOM();
-      };
-
-      document.querySelectorAll('.bank-card-select-btn').forEach(btn => {
-        btn.onclick = () => {
-          this.bankTransferDraft.selectedBankId = btn.getAttribute('data-bank-id');
-          this.renderCardPaymentPage();
-        };
-      });
-
-      document.getElementById('card-payment-setup-btn').onclick = () => {
-        showToast('Card payment gateway integration is not active yet. This UI is ready for the next step.', 'success');
-      };
-    };
-
-    store.renderPaymentProofSubmittedPage = function() {
-      const container = document.getElementById('app-content');
-      if (!container) return;
-      const draft = JSON.parse(localStorage.getItem('sovanex_bank_transfer_draft') || '{}');
-      const finalOrder = (() => {
-        const localHistory = JSON.parse(localStorage.getItem('sovanex_order_history')) || [];
-        const orderId = localHistory.length > 0 ? localHistory[localHistory.length - 1] : (draft.orderId || 'SOV-000000');
-        return { orderId, total: Number(draft.total || this.paymentSummary.total || 0) };
-      })();
-
-      container.innerHTML = `
-        <div class="max-w-4xl mx-auto px-4 py-12 md:py-16" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
-          <div class="bg-[#141414] border border-luxuryGold/20 rounded-3xl p-6 md:p-10 shadow-2xl text-center space-y-6">
-            <div class="mx-auto w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-center text-3xl">✓</div>
-            <div class="space-y-3">
-              <h1 class="font-serif text-3xl md:text-4xl text-white">Payment Proof Submitted</h1>
-              <p class="text-lg text-luxuryGold font-medium">Thank you! Your payment proof has been submitted successfully.</p>
-              <p class="text-base text-luxuryGold font-medium">شكراً! توصلنا بـpreuve de paiement ديالك بنجاح.</p>
-            </div>
-
-            <div class="max-w-xl mx-auto rounded-2xl border border-luxuryGold/20 bg-black/40 p-5 text-left space-y-3 text-sm text-gray-300">
-              <div class="flex justify-between gap-4"><span>Your order is now:</span><span class="font-semibold text-luxuryGold">Pending Payment Verification</span></div>
-              <div class="flex justify-between gap-4"><span>الطلب ديالك دابا كيتسنى مراجعة الأداء:</span><span class="font-semibold text-luxuryGold">Pending Verification</span></div>
-              <div class="flex justify-between gap-4"><span>Order #</span><span class="font-mono text-white">${finalOrder.orderId}</span></div>
-              <div class="flex justify-between gap-4"><span>Amount</span><span class="text-luxuryGold font-semibold">${finalOrder.total} DH</span></div>
-              <div class="flex justify-between gap-4"><span>Payment Method</span><span class="text-white">Bank Transfer</span></div>
-              <div class="flex justify-between gap-4"><span>Selected Bank</span><span class="text-white">${this.bankTransferDraft.selectedBankId ? (this.getActiveBanks().find(bank => bank.id === this.bankTransferDraft.selectedBankId)?.name || 'Selected bank') : 'Bank selected'}</span></div>
-            </div>
-
-            <p class="text-sm text-gray-400 max-w-2xl mx-auto">
-              We will verify your payment and process your order shortly.<br>
-              غادي نراجعو التحويل ونكملو معالجة الطلب ديالك.
-            </p>
-
-            <button id="payment-proof-confirm-back-home" class="px-6 py-3 bg-luxuryGold text-black rounded-xl text-xs uppercase font-bold tracking-[0.18em]">Back to Home</button>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('payment-proof-confirm-back-home').onclick = () => {
-        this.currentPage = 'home';
-        this.updateDOM();
-      };
     };
 
     store.renderContactPage = function() {
@@ -3352,7 +2743,7 @@
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "bank-management", "telegram-settings", "general-settings"].map(tab => `
+            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -3411,247 +2802,11 @@
         this.renderAdminCategories(container);
       } else if (this.adminView === "lookbook") {
         this.renderAdminLookbook(container);
-      } else if (this.adminView === "bank-management") {
-        this.renderAdminBankManagement(container);
       } else if (this.adminView === "telegram-settings") {
         this.renderAdminTelegramSettings(container);
       } else if (this.adminView === "general-settings") {
         this.renderAdminGeneralSettings(container);
       }
-    };
-
-    store.renderAdminBankManagement = function(container) {
-      container.innerHTML = `
-        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="flex justify-between items-center border-b border-white/10 pb-4">
-            <div>
-              <h3 class="font-serif text-xl text-luxuryGold">Bank Transfer Management</h3>
-              <p class="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Add, edit, activate, deactivate, delete</p>
-            </div>
-            <button id="add-bank-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase rounded-lg transition">+ Add Bank</button>
-          </div>
-
-          <div id="bank-form-mount" class="hidden bg-black/60 p-6 rounded-2xl border border-luxuryGold/30 space-y-4"></div>
-
-          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            ${this.getActiveBanks().length === 0 && this.banks.length === 0 ? '<div class="xl:col-span-2 text-sm text-gray-400 italic">No bank records configured.</div>' : this.banks.map(bank => `
-              <div class="bg-black/40 rounded-2xl border border-luxuryGold/20 p-4 flex gap-4">
-                <div class="w-20 h-20 rounded-2xl overflow-hidden border border-luxuryGold/15 bg-white/5 shrink-0">
-                  <img src="${bank.logoURL || fallbackImage}" alt="${bank.name}" class="w-full h-full object-cover" onerror="this.src='${fallbackImage}'">
-                </div>
-                <div class="flex-1 min-w-0 space-y-2">
-                  <div class="flex justify-between gap-3 items-start">
-                    <div>
-                      <p class="font-serif text-lg text-white">${bank.name}</p>
-                      <p class="text-[10px] text-gray-400 uppercase tracking-[0.14em]">Account Holder: ${bank.beneficiary || 'SOHAIB OTMANI'}</p>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase ${bank.isActive !== false ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}">${bank.isActive !== false ? 'Active' : 'Inactive'}</span>
-                  </div>
-                  <p class="text-[11px] text-gray-300 font-mono truncate">RIB: ${bank.rib || 'N/A'}</p>
-                  <div class="flex flex-wrap justify-end gap-2 pt-2 border-t border-white/5">
-                    <button class="edit-bank-btn px-3 py-1 bg-luxuryGold text-black rounded text-[10px] uppercase font-bold" data-id="${bank.id}">Edit</button>
-                    <button class="toggle-bank-btn px-3 py-1 ${bank.isActive !== false ? 'bg-red-800 text-white' : 'bg-emerald-700 text-white'} rounded text-[10px] uppercase font-bold" data-id="${bank.id}">${bank.isActive !== false ? 'Deactivate' : 'Activate'}</button>
-                    <button class="delete-bank-btn px-3 py-1 bg-black text-red-400 border border-red-500/30 rounded text-[10px] uppercase font-bold" data-id="${bank.id}">Delete</button>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-
-      const formMount = document.getElementById('bank-form-mount');
-      const showBankForm = (bank = null) => {
-        formMount.innerHTML = `
-          <h4 class="font-serif text-md text-luxuryGold">${bank ? 'Edit Bank' : 'Add Bank'}</h4>
-          <form id="bank-form" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Bank Name</label>
-                <input type="text" name="bankName" required value="${bank ? bank.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
-              </div>
-              <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Account Holder / Beneficiary</label>
-                <input type="text" name="beneficiary" required value="${bank ? (bank.beneficiary || 'SOHAIB OTMANI') : 'SOHAIB OTMANI'}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
-              </div>
-            </div>
-            <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">RIB</label>
-              <input type="text" name="rib" required value="${bank ? (bank.rib || '') : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
-            </div>
-            <div>
-              <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Bank Logo</label>
-              <div class="flex gap-2">
-                <input type="text" id="bank-logo-url" name="logoURL" value="${bank ? (bank.logoURL || '') : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
-                <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
-                  Upload
-                  <input type="file" accept="image/*" class="hidden" id="bank-logo-file">
-                </label>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <input type="checkbox" name="isActive" ${!bank || bank.isActive !== false ? 'checked' : ''} class="rounded text-luxuryGold">
-              <label class="text-xs text-gray-300 font-semibold">Active / Inactive</label>
-            </div>
-            <div class="flex gap-3 justify-end">
-              <button type="button" id="bank-form-cancel" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Cancel</button>
-              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Bank</button>
-            </div>
-          </form>
-        `;
-        formMount.classList.remove('hidden');
-
-        const bankFileInput = document.getElementById('bank-logo-file');
-        if (bankFileInput) {
-          bankFileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              window.compressImageFile(file, (base64) => {
-                const urlInput = document.getElementById('bank-logo-url');
-                if (urlInput) urlInput.value = base64;
-                showToast('Bank logo uploaded successfully!');
-              });
-            }
-          };
-        }
-
-        document.getElementById('bank-form-cancel').onclick = () => formMount.classList.add('hidden');
-        document.getElementById('bank-form').onsubmit = async (e) => {
-          e.preventDefault();
-          const form = e.target;
-          const payload = {
-            name: form.bankName.value,
-            beneficiary: form.beneficiary.value || 'SOHAIB OTMANI',
-            rib: form.rib.value,
-            logoURL: form.logoURL.value,
-            isActive: form.isActive.checked,
-            updatedAt: new Date()
-          };
-
-          try {
-            const banksRef = collection(db, 'artifacts', appId, 'public', 'data', 'banks');
-            if (bank) {
-              await updateDoc(doc(banksRef, bank.id), payload);
-              showToast('Bank updated successfully.');
-            } else {
-              await addDoc(banksRef, { ...payload, createdAt: new Date() });
-              showToast('Bank added successfully.');
-            }
-            formMount.classList.add('hidden');
-          } catch (err) {
-            console.error(err);
-            showToast('Failed to save bank configuration.', 'error');
-          }
-        };
-      };
-
-      document.getElementById('add-bank-btn').onclick = () => showBankForm();
-      document.querySelectorAll('.edit-bank-btn').forEach(btn => {
-        btn.onclick = () => {
-          const bank = this.banks.find(item => item.id === btn.getAttribute('data-id'));
-          if (bank) showBankForm(bank);
-        };
-      });
-      document.querySelectorAll('.toggle-bank-btn').forEach(btn => {
-        btn.onclick = async () => {
-          const bank = this.banks.find(item => item.id === btn.getAttribute('data-id'));
-          if (!bank) return;
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banks', bank.id), { isActive: !(bank.isActive !== false), updatedAt: new Date() });
-          showToast(bank.isActive !== false ? 'Bank deactivated.' : 'Bank activated.');
-        };
-      });
-      document.querySelectorAll('.delete-bank-btn').forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute('data-id');
-          triggerConfirm('Delete Bank', 'Remove this bank from the active payment bank list?', async () => {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banks', id));
-            showToast('Bank removed successfully.');
-          });
-        };
-      });
-    };
-
-    store.renderAdminOrders = function(container) {
-      container.innerHTML = `
-        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-white">
-              <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold">
-                <tr>
-                  <th class="p-4">Client Detail</th>
-                  <th class="p-4">Item Compositions</th>
-                  <th class="p-4">Payment</th>
-                  <th class="p-4">Total Price</th>
-                  <th class="p-4">Status</th>
-                  <th class="p-4 text-right">Fulfillment</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/5">
-                ${this.orders.map(o => `
-                  <tr class="hover:bg-white/5 transition align-top">
-                    <td class="p-4">
-                      <p class="font-bold text-sm text-luxuryGold">${o.customerName}</p>
-                      <p class="text-[10px] text-gray-400 mt-1">${o.phone} — ${o.address} (${o.deliveryCity || 'Morocco'})</p>
-                    </td>
-                    <td class="p-4">
-                      ${o.items?.map(item => `<p class="text-[11px] text-gray-300">• ${item.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim()} <strong class="text-luxuryGold">x${item.quantity}</strong></p>`).join('')}
-                    </td>
-                    <td class="p-4">
-                      <p class="text-[10px] text-gray-400 uppercase tracking-[0.12em]">${o.paymentMethod || 'Cash on Delivery'}</p>
-                      <p class="text-[10px] text-luxuryGold mt-1">${o.paymentStatus || (o.status === 'pending' ? 'Pending Verification' : 'Pending')}</p>
-                      ${o.paymentProofURL ? `
-                        <a href="${o.paymentProofURL}" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 text-[9px] uppercase tracking-[0.18em] text-luxuryGold underline">View proof</a>
-                      ` : ''}
-                    </td>
-                    <td class="p-4 font-serif font-bold text-luxuryGold">${o.total} MAD</td>
-                    <td class="p-4">
-                      <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${o.status === 'pending' ? 'bg-red-950 text-red-300' : o.status === 'cancelled' ? 'bg-white/5 text-gray-500' : 'bg-emerald-950 text-emerald-300'}">${o.paymentStatus || o.status || 'pending'}</span>
-                    </td>
-                    <td class="p-4 text-right space-x-2">
-                      ${o.paymentProofURL ? `
-                        <button class="view-proof-btn px-3 py-1 bg-[#111] border border-luxuryGold/40 text-luxuryGold rounded text-[10px] uppercase font-bold" data-proof="${o.paymentProofURL}">Proof</button>
-                      ` : ''}
-                      ${o.status === 'pending' ? `
-                        <button class="fulfill-order-btn px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] uppercase font-bold" data-id="${o.id}">Paid</button>
-                        <button class="cancel-order-btn px-3 py-1 bg-red-700 hover:bg-red-850 text-white rounded text-[10px] uppercase font-bold" data-id="${o.id}">Reject</button>
-                      ` : `<span class="text-[10px] text-gray-500">Archived</span>`}
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-
-      document.querySelectorAll('.view-proof-btn').forEach(btn => {
-        btn.onclick = () => {
-          const proofUrl = btn.getAttribute('data-proof');
-          if (!proofUrl) return;
-          triggerConfirm('Payment Proof', `<img src="${proofUrl}" class="w-full max-h-[70vh] object-contain rounded-xl border border-luxuryGold/20" /><div class="mt-4 text-center"><a href="${proofUrl}" target="_blank" class="text-luxuryGold underline">Open in full size</a></div>`, null, true);
-        };
-      });
-
-      document.querySelectorAll(".fulfill-order-btn").forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute("data-id");
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "processed", paymentStatus: "Paid" });
-          showToast("Payment approved and order marked as paid.");
-        };
-      });
-
-      document.querySelectorAll(".cancel-order-btn").forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute("data-id");
-          const order = store.orders.find(o => o.id === id);
-          if (!order) return;
-
-          triggerConfirm("Reject Payment", "Reject this bank transfer proof and keep the order pending?", async () => {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "pending", paymentStatus: "Rejected" });
-            showToast("Payment rejected.");
-          });
-        };
-      });
     };
 
     store.renderAdminDashboard = function(container) {
@@ -5259,14 +4414,6 @@
                         `).join('')}
                       </select>
 
-                      <div class="pt-1">
-                        <label class="block text-[10px] uppercase tracking-[0.18em] text-luxuryGold font-bold mb-2">Choose Your Payment Method</label>
-                        <select id="cart-page-payment-method" name="paymentMethod" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                          <option value="cash_on_delivery" ${this.checkoutFormValues.paymentMethod === 'cash_on_delivery' ? 'selected' : ''}>Cash on Delivery</option>
-                          <option value="bank_transfer" ${this.checkoutFormValues.paymentMethod === 'bank_transfer' ? 'selected' : ''}>Bank Transfer</option>
-                        </select>
-                      </div>
-
                       <textarea name="address" required placeholder="${this.t('deliveryAddress')}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
                       
                       <button type="submit" id="cart-page-checkout-submit" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
@@ -5342,26 +4489,8 @@
 
       const checkoutForm = document.getElementById("cart-page-checkout-form");
       if (checkoutForm) {
-        const syncCheckoutFormState = () => {
-          this.checkoutFormValues.customerName = checkoutForm.customerName.value;
-          this.checkoutFormValues.phone = checkoutForm.phone.value;
-          this.checkoutFormValues.cityId = checkoutForm.cityId.value;
-          this.checkoutFormValues.address = checkoutForm.address.value;
-          this.checkoutFormValues.paymentMethod = checkoutForm.paymentMethod.value;
-        };
-
-        checkoutForm.customerName.oninput = () => syncCheckoutFormState();
-        checkoutForm.phone.oninput = () => syncCheckoutFormState();
-        checkoutForm.address.oninput = () => syncCheckoutFormState();
-        checkoutForm.paymentMethod.onchange = () => syncCheckoutFormState();
-
         checkoutForm.onsubmit = (e) => {
           e.preventDefault();
-          syncCheckoutFormState();
-          if (this.checkoutFormValues.paymentMethod === 'bank_transfer') {
-            this.beginBankTransferFlow();
-            return;
-          }
           this.processCheckoutPage(e);
         };
       }
@@ -5409,15 +4538,6 @@
       const phone = formEl.phone.value;
       const cityId = formEl.cityId.value;
       const address = formEl.address.value;
-      const paymentMethod = formEl.paymentMethod ? formEl.paymentMethod.value : 'cash_on_delivery';
-      this.checkoutFormValues = {
-        ...this.checkoutFormValues,
-        customerName: name,
-        phone,
-        cityId,
-        address,
-        paymentMethod
-      };
 
       if (!name || !phone || !cityId || !address) {
         showToast("Please fill in all required delivery coordinates.", "error");
@@ -5453,7 +4573,7 @@
           phone,
           address,
           status: "pending",
-          paymentMethod: paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Telegram Automated',
+          paymentMethod: "Telegram Automated",
           createdAt: new Date()
         };
 
@@ -5481,23 +4601,33 @@
           productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
         });
 
-        const msgText = this.buildTelegramOrderMessage({
-          orderId,
-          items: this.cart.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.discountPrice || item.price
-          })),
-          subtotal,
-          city: cityName,
-          deliveryFee,
-          total,
-          name,
-          address,
-          phone
-        });
+        let msgText = this.telegramSettings.template
+          .replace(/{products}/g, productsMsg.trim())
+          .replace(/{subtotal}/g, subtotal)
+          .replace(/{city}/g, cityName)
+          .replace(/{delivery}/g, deliveryFee)
+          .replace(/{total}/g, total)
+          .replace(/{name}/g, name)
+          .replace(/{address}/g, address)
+          .replace(/{phone}/g, phone)
+          .replace(/{orderId}/g, orderId);
 
-        await this.sendTelegramMessage(msgText);
+        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
+          try {
+            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
+            await fetch(telegramUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: this.telegramSettings.chatId,
+                text: msgText,
+                parse_mode: "Markdown"
+              })
+            });
+          } catch (apiErr) {
+            console.error("Telegram delivery bypassed:", apiErr);
+          }
+        }
 
         this.cart = [];
         localStorage.setItem("bp_cart", JSON.stringify([]));
