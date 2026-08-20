@@ -44,7 +44,8 @@
       "imports": {
         "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+        "firebase/storage": "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js"
       }
     }
   </script>
@@ -175,6 +176,56 @@
       object-fit: cover !important;
       background-color: transparent !important;
     }
+    .checkout-payment-shell,
+    .checkout-payment-shell * {
+      box-sizing: border-box;
+    }
+    .checkout-payment-shell {
+      min-width: 0;
+      overflow: hidden;
+    }
+    .checkout-payment-shell .checkout-action {
+      width: 100%;
+      min-height: 48px;
+      padding: 0.8rem 1rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .checkout-payment-shell .payment-method-card,
+    .checkout-payment-shell .bank-select-card {
+      min-width: 0;
+      min-height: 150px;
+      overflow: hidden;
+    }
+    .checkout-payment-shell .checkout-copy {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .checkout-payment-shell .checkout-proof-input {
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .checkout-payment-shell .checkout-proof-input::file-selector-button {
+      max-width: 100%;
+      margin-right: 0.5rem;
+      padding: 0.45rem 0.7rem;
+      border: 0;
+      border-radius: 0.5rem;
+      background: var(--accent-color);
+      color: #000;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    @media (max-width: 640px) {
+      .checkout-payment-shell .payment-method-card,
+      .checkout-payment-shell .bank-select-card {
+        min-height: 132px;
+      }
+      .checkout-payment-shell .payment-method-card {
+        padding: 1rem;
+      }
+    }
 
     @keyframes modal-enter {
       0% { opacity: 0; transform: scale(0.96) translateY(12px); }
@@ -250,6 +301,7 @@
     import { initializeApp } from "firebase/app";
     import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment, where } from "firebase/firestore";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+    import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
     // Global application namespace
     const appId = "sovanex";
@@ -269,6 +321,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const storage = getStorage(app);
     const fallbackImage = "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=800";
 
     // Global Fallback Logo Handler to prevent broken image icons and provide a luxurious SVG alternative
@@ -631,7 +684,46 @@
         customerName: "",
         phone: "",
         cityId: "",
-        address: ""
+        address: "",
+        paymentMethod: "cod",
+        selectedBankId: "",
+        paymentProofData: "",
+        paymentProofName: ""
+      },
+      
+      checkoutPage: "payment-method",
+
+      bankAccounts: [],
+
+      paymentSettingsDefaults: {
+        paymentMethods: {
+          cod: true,
+          bank: true
+        },
+        paymentProofRequired: true,
+        bankInstructions: "Please transfer the exact amount shown above to the selected bank account.\n\nAfter completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.",
+        bankAccountInfo: "Bank: Banque Populaire\nAccount Name: SOVANEX\nIBAN: MA64 0000 0000 0000 0000 0000 000\nReference: Use your order code",
+        bankAccounts: [
+          {
+            id: "bank_001",
+            bankName: "Banque Populaire",
+            accountHolderName: "SOVANEX",
+            accountNumber: "1234567890",
+            rib: "001234567890123456789012",
+            iban: "MA64 0000 0000 0000 0000 0000 000",
+            isActive: true
+          }
+        ]
+      },
+      paymentPipelineSettings: {
+        default: 'unified_order_telegram',
+        options: [
+          {
+            id: 'unified_order_telegram',
+            label: 'Unified order → Firebase → Telegram',
+            description: 'This is the live pipeline already in use for all paid orders. It saves the order and sends the Telegram notification using the current Firestore + Telegram configuration.'
+          }
+        ]
       },
       
       telegramSettings: {
@@ -823,6 +915,79 @@
         </div>
       `;
     };
+
+    // Load fallback products immediately so UI doesn't show "Loading..." indefinitely
+    store.products = [
+      {
+        name: "Rose Empress Gold Chrono",
+        category: "Watches",
+        gender: "Women",
+        price: 1200,
+        discountPrice: 950,
+        imageURL: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&q=80&w=600",
+        description: "An elegant, luxurious diamond-embellished rose gold watch designed specifically for her sophisticated taste.",
+        stock: 8,
+        rating: 5.0,
+        reviewsCount: 18,
+        isPromotion: true,
+        isBestSeller: true,
+        limitedStock: true,
+        createdAt: new Date(),
+        id: 'fallback-1'
+      },
+      {
+        name: "Oceanic Imperial Nautilus",
+        category: "Watches",
+        gender: "Men",
+        price: 1850,
+        discountPrice: 1500,
+        imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600",
+        description: "A gorgeous deep royal blue marine dial luxury automatic watch. Perfectly robust and elegant.",
+        stock: 5,
+        rating: 4.9,
+        reviewsCount: 24,
+        isPromotion: false,
+        isBestSeller: true,
+        limitedStock: true,
+        createdAt: new Date(),
+        id: 'fallback-2'
+      },
+      {
+        name: "Gilded Atlas Queen Bracelet",
+        category: "Accessories",
+        gender: "Women",
+        price: 450,
+        discountPrice: null,
+        imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600",
+        description: "Sophisticated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
+        stock: 15,
+        rating: 4.8,
+        reviewsCount: 9,
+        isPromotion: false,
+        isBestSeller: false,
+        limitedStock: false,
+        createdAt: new Date(),
+        id: 'fallback-3'
+      },
+      {
+        name: "Sovereign Gold Carbon Ring",
+        category: "Accessories",
+        gender: "Men",
+        price: 550,
+        discountPrice: 380,
+        imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600",
+        description: "A masculine scratch-resistant sapphire-grade tungsten ring with deep obsidian carbon inlay. Absolute royalty.",
+        stock: 12,
+        rating: 5.0,
+        reviewsCount: 14,
+        isPromotion: true,
+        isBestSeller: false,
+        limitedStock: false,
+        createdAt: new Date(),
+        id: 'fallback-4'
+      }
+    ];
+    store.loadingProducts = false;
 
     store.updateDOM = function() {
       this.updateTheme(); // Sync theme dynamically based on current selections
@@ -1076,13 +1241,122 @@
       }
 
       const prodQuery = collection(db, 'artifacts', appId, 'public', 'data', 'products');
-      onSnapshot(prodQuery, (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        store.products = list;
+      
+      // Use getDocs instead of onSnapshot to avoid long-polling issues with Cloudflare
+      const loadProducts = async () => {
+        console.log('Starting loadProducts...');
+        try {
+          // Create a timeout promise
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('getDocs timeout after 10s')), 10000)
+          );
+          
+          console.log('Calling getDocs for products...');
+          const snap = await Promise.race([getDocs(prodQuery), timeoutPromise]);
+          console.log('getDocs returned, processing', snap.size, 'documents');
+          const list = [];
+          snap.forEach(doc => {
+            list.push({ id: doc.id, ...doc.data() });
+            console.log('Added product:', doc.id);
+          });
+          store.products = list;
+          console.log('Store products updated with', list.length, 'products');
 
-        if (list.length === 0) {
-          const initialProducts = [
+          if (list.length === 0) {
+            console.log('No products found, creating initial products');
+            const initialProducts = [
+              {
+                name: "Rose Empress Gold Chrono",
+                category: "Watches",
+                gender: "Women",
+                price: 1200,
+                discountPrice: 950,
+                imageURL: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&q=80&w=600",
+                description: "An elegant, luxurious diamond-embellished rose gold watch designed specifically for her sophisticated taste.",
+                stock: 8,
+                rating: 5.0,
+                reviewsCount: 18,
+                isPromotion: true,
+                isBestSeller: true,
+                limitedStock: true,
+                createdAt: new Date()
+              },
+              {
+                name: "Oceanic Imperial Nautilus",
+                category: "Watches",
+                gender: "Men",
+                price: 1850,
+                discountPrice: 1500,
+                imageURL: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600",
+                description: "A gorgeous deep royal blue marine dial luxury automatic watch. Perfectly robust and elegant.",
+                stock: 5,
+                rating: 4.9,
+                reviewsCount: 24,
+                isPromotion: false,
+                isBestSeller: true,
+                limitedStock: true,
+                createdAt: new Date()
+              },
+              {
+                name: "Gilded Atlas Queen Bracelet",
+                category: "Accessories",
+                gender: "Women",
+                price: 450,
+                discountPrice: null,
+                imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600",
+                description: "Sophisticated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
+                stock: 15,
+                rating: 4.8,
+                reviewsCount: 9,
+                isPromotion: false,
+                isBestSeller: false,
+                limitedStock: false,
+                createdAt: new Date()
+              },
+              {
+                name: "Sovereign Gold Carbon Ring",
+                category: "Accessories",
+                gender: "Men",
+                price: 550,
+                discountPrice: 380,
+                imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600",
+                description: "A masculine scratch-resistant sapphire-grade tungsten ring with deep obsidian carbon inlay. Absolute royalty.",
+                stock: 12,
+                rating: 5.0,
+                reviewsCount: 14,
+                isPromotion: true,
+                isBestSeller: false,
+                limitedStock: false,
+                createdAt: new Date()
+              }
+            ];
+
+            for (const p of initialProducts) {
+              try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), p);
+                console.log('Created product:', p.name);
+              } catch (addErr) {
+                console.error('Failed to add product:', p.name, addErr);
+              }
+            }
+          }
+
+          console.log('Setting loadingProducts to false');
+          store.loadingProducts = false;
+          store.updateDOM();
+
+          if (window.location.pathname.startsWith('/product/')) {
+            store.handleRouting();
+          }
+        } catch (err) {
+          console.error("Products error:", err);
+          console.error("Error code:", err.code);
+          console.error("Error message:", err.message);
+          console.error("Full error:", JSON.stringify(err));
+          
+          // Use fallback products on timeout or error
+          console.log('Using fallback products due to error');
+          store.products = [
             {
               name: "Rose Empress Gold Chrono",
               category: "Watches",
@@ -1097,7 +1371,8 @@
               isPromotion: true,
               isBestSeller: true,
               limitedStock: true,
-              createdAt: new Date()
+              createdAt: new Date(),
+              id: 'fallback-1'
             },
             {
               name: "Oceanic Imperial Nautilus",
@@ -1113,58 +1388,19 @@
               isPromotion: false,
               isBestSeller: true,
               limitedStock: true,
-              createdAt: new Date()
-            },
-            {
-              name: "Gilded Atlas Queen Bracelet",
-              category: "Accessories",
-              gender: "Women",
-              price: 450,
-              discountPrice: null,
-              imageURL: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600",
-              description: "Sophisticated premium 18k gold-plated geometric bangle studded with brilliant cubic zirconias.",
-              stock: 15,
-              rating: 4.8,
-              reviewsCount: 9,
-              isPromotion: false,
-              isBestSeller: false,
-              limitedStock: false,
-              createdAt: new Date()
-            },
-            {
-              name: "Sovereign Gold Carbon Ring",
-              category: "Accessories",
-              gender: "Men",
-              price: 550,
-              discountPrice: 380,
-              imageURL: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600",
-              description: "A masculine scratch-resistant sapphire-grade tungsten ring with deep obsidian carbon inlay. Absolute royalty.",
-              stock: 12,
-              rating: 5.0,
-              reviewsCount: 14,
-              isPromotion: true,
-              isBestSeller: false,
-              limitedStock: false,
-              createdAt: new Date()
+              createdAt: new Date(),
+              id: 'fallback-2'
             }
           ];
-
-          initialProducts.forEach(async (p) => {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), p);
-          });
+          
+          store.loadingProducts = false;
+          store.updateDOM();
+          showToast("Warning: Products loaded with fallback data. Check your connection.", "error");
         }
-
-        store.loadingProducts = false;
-        store.updateDOM();
-
-        if (window.location.pathname.startsWith('/product/')) {
-          store.handleRouting();
-        }
-      }, (err) => {
-        console.error("Products error:", err);
-        store.loadingProducts = false;
-        store.updateDOM();
-      });
+      };
+      
+      console.log('Calling loadProducts immediately...');
+      loadProducts();
 
       const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
       const catQuery = query(catRef, orderBy("order", "asc"));
@@ -1508,94 +1744,201 @@
       }).catch(err => console.error(err));
     };
 
+    store.getAvailablePaymentMethods = function() {
+      const config = this.settings && this.settings.paymentMethods ? this.settings.paymentMethods : this.paymentSettingsDefaults.paymentMethods;
+      const labels = {
+        cod: 'Cash on Delivery',
+        bank: 'Bank Transfer'
+      };
+
+      return [
+        { id: 'cod', label: labels.cod },
+        { id: 'bank', label: labels.bank }
+      ].filter(method => config[method.id] !== false);
+    };
+
+    store.getBankPaymentPipeline = function() {
+      const options = this.paymentPipelineSettings?.options || this.paymentSettingsDefaults?.paymentPipelineOptions || [];
+      const selectedId = this.settings?.bankPaymentPipeline || this.paymentPipelineSettings?.default || options[0]?.id;
+      return options.find(option => option.id === selectedId) || options[0] || {
+        id: 'unified_order_telegram',
+        label: 'Unified order → Firebase → Telegram',
+        description: 'Live pipeline used for current orders.'
+      };
+    };
+
+    store.getActiveBankAccounts = function() {
+      const accounts = this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || [];
+      return accounts.filter(acc => acc.isActive);
+    };
+
+    store.getBankAccountById = function(bankId) {
+      const accounts = this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || [];
+      return accounts.find(acc => acc.id === bankId);
+    };
+
+    store.resetCheckoutState = function() {
+      this.checkoutLoading = false;
+      if (typeof this.updateDOM === 'function') this.updateDOM();
+    };
+
+    store.submitUnifiedOrder = async function({
+      customerName,
+      phone,
+      cityId,
+      address,
+      paymentMethod,
+      paymentStatus,
+      paymentProofData,
+      paymentProofName,
+      selectedBankId,
+      bankSnapshot
+    }) {
+      if (!customerName || !phone || !cityId || !address) {
+        showToast("Please fill in all required delivery coordinates.", "error");
+        return null;
+      }
+
+      const normalizedPaymentMethod = paymentMethod === 'cod' ? 'Cash on Delivery' :
+        paymentMethod === 'bank' ? 'Bank Transfer' :
+        (paymentMethod || 'Cash on Delivery');
+
+      // Validate bank selection for bank transfer
+      if (normalizedPaymentMethod === 'Bank Transfer') {
+        if (!selectedBankId || !bankSnapshot) {
+          showToast("Please select a bank account for this transfer.", "error");
+          return null;
+        }
+      }
+
+      const requireProof = normalizedPaymentMethod !== 'Cash on Delivery' && this.settings?.paymentProofRequired !== false;
+      if (requireProof && (!paymentProofData || !String(paymentProofData).trim())) {
+        showToast("Please upload a payment proof screenshot before submitting the order.", "error");
+        return null;
+      }
+
+      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+      const cityObj = this.deliveryCities.find(c => c.id === cityId);
+      const deliveryFee = cityObj ? cityObj.price : 0;
+      const cityName = cityObj ? cityObj.name : "Morocco";
+      const total = subtotal + deliveryFee;
+      const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
+
+      const orderItems = this.cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.discountPrice || item.price
+      }));
+
+      const orderData = {
+        orderId,
+        items: orderItems,
+        total,
+        subtotal,
+        deliveryFee,
+        deliveryCity: cityName,
+        customerName,
+        phone,
+        address,
+        status: "pending",
+        paymentMethod: normalizedPaymentMethod,
+        paymentStatus: paymentStatus || (normalizedPaymentMethod === 'Cash on Delivery' ? 'Pending' : 'Proof Submitted'),
+        paymentProofName: paymentProofName || '',
+        createdAt: new Date()
+      };
+
+      // Save bank snapshot for bank transfer orders
+      if (normalizedPaymentMethod === 'Bank Transfer' && bankSnapshot) {
+        orderData.bankSnapshot = bankSnapshot;
+        orderData.selectedBankId = selectedBankId;
+      }
+
+      const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+      await addDoc(ordersCol, orderData);
+
+      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+      localHistory.push(orderId);
+      localStorage.setItem("sovanex_order_history", JSON.stringify(localHistory));
+
+      let productsMsg = "";
+      this.cart.forEach(item => {
+        productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
+      });
+
+      const paymentProofText = orderData.paymentProofName || 'Not provided';
+
+      let msgText = this.telegramSettings.template
+        .replace(/{products}/g, productsMsg.trim())
+        .replace(/{subtotal}/g, subtotal)
+        .replace(/{city}/g, cityName)
+        .replace(/{delivery}/g, deliveryFee)
+        .replace(/{total}/g, total)
+        .replace(/{name}/g, customerName)
+        .replace(/{address}/g, address)
+        .replace(/{phone}/g, phone)
+        .replace(/{orderId}/g, orderId)
+        .replace(/{paymentMethod}/g, normalizedPaymentMethod)
+        .replace(/{paymentStatus}/g, orderData.paymentStatus)
+        .replace(/{paymentProof}/g, paymentProofText);
+
+      if (!msgText.includes('{paymentMethod}') && !msgText.includes('Payment Method')) {
+        msgText += `\n\nPayment Method: ${normalizedPaymentMethod}\nPayment Status: ${orderData.paymentStatus}\nPayment Proof: ${paymentProofText}`;
+      }
+
+      // FIX: Make Telegram notification non-blocking with timeout to prevent infinite "Processing Request..." state
+      if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
+        const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
+        const telegramPayload = {
+          chat_id: this.telegramSettings.chatId,
+          text: msgText,
+          parse_mode: "Markdown"
+        };
+        
+        // Send notification without blocking order completion
+        fetch(telegramUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(telegramPayload)
+        }).catch(err => {
+          console.error("Telegram notification failed after order creation:", err);
+        });
+      }
+
+      return { orderId, orderData };
+    };
+
     store.processCheckout = async function(e) {
       e.preventDefault();
       
-      if (this.cart.length === 0) return;
+      if (this.cart.length === 0 || this.checkoutLoading) return;
       
       const formEl = e.target;
       const name = formEl.customerName.value;
       const phone = formEl.phone.value;
       const cityId = formEl.cityId.value;
       const address = formEl.address.value;
-
-      if (!name || !phone || !cityId || !address) {
-        showToast("Please fill in all required delivery coordinates.", "error");
-        return;
-      }
+      const paymentMethod = (formEl.paymentMethod && formEl.paymentMethod.value) || 'cod';
+      const paymentProofData = (formEl.paymentProofData && formEl.paymentProofData.value) || '';
+      const paymentProofName = (formEl.paymentProofName && formEl.paymentProofName.value) || '';
 
       this.checkoutLoading = true;
       this.updateDOM();
 
       try {
-        const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
-        const cityObj = this.deliveryCities.find(c => c.id === cityId);
-        const deliveryFee = cityObj ? cityObj.price : 0;
-        const cityName = cityObj ? cityObj.name : "Morocco";
-        const total = subtotal + deliveryFee;
-        const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
-
-        const orderItems = this.cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.discountPrice || item.price
-        }));
-
-        const newOrder = {
-          orderId,
-          items: orderItems,
-          total,
-          subtotal,
-          deliveryFee,
-          deliveryCity: cityName,
+        const result = await this.submitUnifiedOrder({
           customerName: name,
           phone,
+          cityId,
           address,
-          status: "pending",
-          paymentMethod: "Telegram Automated",
-          createdAt: new Date()
-        };
-
-        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        await addDoc(ordersCol, newOrder);
-
-        // Save placed Order ID locally for personalized History Tracking
-        const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
-        localHistory.push(orderId);
-        localStorage.setItem("sovanex_order_history", JSON.stringify(localHistory));
-
-        let productsMsg = "";
-        this.cart.forEach(item => {
-          productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
+          paymentMethod,
+          paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Proof Submitted',
+          paymentProofData,
+          paymentProofName
         });
 
-        let msgText = this.telegramSettings.template
-          .replace(/{products}/g, productsMsg.trim())
-          .replace(/{subtotal}/g, subtotal)
-          .replace(/{city}/g, cityName)
-          .replace(/{delivery}/g, deliveryFee)
-          .replace(/{total}/g, total)
-          .replace(/{name}/g, name)
-          .replace(/{address}/g, address)
-          .replace(/{phone}/g, phone)
-          .replace(/{orderId}/g, orderId);
-
-        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
-          try {
-            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
-            await fetch(telegramUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: this.telegramSettings.chatId,
-                text: msgText,
-                parse_mode: "Markdown"
-              })
-            });
-          } catch (apiErr) {
-            console.error("Direct Telegram bot execution failed.", apiErr);
-          }
+        if (!result) {
+          return;
         }
 
         const purchasedItemIds = this.cart.map(item => item.id);
@@ -1603,9 +1946,8 @@
 
         this.cart = [];
         localStorage.setItem("bp_cart", JSON.stringify([]));
-        this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "" };
+        this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", paymentProofData: "", paymentProofName: "" };
         this.cartOpen = false;
-        this.checkoutLoading = false;
         
         let recommendationsMarkup = "";
         if (recommendations.length > 0) {
@@ -1650,7 +1992,7 @@
             '<p class="text-xs text-gray-300">Your order has been registered successfully!</p>' +
             '<div class="bg-black/50 p-4 rounded-xl border border-luxuryGold/20 max-w-xs mx-auto">' +
               '<p class="text-[10px] uppercase tracking-wider text-luxuryGold font-semibold mb-1">Order Code (ID)</p>' +
-              '<span class="inline-block bg-black/80 text-luxuryGold font-mono text-base font-bold px-4 py-2 rounded-lg border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">' + orderId + '</span>' +
+              '<span class="inline-block bg-black/80 text-luxuryGold font-mono text-base font-bold px-4 py-2 rounded-lg border border-luxuryGold/40 tracking-wider select-all cursor-pointer hover:border-luxuryGold transition" title="Double click to select and copy">' + result.orderId + '</span>' +
             '</div>' +
             '<p class="text-[11px] text-gray-400 max-w-sm mx-auto">Please copy this ID and send it to our customer support on WhatsApp to complete and track your delivery.</p>' +
             recommendationsMarkup +
@@ -3393,6 +3735,7 @@
                 <tr>
                   <th class="p-4">Client Detail</th>
                   <th class="p-4">Item Compositions</th>
+                  <th class="p-4">Payment</th>
                   <th class="p-4">Total Price</th>
                   <th class="p-4">Status</th>
                   <th class="p-4 text-right">Fulfillment</th>
@@ -3400,13 +3743,29 @@
               </thead>
               <tbody class="divide-y divide-white/5">
                 ${this.orders.map(o => `
-                  <tr class="hover:bg-white/5 transition">
+                  <tr class="hover:bg-white/5 transition align-top">
                     <td class="p-4">
                       <p class="font-bold text-sm text-luxuryGold">${o.customerName}</p>
                       <p class="text-[10px] text-gray-400 mt-1">${o.phone} — ${o.address} (${o.deliveryCity || 'Morocco'})</p>
                     </td>
                     <td class="p-4">
                       ${o.items?.map(item => `<p class="text-[11px] text-gray-300">• ${item.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim()} <strong class="text-luxuryGold">x${item.quantity}</strong></p>`).join('')}
+                    </td>
+                    <td class="p-4">
+                      <p class="text-[10px] font-bold text-luxuryGold uppercase">${o.paymentMethod || 'Cash on Delivery'}</p>
+                      ${o.paymentMethod === 'Bank Transfer' || o.paymentMethod === 'bank' ? `
+                        <div class="mt-2 space-y-1">
+                          <p class="text-[9px] text-gray-300">Amount: <span class="font-bold text-white">${o.total || 0} MAD</span></p>
+                          ${o.bankSnapshot ? `
+                            <div class="text-[9px] space-y-0.5 border-t border-white/10 pt-1 mt-1">
+                              <p class="text-gray-400">Bank: <span class="text-white font-semibold">${o.bankSnapshot.bankName}</span></p>
+                              <p class="text-gray-400">Account: <span class="text-white font-semibold">${o.bankSnapshot.accountHolderName}</span></p>
+                              <p class="text-gray-400">RIB: <span class="font-mono text-gray-300">${o.bankSnapshot.rib}</span></p>
+                            </div>
+                          ` : ''}
+                          ${o.paymentProofName ? `<p class="text-[9px] text-gray-400 mt-1">Proof: ${o.paymentProofName}</p>` : `<p class="text-[9px] text-gray-400 mt-1">No proof uploaded</p>`}
+                        </div>
+                      ` : ''}
                     </td>
                     <td class="p-4 font-serif font-bold text-luxuryGold">${o.total} MAD</td>
                     <td class="p-4">
@@ -4010,6 +4369,81 @@
               </div>
             </div>
 
+            <div class="border-t border-luxuryGold/20 pt-4 space-y-4">
+              <div>
+                <h4 class="font-serif text-lg text-luxuryGold mb-2">Payment Configuration</h4>
+                <p class="text-[9px] text-gray-400">Controls the checkout payment methods and bank/card instructions while keeping the same order + Telegram pipeline for all payments.</p>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label class="flex items-center gap-2 text-xs text-white"><input type="checkbox" name="codEnabled" ${this.settings.paymentMethods?.cod !== false ? 'checked' : ''} class="rounded text-luxuryGold"> Cash on Delivery</label>
+                <label class="flex items-center gap-2 text-xs text-white"><input type="checkbox" name="bankEnabled" ${this.settings.paymentMethods?.bank !== false ? 'checked' : ''} class="rounded text-luxuryGold"> Bank Transfer</label>
+              </div>
+              <label class="flex items-center gap-2 text-xs text-white"><input type="checkbox" name="paymentProofRequired" ${this.settings.paymentProofRequired !== false ? 'checked' : ''} class="rounded text-luxuryGold"> Require payment proof for bank/card submissions</label>
+
+              <div class="rounded-2xl border border-luxuryGold/20 bg-black/40 p-4 space-y-3">
+                <div>
+                  <p class="text-[10px] uppercase font-bold text-luxuryGold mb-1">Live bank-processing system</p>
+                  <p class="text-[9px] text-gray-400">This app is already using the verified order → Firebase → Telegram pipeline. No system is auto-activated without showing the active option below.</p>
+                </div>
+                <div class="rounded-xl border border-luxuryGold/20 bg-[#111] p-3">
+                  <p class="font-semibold text-luxuryGold uppercase tracking-wider text-[10px]">${this.getBankPaymentPipeline().label}</p>
+                  <p class="text-[9px] text-gray-400 mt-1">${this.getBankPaymentPipeline().description}</p>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Bank Transfer Instructions</label>
+                <textarea name="bankInstructions" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-20 resize-none">${this.settings.bankInstructions || this.paymentSettingsDefaults.bankInstructions}</textarea>
+              </div>
+
+              <div class="rounded-2xl border border-luxuryGold/20 bg-black/40 p-4 space-y-4">
+                <div>
+                  <h4 class="text-sm font-bold text-luxuryGold uppercase mb-2">🏦 Bank Account Management</h4>
+                  <p class="text-[9px] text-gray-400 mb-3">Add, edit, enable/disable bank accounts available for customers</p>
+                </div>
+
+                ${(this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || []).length > 0 ? `
+                  <div class="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                    ${(this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || []).map((bank, idx) => `
+                      <div class="rounded-lg border border-luxuryGold/10 bg-[#111] p-2 flex items-start justify-between gap-2">
+                        <div class="flex-1 text-[9px]">
+                          <p class="font-bold text-white">${bank.bankName}</p>
+                          <p class="text-gray-400">Account: ${bank.accountHolderName}</p>
+                          <p class="text-gray-500">RIB: ${bank.rib}</p>
+                        </div>
+                        <div class="flex gap-1">
+                          <button type="button" class="admin-toggle-bank-status px-2 py-1 text-[8px] font-bold rounded uppercase ${bank.isActive ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400'}" data-bank-idx="${idx}" data-action="toggle">
+                            ${bank.isActive ? 'Active' : 'Disabled'}
+                          </button>
+                          <button type="button" class="admin-delete-bank px-2 py-1 text-[8px] font-bold rounded uppercase bg-red-700 text-white" data-bank-idx="${idx}" data-action="delete">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : `<p class="text-[9px] text-gray-500 italic">No bank accounts configured yet. Add one below.</p>`}
+
+                <div class="rounded-lg border border-luxuryGold/30 bg-[#111] p-3 space-y-2">
+                  <p class="text-[9px] font-bold text-luxuryGold uppercase">Add New Bank Account</p>
+                  <input type="text" placeholder="Bank Name (e.g., Banque Populaire)" class="admin-bank-add-name w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <input type="text" placeholder="Account Holder Name" class="admin-bank-add-holder w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <input type="text" placeholder="Account Number" class="admin-bank-add-number w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <input type="text" placeholder="RIB" class="admin-bank-add-rib w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <input type="text" placeholder="IBAN" class="admin-bank-add-iban w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <button type="button" class="admin-bank-add-btn w-full px-2 py-1 text-[9px] font-bold rounded uppercase bg-luxuryGold text-black hover:bg-luxuryGold/90">Add Bank Account</button>
+                </div>
+
+                <input type="hidden" name="bankAccounts" id="admin-bank-accounts-json" value='${JSON.stringify(this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || [])}'>
+              </div>
+
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Bank Account Information (Legacy)</label>
+                <textarea name="bankAccountInfo" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-20 resize-none">${this.settings.bankAccountInfo || this.paymentSettingsDefaults.bankAccountInfo}</textarea>
+                <p class="text-[9px] text-gray-400 mt-1">This field is kept for backward compatibility. Use Bank Account Management above instead.</p>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Instagram Profile</label>
@@ -4117,9 +4551,116 @@
         };
       }
 
+      // Bank account management handlers
+      document.querySelectorAll(".admin-toggle-bank-status").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const idx = parseInt(btn.getAttribute("data-bank-idx"));
+          const bankAccountsJson = document.getElementById("admin-bank-accounts-json");
+          if (bankAccountsJson) {
+            try {
+              const accounts = JSON.parse(bankAccountsJson.value);
+              if (accounts[idx]) {
+                accounts[idx].isActive = !accounts[idx].isActive;
+                bankAccountsJson.value = JSON.stringify(accounts);
+                showToast(accounts[idx].isActive ? "Bank account enabled." : "Bank account disabled.");
+                store.renderAdminGeneralSettings(document.getElementById("app-content"));
+              }
+            } catch (err) {
+              console.error("Error toggling bank account:", err);
+            }
+          }
+        };
+      });
+
+      document.querySelectorAll(".admin-delete-bank").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const idx = parseInt(btn.getAttribute("data-bank-idx"));
+          const bankAccountsJson = document.getElementById("admin-bank-accounts-json");
+          if (bankAccountsJson) {
+            try {
+              const accounts = JSON.parse(bankAccountsJson.value);
+              const deleted = accounts[idx];
+              accounts.splice(idx, 1);
+              bankAccountsJson.value = JSON.stringify(accounts);
+              showToast(`Bank account ${deleted.bankName} deleted.`);
+              store.renderAdminGeneralSettings(document.getElementById("app-content"));
+            } catch (err) {
+              console.error("Error deleting bank account:", err);
+            }
+          }
+        };
+      });
+
+      document.querySelectorAll(".admin-bank-add-btn").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const form = btn.closest(".admin-bank-add-btn").parentElement;
+          const nameInput = document.querySelector(".admin-bank-add-name");
+          const holderInput = document.querySelector(".admin-bank-add-holder");
+          const numberInput = document.querySelector(".admin-bank-add-number");
+          const ribInput = document.querySelector(".admin-bank-add-rib");
+          const ibanInput = document.querySelector(".admin-bank-add-iban");
+
+          const bankName = nameInput?.value.trim();
+          const accountHolderName = holderInput?.value.trim();
+          const accountNumber = numberInput?.value.trim();
+          const rib = ribInput?.value.trim();
+          const iban = ibanInput?.value.trim();
+
+          if (!bankName || !accountHolderName || !accountNumber || !rib || !iban) {
+            showToast("Please fill in all bank account fields.", "error");
+            return;
+          }
+
+          const bankAccountsJson = document.getElementById("admin-bank-accounts-json");
+          if (bankAccountsJson) {
+            try {
+              const accounts = JSON.parse(bankAccountsJson.value);
+              const newBank = {
+                id: "bank_" + Date.now(),
+                bankName,
+                accountHolderName,
+                accountNumber,
+                rib,
+                iban,
+                isActive: true
+              };
+              accounts.push(newBank);
+              bankAccountsJson.value = JSON.stringify(accounts);
+              // Clear inputs
+              nameInput.value = '';
+              holderInput.value = '';
+              numberInput.value = '';
+              ribInput.value = '';
+              ibanInput.value = '';
+              showToast(`Bank account ${bankName} added successfully.`);
+              store.renderAdminGeneralSettings(document.getElementById("app-content"));
+            } catch (err) {
+              console.error("Error adding bank account:", err);
+              showToast("Error adding bank account.", "error");
+            }
+          }
+        };
+      });
+
       document.getElementById("general-settings-form").onsubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
+        
+        // Get bank accounts from hidden input
+        let bankAccounts = [];
+        const bankAccountsJson = document.getElementById("admin-bank-accounts-json");
+        if (bankAccountsJson) {
+          try {
+            bankAccounts = JSON.parse(bankAccountsJson.value);
+          } catch (err) {
+            console.warn("Error parsing bank accounts JSON", err);
+            bankAccounts = this.paymentSettingsDefaults.bankAccounts;
+          }
+        }
+
         const payload = {
           logoURL: form.logoURL.value,
           heroTitleEn: form.heroTitleEn.value,
@@ -4136,12 +4677,20 @@
           emailCoordinate: form.emailCoordinate.value,
           websiteDescription: form.websiteDescription.value,
           deliveryTerms: form.deliveryTerms.value,
-          returnPolicy: form.returnPolicy.value
+          returnPolicy: form.returnPolicy.value,
+          paymentMethods: {
+            cod: form.codEnabled.checked,
+            bank: form.bankEnabled.checked
+          },
+          paymentProofRequired: form.paymentProofRequired.checked,
+          bankInstructions: form.bankInstructions.value,
+          bankAccountInfo: form.bankAccountInfo.value,
+          bankAccounts: bankAccounts
         };
 
-        // Instant local storage cache save to bypass any connection delays or permission issues
         localStorage.setItem("sovanex_settings", JSON.stringify(payload));
         store.settings = { ...store.settings, ...payload };
+        store.bankAccounts = bankAccounts;
         showToast("Settings saved successfully.");
         store.updateDOM();
 
@@ -4250,6 +4799,22 @@
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
       const deliveryFee = cityObj ? cityObj.price : 0;
       const total = subtotal + deliveryFee;
+      const paymentMethods = this.getAvailablePaymentMethods();
+      const selectedPaymentMethod = paymentMethods.some(method => method.id === this.checkoutFormValues.paymentMethod)
+        ? this.checkoutFormValues.paymentMethod
+        : paymentMethods[0]?.id || 'cod';
+      const activePaymentMethod = paymentMethods.find(method => method.id === selectedPaymentMethod) || paymentMethods[0];
+      const paymentInstructions = activePaymentMethod?.id === 'bank'
+        ? (this.settings.bankInstructions || this.paymentSettingsDefaults.bankInstructions)
+        : 'Cash on Delivery is available for local collection and doorstep delivery.';
+      const paymentAccountInfo = activePaymentMethod?.id === 'bank'
+        ? (this.settings.bankAccountInfo || this.paymentSettingsDefaults.bankAccountInfo)
+        : '';
+      const proofRequired = activePaymentMethod?.id !== 'cod' && this.settings.paymentProofRequired !== false;
+      const bankPipeline = this.getBankPaymentPipeline();
+      const bankAccountLines = (this.settings.bankAccountInfo || this.paymentSettingsDefaults.bankAccountInfo || '')
+        .split('\n')
+        .filter(Boolean);
 
       let itemsMarkup = this.cart.map(item => {
         const cleanName = item.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
@@ -4275,7 +4840,7 @@
       }).join('');
 
       container.innerHTML = `
-        <div class="max-w-4xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+        <div class="max-w-6xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
@@ -4300,7 +4865,7 @@
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-            <div class="md:col-span-7 space-y-4">
+            <div class="md:col-span-5 space-y-4">
               ${this.cartTab === 'cart' ? `
                 ${cartCount === 0 ? `
                   <div class="text-center py-16 bg-luxuryBeige rounded-3xl border border-luxuryGold/10 space-y-4">
@@ -4380,9 +4945,9 @@
               `}
             </div>
 
-            <div class="md:col-span-5">
+            <div class="md:col-span-7 min-w-0">
               ${this.cartTab === 'cart' && cartCount > 0 ? `
-                <div class="bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-xl space-y-4 animate-fade-in" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+                <div class="checkout-payment-shell bg-[#141414] p-5 sm:p-7 rounded-3xl border border-luxuryGold/20 shadow-xl space-y-5 animate-fade-in" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
                   <div class="flex justify-between items-center text-sm font-medium">
                     <span class="text-gray-300">Subtotal</span>
                     <span class="text-xl font-serif font-bold text-luxuryGold">${subtotal} MAD</span>
@@ -4415,13 +4980,141 @@
                       </select>
 
                       <textarea name="address" required placeholder="${this.t('deliveryAddress')}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
-                      
-                      <button type="submit" id="cart-page-checkout-submit" ${this.checkoutLoading ? 'disabled' : ''} class="w-full py-3 bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
-                        <span>${this.checkoutLoading ? "Processing Request... / جاري تأكيد الطلب..." : this.t('confirmOrder')}</span>
+
+                      <input type="hidden" name="paymentMethod" id="cart-page-payment-method" value="${selectedPaymentMethod}">
+                      <input type="hidden" name="selectedBankId" id="cart-page-selected-bank-id" value="${this.checkoutFormValues.selectedBankId}">
+                      <input type="hidden" name="paymentProofData" value="${this.checkoutFormValues.paymentProofData || ''}">
+                      <input type="hidden" name="paymentProofName" value="${this.checkoutFormValues.paymentProofName || ''}">
+
+                      ${this.checkoutPage === 'payment-method' ? `
+                        <div class="checkout-step-content space-y-5">
+                          <div class="border-b border-luxuryGold/15 pb-4">
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">STEP 1</p>
+                            <h2 class="text-xl sm:text-2xl font-serif text-luxuryGold uppercase tracking-wider">SELECT PAYMENT METHOD</h2>
+                          </div>
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                            ${paymentMethods.map(method => {
+                              const isSelected = selectedPaymentMethod === method.id;
+                              const icon = method.id === 'cod' ? '💵' : '🏦';
+                              const title = method.id === 'cod' ? 'CASH ON DELIVERY' : 'BANK TRANSFER';
+                              const description = method.id === 'cod' 
+                                ? 'Pay when order arrives safely at your doorstep'
+                                : 'Transfer to bank account and upload payment proof';
+                              return `
+                                <button type="button" aria-pressed="${isSelected}" class="payment-method-card w-full cursor-pointer p-4 sm:p-5 rounded-2xl border-2 text-left transition-all duration-300 ${isSelected ? 'border-luxuryGold bg-gradient-to-br from-luxuryGold/20 to-luxuryGold/5 shadow-[0_0_20px_rgba(212,175,55,0.3)]' : 'border-white/20 bg-black/40 hover:border-luxuryGold/50 hover:bg-black/60'}" data-method="${method.id}">
+                                  <div class="flex h-full items-start gap-3">
+                                    <span class="text-3xl sm:text-4xl leading-none flex-shrink-0">${icon}</span>
+                                    <div class="checkout-copy flex-1 pt-0.5">
+                                      <p class="text-sm font-bold font-serif ${isSelected ? 'text-luxuryGold' : 'text-white'} mb-2 uppercase tracking-wider">${title}</p>
+                                      <p class="text-[10px] text-gray-400 leading-relaxed">${description}</p>
+                                      </div>
+                                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-luxuryGold bg-luxuryGold shadow-lg shadow-luxuryGold/40' : 'border-gray-600 hover:border-luxuryGold/60'}">
+                                      ${isSelected ? '<span class="text-black text-sm font-bold leading-none">✓</span>' : ''}
+                                    </div>
+                                  </div>
+                                </button>
+                              `;
+                            }).join('')}
+                          </div>
+                        </div>
+                      ` : ''}
+
+                      ${this.checkoutPage === 'bank-selection' ? `
+                        <div class="checkout-step-content space-y-5">
+                          <div class="flex items-center gap-3">
+                            <button type="button" class="back-to-payment checkout-action !w-auto px-4 py-2 rounded-lg text-[9px] text-luxuryGold uppercase font-bold bg-black/50 border border-luxuryGold/30 hover:bg-luxuryGold/10 transition">← Back to Payment Method</button>
+                          </div>
+                          <div class="border-b border-luxuryGold/15 pb-4">
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">STEP 2</p>
+                            <h2 class="text-xl sm:text-2xl font-serif text-luxuryGold uppercase tracking-wider">SELECT BANK ACCOUNT</h2>
+                            <div class="mt-4 rounded-xl border border-luxuryGold/20 bg-black/50 p-4">
+                              <p class="text-sm text-gray-300">You will transfer exactly:</p>
+                              <p class="mt-1 text-2xl font-serif font-bold text-luxuryGold">${total} MAD</p>
+                            </div>
+                          </div>
+                          <div class="space-y-3">
+                            ${this.getActiveBankAccounts().map(bank => {
+                              const isSelected = this.checkoutFormValues.selectedBankId === bank.id;
+                              return `
+                                <button type="button" aria-pressed="${isSelected}" class="bank-select-card cursor-pointer w-full p-5 rounded-2xl border-2 text-left transition-all duration-300 ${isSelected ? 'border-luxuryGold bg-luxuryGold/10 shadow-lg shadow-luxuryGold/20' : 'border-white/15 bg-black/40 hover:border-luxuryGold/50 hover:bg-black/60'}" data-bank-id="${bank.id}">
+                                  <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1">
+                                      <p class="text-base font-bold font-serif ${isSelected ? 'text-luxuryGold' : 'text-white'} mb-1">${bank.bankName}</p>
+                                      <p class="text-xs text-gray-400">Account Holder: <span class="text-gray-300 font-medium">${bank.accountHolderName}</span></p>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-luxuryGold bg-luxuryGold shadow-md shadow-luxuryGold/40' : 'border-gray-600 hover:border-luxuryGold/60'}">
+                                      ${isSelected ? '<span class="text-black text-sm font-bold leading-none">✓</span>' : ''}
+                                    </div>
+                                  </div>
+                                </button>
+                              `;
+                            }).join('')}
+                          </div>
+                        </div>
+                      ` : ''}
+
+                      ${this.checkoutPage === 'bank-details' && selectedPaymentMethod === 'bank' && this.checkoutFormValues.selectedBankId ? (() => {
+                        const selectedBank = this.getBankAccountById(this.checkoutFormValues.selectedBankId);
+                        return selectedBank ? `
+                          <div class="checkout-step-content space-y-5">
+                            <div class="flex items-center gap-3">
+                              <button type="button" class="back-to-bank-select checkout-action !w-auto px-4 py-2 rounded-lg text-[9px] text-luxuryGold uppercase font-bold bg-black/50 border border-luxuryGold/30 hover:bg-luxuryGold/10 transition">← Back to Bank Accounts</button>
+                            </div>
+                            <div class="border-b border-luxuryGold/15 pb-4">
+                              <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">STEP 3</p>
+                              <div class="flex flex-wrap items-end justify-between gap-3 mt-1">
+                                <h2 class="text-xl sm:text-2xl font-serif text-luxuryGold uppercase tracking-wider">BANK DETAILS</h2>
+                                <span class="text-xl font-serif font-bold text-luxuryGold">${total} MAD</span>
+                              </div>
+                            </div>
+                            <div class="rounded-2xl border border-luxuryGold/20 bg-black/50 p-5 space-y-4">
+                              <p class="text-lg font-bold font-serif text-white">🏦 ${selectedBank.bankName}</p>
+                              <div class="rounded-xl border border-luxuryGold/15 bg-[#111] p-4 grid gap-4 sm:grid-cols-2">
+                                <div class="space-y-1">
+                                  <p class="text-[10px] text-gray-400 uppercase tracking-wider">Account Holder</p>
+                                  <p class="text-sm font-bold text-white break-words">${selectedBank.accountHolderName}</p>
+                                </div>
+                                <div class="space-y-1">
+                                  <p class="text-[10px] text-gray-400 uppercase tracking-wider">Account Number</p>
+                                  <p class="font-mono text-xs text-gray-300 break-all">${selectedBank.accountNumber}</p>
+                                </div>
+                                <div class="space-y-1">
+                                  <p class="text-[10px] text-gray-400 uppercase tracking-wider">RIB</p>
+                                  <p class="font-mono text-xs text-gray-300 break-all">${selectedBank.rib}</p>
+                                </div>
+                                <div class="space-y-1">
+                                  <p class="text-[10px] text-gray-400 uppercase tracking-wider">IBAN</p>
+                                  <p class="font-mono text-xs text-gray-300 break-all">${selectedBank.iban}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rounded-2xl border border-luxuryGold/25 bg-gradient-to-br from-luxuryGold/10 to-transparent p-5 space-y-3">
+                              <p class="text-sm font-bold text-luxuryGold uppercase tracking-wider">HOW BANK TRANSFER WORKS</p>
+                              <p class="text-sm text-gray-300 leading-relaxed">Please transfer the exact amount shown above to the selected bank account.</p>
+                              <p class="text-sm text-gray-300 leading-relaxed">After completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.</p>
+                            </div>
+                            <div class="space-y-3 rounded-2xl border border-luxuryGold/20 bg-black/50 p-5">
+                              <label class="block text-[11px] uppercase tracking-widest text-luxuryGold font-bold">PAYMENT PROOF SCREENSHOT</label>
+                              <p class="text-xs text-gray-400">Upload a clear screenshot of your completed bank transfer.</p>
+                              <input type="file" accept="image/*" id="checkout-proof-upload" class="checkout-proof-input w-full px-3 py-2.5 text-xs rounded-lg border border-luxuryGold/30 bg-[#111] text-white">
+                              ${this.checkoutFormValues.paymentProofName ? `
+                                <div class="rounded-lg border border-luxuryGold/20 bg-[#111] p-2">
+                                  <p class="text-[9px] text-luxuryGold mb-1">✓ Proof uploaded: ${this.checkoutFormValues.paymentProofName}</p>
+                                  ${this.checkoutFormValues.paymentProofData ? `
+                                    <img src="${this.checkoutFormValues.paymentProofData}" alt="Proof" class="max-w-full max-h-40 rounded border border-luxuryGold/20">
+                                  ` : ''}
+                                </div>
+                              ` : ''}
+                            </div>
+                          </div>
+                        ` : '';
+                      })() : ''}
+
+                      <button type="submit" id="cart-page-checkout-submit" ${this.checkoutLoading ? 'disabled' : ''} class="checkout-action bg-luxuryGold text-black hover:bg-luxuryGold/90 font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2">
+                        <span>${this.checkoutLoading ? "Processing Request... / جاري تأكيد الطلب..." : (this.checkoutPage === 'payment-method' ? (selectedPaymentMethod === 'bank' ? 'Continue to Bank Selection' : this.t('confirmOrder')) : (this.checkoutPage === 'bank-selection' ? 'Continue to Bank Details' : this.t('confirmOrder')))}</span>
                         ${getIconSvg('send', 'w-3.5 h-3.5')}
                       </button>
                     </form>
-                    <p class="text-[9.5px] text-center text-gray-500 font-light mt-1">${this.t('cashOnDelivery')}</p>
                   </div>
                 </div>
               ` : ''}
@@ -4475,23 +5168,187 @@
       const citySelect = document.getElementById("cart-page-city-select");
       if (citySelect) {
         citySelect.onchange = (e) => {
-          // Save currently typed values inside this.checkoutFormValues first to prevent loss of state upon re-render!
           const checkoutForm = document.getElementById("cart-page-checkout-form");
           if (checkoutForm) {
             this.checkoutFormValues.customerName = checkoutForm.customerName.value;
             this.checkoutFormValues.phone = checkoutForm.phone.value;
             this.checkoutFormValues.address = checkoutForm.address.value;
+            this.checkoutFormValues.paymentMethod = checkoutForm.paymentMethod.value;
+            this.checkoutFormValues.paymentProofData = checkoutForm.paymentProofData ? checkoutForm.paymentProofData.value : '';
+            this.checkoutFormValues.paymentProofName = checkoutForm.paymentProofName ? checkoutForm.paymentProofName.value : '';
           }
           this.checkoutFormValues.cityId = e.target.value;
           this.renderCartPage();
         };
       }
 
+      const paymentMethodSelect = document.getElementById("cart-page-payment-method");
+      if (paymentMethodSelect) {
+        paymentMethodSelect.onchange = (e) => {
+          const checkoutForm = document.getElementById("cart-page-checkout-form");
+          if (checkoutForm) {
+            this.checkoutFormValues.customerName = checkoutForm.customerName.value;
+            this.checkoutFormValues.phone = checkoutForm.phone.value;
+            this.checkoutFormValues.address = checkoutForm.address.value;
+            this.checkoutFormValues.paymentMethod = e.target.value;
+            this.checkoutFormValues.paymentProofData = checkoutForm.paymentProofData ? checkoutForm.paymentProofData.value : '';
+            this.checkoutFormValues.paymentProofName = checkoutForm.paymentProofName ? checkoutForm.paymentProofName.value : '';
+          }
+          this.renderCartPage();
+        };
+      }
+
+      const proofUpload = document.getElementById("checkout-proof-upload");
+      if (proofUpload) {
+        proofUpload.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+          if (!validTypes.includes(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) {
+            showToast("Please upload a valid payment proof image (JPG, JPEG, PNG, or WebP).", "error");
+            proofUpload.value = '';
+            return;
+          }
+          window.compressImageFile(file, (base64) => {
+            const checkoutForm = document.getElementById("cart-page-checkout-form");
+            if (checkoutForm && checkoutForm.paymentProofData) checkoutForm.paymentProofData.value = base64;
+            if (checkoutForm && checkoutForm.paymentProofName) checkoutForm.paymentProofName.value = file.name;
+            this.checkoutFormValues.paymentProofData = base64;
+            this.checkoutFormValues.paymentProofName = file.name;
+            showToast("Payment proof ready to submit.");
+          });
+        };
+      }
+
+      // Handle payment method card selection
+      document.querySelectorAll(".payment-method-card").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const method = btn.getAttribute("data-method");
+          const checkoutForm = document.getElementById("cart-page-checkout-form");
+          if (checkoutForm) {
+            this.checkoutFormValues.customerName = checkoutForm.customerName.value;
+            this.checkoutFormValues.phone = checkoutForm.phone.value;
+            this.checkoutFormValues.cityId = checkoutForm.cityId.value;
+            this.checkoutFormValues.address = checkoutForm.address.value;
+          }
+          this.checkoutFormValues.paymentMethod = method;
+          this.checkoutFormValues.selectedBankId = "";
+          this.checkoutPage = "payment-method";
+          this.renderCartPage();
+        };
+      });
+
+      // Handle bank selection card clicks
+      document.querySelectorAll(".bank-select-card").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const bankId = btn.getAttribute("data-bank-id");
+          const checkoutForm = document.getElementById("cart-page-checkout-form");
+          if (checkoutForm) {
+            this.checkoutFormValues.customerName = checkoutForm.customerName.value;
+            this.checkoutFormValues.phone = checkoutForm.phone.value;
+            this.checkoutFormValues.cityId = checkoutForm.cityId.value;
+            this.checkoutFormValues.address = checkoutForm.address.value;
+          }
+          this.checkoutFormValues.selectedBankId = bankId;
+          this.checkoutPage = "bank-selection";
+          this.renderCartPage();
+        };
+      });
+
+      // Handle back to payment method button
+      document.querySelectorAll(".back-to-payment").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          this.checkoutPage = "payment-method";
+          this.checkoutFormValues.selectedBankId = "";
+          this.renderCartPage();
+        };
+      });
+
+      // Handle back to bank selection button
+      document.querySelectorAll(".back-to-bank-select").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          this.checkoutPage = "bank-selection";
+          this.renderCartPage();
+        };
+      });
+
+      document.querySelectorAll(".copy-bank-detail").forEach(btn => {
+        btn.onclick = async () => {
+          const value = btn.getAttribute("data-copy-value");
+          if (!value) return;
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(value);
+            } else {
+              const helper = document.createElement("textarea");
+              helper.value = value;
+              document.body.appendChild(helper);
+              helper.select();
+              document.execCommand("copy");
+              helper.remove();
+            }
+            showToast("Bank detail copied.");
+          } catch (err) {
+            console.warn("Copy failed.", err);
+            showToast("Unable to copy automatically.", "error");
+          }
+        };
+      });
+
       const checkoutForm = document.getElementById("cart-page-checkout-form");
       if (checkoutForm) {
-        checkoutForm.onsubmit = (e) => {
+        checkoutForm.onsubmit = async (e) => {
           e.preventDefault();
-          this.processCheckoutPage(e);
+          if (this.checkoutLoading) {
+            console.warn('Checkout already in progress, preventing double submission');
+            return;
+          }
+
+          const activeMethod = this.checkoutFormValues.paymentMethod || 'cod';
+          this.checkoutFormValues.customerName = checkoutForm.customerName.value;
+          this.checkoutFormValues.phone = checkoutForm.phone.value;
+          this.checkoutFormValues.cityId = checkoutForm.cityId.value;
+          this.checkoutFormValues.address = checkoutForm.address.value;
+          
+          // Multi-step checkout progression
+          if (activeMethod === 'bank') {
+            if (this.checkoutPage === 'payment-method') {
+              // Move from payment method selection to bank selection
+              this.checkoutPage = 'bank-selection';
+              this.renderCartPage();
+              return;
+            } else if (this.checkoutPage === 'bank-selection') {
+              // Move from bank selection to bank details
+              if (!this.checkoutFormValues.selectedBankId) {
+                showToast('Please select a bank account to continue.', 'error');
+                return;
+              }
+              this.checkoutPage = 'bank-details';
+              this.renderCartPage();
+              return;
+            } else if (this.checkoutPage === 'bank-details') {
+              // Validate bank details are complete
+              if (!this.checkoutFormValues.selectedBankId) {
+                showToast('Bank selection was lost. Please go back and select again.', 'error');
+                this.checkoutPage = 'bank-selection';
+                this.renderCartPage();
+                return;
+              }
+              // Fall through to order submission
+            }
+          }
+
+          // Update form values from inputs
+          this.checkoutFormValues.paymentMethod = activeMethod;
+          this.checkoutFormValues.paymentProofData = checkoutForm.paymentProofData ? checkoutForm.paymentProofData.value : '';
+          this.checkoutFormValues.paymentProofName = checkoutForm.paymentProofName ? checkoutForm.paymentProofName.value : '';
+          
+          // Submit the order
+          await this.processCheckoutPage(e);
         };
       }
     };
@@ -4538,9 +5395,18 @@
       const phone = formEl.phone.value;
       const cityId = formEl.cityId.value;
       const address = formEl.address.value;
+      const paymentMethod = (formEl.paymentMethod && formEl.paymentMethod.value) || 'cod';
+      const paymentProofData = (formEl.paymentProofData && formEl.paymentProofData.value) || this.checkoutFormValues.paymentProofData || '';
+      const paymentProofName = (formEl.paymentProofName && formEl.paymentProofName.value) || this.checkoutFormValues.paymentProofName || '';
+      const selectedBankId = this.checkoutFormValues.selectedBankId || '';
 
-      if (!name || !phone || !cityId || !address) {
-        showToast("Please fill in all required delivery coordinates.", "error");
+      if (this.checkoutLoading) return;
+
+      // If bank transfer selected and no bank chosen yet, take user to bank selection
+      if (paymentMethod === 'bank' && !selectedBankId) {
+        this.checkoutPage = "bank-selection";
+        this.renderCartPage();
+        showToast("Please select a bank account to continue.", "info");
         return;
       }
 
@@ -4548,99 +5414,56 @@
       this.renderCartPage();
 
       try {
-        const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
-        const cityObj = this.deliveryCities.find(c => c.id === cityId);
-        const deliveryFee = cityObj ? cityObj.price : 0;
-        const cityName = cityObj ? cityObj.name : "Morocco";
-        const total = subtotal + deliveryFee;
-        const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
+        let bankSnapshot = null;
+        if (paymentMethod === 'bank' && selectedBankId) {
+          bankSnapshot = this.getBankAccountById(selectedBankId);
+        }
 
-        const orderItems = this.cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.discountPrice || item.price
-        }));
-
-        const newOrder = {
-          orderId,
-          items: orderItems,
-          total,
-          subtotal,
-          deliveryFee,
-          deliveryCity: cityName,
+        const result = await this.submitUnifiedOrder({
           customerName: name,
           phone,
+          cityId,
           address,
-          status: "pending",
-          paymentMethod: "Telegram Automated",
-          createdAt: new Date()
-        };
+          paymentMethod,
+          paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Proof Submitted',
+          paymentProofData,
+          paymentProofName,
+          selectedBankId,
+          bankSnapshot
+        });
 
-        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        await addDoc(ordersCol, newOrder);
-
-        const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
-        localHistory.push(orderId);
-        localStorage.setItem("sovanex_order_history", JSON.stringify(localHistory));
+        if (!result) {
+          this.checkoutLoading = false;
+          this.renderCartPage();
+          return;
+        }
 
         const purchasedItemIds = this.cart.map(item => item.id);
         localStorage.setItem("sovanex_last_purchased_ids", JSON.stringify(purchasedItemIds));
 
         if (typeof fbq !== 'undefined') {
           fbq('track', 'Purchase', {
-            value: total,
+            value: result.orderData.total,
             currency: 'MAD',
-            contents: orderItems.map(item => ({ id: item.id, quantity: item.quantity })),
+            contents: result.orderData.items.map(item => ({ id: item.id, quantity: item.quantity })),
             content_type: 'product'
           });
         }
 
-        let productsMsg = "";
-        this.cart.forEach(item => {
-          productsMsg += "• *" + item.name + "* x" + item.quantity + " (" + (item.discountPrice || item.price) + " MAD)\n";
-        });
-
-        let msgText = this.telegramSettings.template
-          .replace(/{products}/g, productsMsg.trim())
-          .replace(/{subtotal}/g, subtotal)
-          .replace(/{city}/g, cityName)
-          .replace(/{delivery}/g, deliveryFee)
-          .replace(/{total}/g, total)
-          .replace(/{name}/g, name)
-          .replace(/{address}/g, address)
-          .replace(/{phone}/g, phone)
-          .replace(/{orderId}/g, orderId);
-
-        if (this.telegramSettings.botEnabled && this.telegramSettings.botToken && this.telegramSettings.chatId) {
-          try {
-            const telegramUrl = "https://api.telegram.org/bot" + this.telegramSettings.botToken + "/sendMessage";
-            await fetch(telegramUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: this.telegramSettings.chatId,
-                text: msgText,
-                parse_mode: "Markdown"
-              })
-            });
-          } catch (apiErr) {
-            console.error("Telegram delivery bypassed:", apiErr);
-          }
-        }
-
         this.cart = [];
         localStorage.setItem("bp_cart", JSON.stringify([]));
-        this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "" };
-        this.checkoutLoading = false;
-
+        this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
+        this.checkoutPage = "payment-method";
         this.setPage("order-confirmation");
 
       } catch (err) {
         console.error(err);
-        this.checkoutLoading = false;
         showToast("Order checkout pipeline failed. Please try again.", "error");
+        this.checkoutLoading = false;
         this.renderCartPage();
+      } finally {
+        // Order completed successfully - page changed to order-confirmation
+        // Don't re-render cart page as it would overwrite the confirmation page
       }
     };
 
@@ -5093,11 +5916,18 @@
       if (preloader) {
         preloader.style.opacity = '0';
         preloader.style.visibility = 'hidden';
-        setTimeout(() => preloader.remove(), 400);
+        preloader.style.display = 'none';
+        setTimeout(() => {
+          if (preloader.parentNode) preloader.remove();
+        }, 400);
       }
+      console.log('Preloader hidden');
     };
 
-    const preloaderTimeout = setTimeout(hidePreloader, 1200);
+    const preloaderTimeout = setTimeout(() => {
+      console.log('Preloader timeout triggered at 1200ms');
+      hidePreloader();
+    }, 1200);
 
     async function initAppSequence() {
       try {
