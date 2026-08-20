@@ -245,17 +245,6 @@
 </head>
 <body class="font-sans antialiased overflow-x-hidden">
 
-  <!-- INSTANT LUXURY PRELOADER -->
-  <div id="app-preloader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0A0A0A; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease-out, visibility 0.4s ease-out; font-family: 'Playfair Display', serif;">
-    <div style="font-size: 32px; letter-spacing: 0.3em; color: #FFFFFF; margin-bottom: 24px; font-weight: 700; text-align: center;">
-      SOV<span style="color: var(--accent-color); font-family: 'Plus Jakarta Sans', sans-serif;">ANEX</span>
-    </div>
-    <div style="width: 32px; height: 32px; border: 1.5px solid var(--accent-glow); border-top: 1.5px solid var(--accent-color); border-radius: 50%; animation: preloader-spin 0.9s linear infinite;"></div>
-    <div style="margin-top: 20px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; color: var(--accent-color); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 400;">
-      Loading Shop Collections...
-    </div>
-  </div>
-
   <!-- Main Application Wrapper -->
   <div id="app-wrapper" class="min-h-screen flex flex-col justify-between text-white selection:bg-luxuryGold selection:text-black">
     
@@ -916,7 +905,7 @@
       `;
     };
 
-    // Load fallback products immediately so UI doesn't show "Loading..." indefinitely
+    // Load cached products immediately, falling back to the built-in catalog on first visit.
     store.products = [
       {
         name: "Rose Empress Gold Chrono",
@@ -987,7 +976,29 @@
         id: 'fallback-4'
       }
     ];
+    try {
+      const cachedProducts = JSON.parse(localStorage.getItem("sovanex_products_cache") || "null");
+      if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
+        store.products = cachedProducts;
+      }
+    } catch (error) {
+      console.warn("Cached products could not be restored:", error);
+    }
     store.loadingProducts = false;
+
+    store.getProductSignature = function(products) {
+      return products.map(product => [
+        product.id,
+        product.name,
+        product.price,
+        product.discountPrice,
+        product.imageURL,
+        product.stock,
+        product.isPromotion,
+        product.isBestSeller,
+        product.isPinned
+      ].join("\u001f")).join("\u001e");
+    };
 
     store.updateDOM = function() {
       this.updateTheme(); // Sync theme dynamically based on current selections
@@ -1259,7 +1270,11 @@
             list.push({ id: doc.id, ...doc.data() });
             console.log('Added product:', doc.id);
           });
-          store.products = list;
+          const productsChanged = list.length > 0 && store.getProductSignature(store.products) !== store.getProductSignature(list);
+          if (list.length > 0) localStorage.setItem("sovanex_products_cache", JSON.stringify(list));
+          if (productsChanged) {
+            store.products = list;
+          }
           console.log('Store products updated with', list.length, 'products');
 
           if (list.length === 0) {
@@ -1343,7 +1358,7 @@
 
           console.log('Setting loadingProducts to false');
           store.loadingProducts = false;
-          store.updateDOM();
+          if (productsChanged) store.updateDOM();
 
           if (window.location.pathname.startsWith('/product/')) {
             store.handleRouting();
@@ -5924,11 +5939,6 @@
       console.log('Preloader hidden');
     };
 
-    const preloaderTimeout = setTimeout(() => {
-      console.log('Preloader timeout triggered at 1200ms');
-      hidePreloader();
-    }, 1200);
-
     async function initAppSequence() {
       try {
         let user = auth.currentUser;
@@ -5976,14 +5986,23 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'order-confirmation'];
+      const initialPage = (window.location.pathname || '/').replace(/^\/+/, '') || 'home';
+      store.currentPage = validPages.includes(initialPage) ? initialPage : 'home';
+      history.scrollRestoration = 'manual';
       store.updateDOM();
+      hidePreloader();
 
-      initAppSequence().then(() => {
-        clearTimeout(preloaderTimeout);
-        hidePreloader();
-        
-        store.handleRouting();
+      const savedScrollPosition = Number(sessionStorage.getItem(`sovanex_scroll_${window.location.pathname}`) || 0);
+      if (savedScrollPosition > 0) {
+        requestAnimationFrame(() => window.scrollTo(0, savedScrollPosition));
+      }
+
+      window.addEventListener('beforeunload', () => {
+        sessionStorage.setItem(`sovanex_scroll_${window.location.pathname}`, String(window.scrollY));
       });
+
+      initAppSequence().then(() => store.handleRouting());
 
       window.addEventListener("popstate", () => {
         store.handleRouting();
