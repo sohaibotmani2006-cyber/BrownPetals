@@ -4468,6 +4468,9 @@
                           <p class="text-gray-500">RIB: ${bank.rib}</p>
                         </div>
                         <div class="flex gap-1">
+                          <button type="button" class="admin-edit-bank px-2 py-1 text-[8px] font-bold rounded uppercase bg-luxuryGold text-black" data-bank-idx="${idx}" data-action="edit">
+                            Edit
+                          </button>
                           <button type="button" class="admin-toggle-bank-status px-2 py-1 text-[8px] font-bold rounded uppercase ${bank.isActive ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400'}" data-bank-idx="${idx}" data-action="toggle">
                             ${bank.isActive ? 'Active' : 'Disabled'}
                           </button>
@@ -4481,13 +4484,14 @@
                 ` : `<p class="text-[9px] text-gray-500 italic">No bank accounts configured yet. Add one below.</p>`}
 
                 <div class="rounded-lg border border-luxuryGold/30 bg-[#111] p-3 space-y-2">
-                  <p class="text-[9px] font-bold text-luxuryGold uppercase">Add New Bank Account</p>
+                  <p id="admin-bank-form-title" class="text-[9px] font-bold text-luxuryGold uppercase">Add New Bank Account</p>
                   <input type="text" placeholder="Bank Name (e.g., Banque Populaire)" class="admin-bank-add-name w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <input type="text" placeholder="Account Holder Name" class="admin-bank-add-holder w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <input type="text" placeholder="Account Number" class="admin-bank-add-number w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <input type="text" placeholder="RIB" class="admin-bank-add-rib w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <input type="text" placeholder="IBAN" class="admin-bank-add-iban w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <button type="button" class="admin-bank-add-btn w-full px-2 py-1 text-[9px] font-bold rounded uppercase bg-luxuryGold text-black hover:bg-luxuryGold/90">Add Bank Account</button>
+                  <button type="button" class="admin-bank-cancel-edit hidden w-full px-2 py-1 text-[9px] font-bold rounded uppercase border border-white/15 text-gray-300">Cancel Edit</button>
                 </div>
 
                 <input type="hidden" name="bankAccounts" id="admin-bank-accounts-json" value='${JSON.stringify(this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || [])}'>
@@ -4608,6 +4612,43 @@
       }
 
       // Bank account management handlers
+      const bankSettingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+      const persistBankAccounts = async (accounts) => {
+        const normalizedAccounts = accounts.map(account => ({ ...account }));
+        store.settings = { ...store.settings, bankAccounts: normalizedAccounts };
+        store.bankAccounts = normalizedAccounts;
+        localStorage.setItem("sovanex_settings", JSON.stringify(store.settings));
+        await setDoc(bankSettingsRef, { bankAccounts: normalizedAccounts }, { merge: true });
+      };
+
+      const clearBankEditForm = () => {
+        document.querySelectorAll(".admin-bank-add-name, .admin-bank-add-holder, .admin-bank-add-number, .admin-bank-add-rib, .admin-bank-add-iban").forEach(input => { input.value = ''; });
+        const addButton = document.querySelector(".admin-bank-add-btn");
+        if (addButton) delete addButton.dataset.editIndex;
+        document.getElementById("admin-bank-form-title")?.replaceChildren(document.createTextNode("Add New Bank Account"));
+        document.querySelector(".admin-bank-cancel-edit")?.classList.add("hidden");
+      };
+
+      document.querySelectorAll(".admin-edit-bank").forEach(btn => {
+        btn.onclick = () => {
+          const idx = Number(btn.getAttribute("data-bank-idx"));
+          const accounts = JSON.parse(document.getElementById("admin-bank-accounts-json")?.value || '[]');
+          const account = accounts[idx];
+          if (!account) return;
+          document.querySelector(".admin-bank-add-name").value = account.bankName || '';
+          document.querySelector(".admin-bank-add-holder").value = account.accountHolderName || '';
+          document.querySelector(".admin-bank-add-number").value = account.accountNumber || '';
+          document.querySelector(".admin-bank-add-rib").value = account.rib || '';
+          document.querySelector(".admin-bank-add-iban").value = account.iban || '';
+          const addButton = document.querySelector(".admin-bank-add-btn");
+          addButton.dataset.editIndex = String(idx);
+          document.getElementById("admin-bank-form-title")?.replaceChildren(document.createTextNode("Edit Bank Account"));
+          document.querySelector(".admin-bank-cancel-edit")?.classList.remove("hidden");
+        };
+      });
+
+      document.querySelector(".admin-bank-cancel-edit")?.addEventListener("click", clearBankEditForm);
+
       document.querySelectorAll(".admin-toggle-bank-status").forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
@@ -4619,8 +4660,12 @@
               if (accounts[idx]) {
                 accounts[idx].isActive = !accounts[idx].isActive;
                 bankAccountsJson.value = JSON.stringify(accounts);
-                showToast(accounts[idx].isActive ? "Bank account enabled." : "Bank account disabled.");
-                store.renderAdminGeneralSettings(document.getElementById("app-content"));
+                persistBankAccounts(accounts)
+                  .then(() => {
+                    showToast(accounts[idx].isActive ? "Bank account enabled." : "Bank account disabled.");
+                    store.renderAdminGeneralSettings(document.getElementById("app-content"));
+                  })
+                  .catch(err => showToast("Could not save bank status: " + err.message, "error"));
               }
             } catch (err) {
               console.error("Error toggling bank account:", err);
@@ -4640,8 +4685,12 @@
               const deleted = accounts[idx];
               accounts.splice(idx, 1);
               bankAccountsJson.value = JSON.stringify(accounts);
-              showToast(`Bank account ${deleted.bankName} deleted.`);
-              store.renderAdminGeneralSettings(document.getElementById("app-content"));
+              persistBankAccounts(accounts)
+                .then(() => {
+                  showToast(`Bank account ${deleted.bankName} deleted.`);
+                  store.renderAdminGeneralSettings(document.getElementById("app-content"));
+                })
+                .catch(err => showToast("Could not delete bank account: " + err.message, "error"));
             } catch (err) {
               console.error("Error deleting bank account:", err);
             }
@@ -4652,7 +4701,6 @@
       document.querySelectorAll(".admin-bank-add-btn").forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
-          const form = btn.closest(".admin-bank-add-btn").parentElement;
           const nameInput = document.querySelector(".admin-bank-add-name");
           const holderInput = document.querySelector(".admin-bank-add-holder");
           const numberInput = document.querySelector(".admin-bank-add-number");
@@ -4683,16 +4731,20 @@
                 iban,
                 isActive: true
               };
-              accounts.push(newBank);
+              const editIndex = Number(btn.dataset.editIndex);
+              if (Number.isInteger(editIndex) && editIndex >= 0 && accounts[editIndex]) {
+                accounts[editIndex] = { ...accounts[editIndex], ...newBank, id: accounts[editIndex].id };
+              } else {
+                accounts.push(newBank);
+              }
               bankAccountsJson.value = JSON.stringify(accounts);
-              // Clear inputs
-              nameInput.value = '';
-              holderInput.value = '';
-              numberInput.value = '';
-              ribInput.value = '';
-              ibanInput.value = '';
-              showToast(`Bank account ${bankName} added successfully.`);
-              store.renderAdminGeneralSettings(document.getElementById("app-content"));
+              persistBankAccounts(accounts)
+                .then(() => {
+                  clearBankEditForm();
+                  showToast(editIndex >= 0 ? `Bank account ${bankName} updated successfully.` : `Bank account ${bankName} added successfully.`);
+                  store.renderAdminGeneralSettings(document.getElementById("app-content"));
+                })
+                .catch(err => showToast("Could not save bank account: " + err.message, "error"));
             } catch (err) {
               console.error("Error adding bank account:", err);
               showToast("Error adding bank account.", "error");
