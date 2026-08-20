@@ -771,7 +771,7 @@
         // Normalize path to page key
         const raw = pathname.replace(/^\/+/, '');
         const page = raw === '' ? 'home' : raw;
-        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'order-confirmation'];
+        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'bank-transfer', 'order-confirmation'];
         if (validPages.includes(page)) {
           const pageChanged = (this.currentPage !== page);
           this.currentPage = page;
@@ -823,10 +823,31 @@
       return "All";
     };
 
+    try {
+      const cachedSettings = JSON.parse(localStorage.getItem("sovanex_settings") || "null");
+      if (cachedSettings && typeof cachedSettings === "object") {
+        store.settings = { ...store.settings, ...cachedSettings };
+      }
+    } catch (error) {
+      console.warn("Cached settings could not be restored:", error);
+    }
+
     window.compressImageFile = (file, callback) => {
       const reader = new FileReader();
+      let completed = false;
+      const complete = (dataUrl) => {
+        if (completed) return;
+        completed = true;
+        callback(dataUrl);
+      };
+
+      reader.onerror = () => {
+        console.error("Image file could not be read.");
+      };
       reader.onload = (e) => {
+        const originalDataUrl = e.target.result;
         const img = new Image();
+        img.onerror = () => complete(originalDataUrl);
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const maxDim = 800; // Optimal constraint to stay under Firestore document limitations
@@ -843,14 +864,22 @@
               height = maxDim;
             }
           }
+          if (!width || !height) {
+            complete(originalDataUrl);
+            return;
+          }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            complete(originalDataUrl);
+            return;
+          }
           ctx.drawImage(img, 0, 0, width, height);
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); // 0.7 quality for superb optimization
-          callback(compressedBase64);
+          complete(compressedBase64);
         };
-        img.src = e.target.result;
+        img.src = originalDataUrl;
       };
       reader.readAsDataURL(file);
     };
@@ -2077,7 +2106,7 @@
         this.renderPoliciesPage();
       } else if (this.currentPage === "admin") {
         this.renderAdminPage();
-      } else if (this.currentPage === "cart") {
+      } else if (this.currentPage === "cart" || this.currentPage === "bank-transfer") {
         this.renderCartPage();
       } else if (this.currentPage === "order-confirmation") {
         this.renderOrderConfirmationPage();
@@ -4820,6 +4849,7 @@
       if (!container) return;
 
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+      const isBankTransferPage = this.currentPage === 'bank-transfer';
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
 
       const selectedCityId = this.checkoutFormValues.cityId;
@@ -4867,7 +4897,7 @@
       }).join('');
 
       container.innerHTML = `
-        <div class="max-w-6xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+        <div class="${isBankTransferPage ? 'max-w-7xl' : 'max-w-6xl'} mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           
           <!-- STICKY FLOATING BACK-TO-HOME CAPSULE -->
           <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
@@ -4878,7 +4908,8 @@
 
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('yourSelection')}</span>
-            <h1 class="text-3xl md:text-4xl font-serif text-white uppercase tracking-wider">${this.t('sovereignCart')}</h1>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">${isBankTransferPage ? 'BANK TRANSFER' : this.t('sovereignCart')}</h1>
+            ${isBankTransferPage ? '<p class="max-w-2xl mx-auto text-sm text-gray-400 leading-relaxed">Review the selected bank account details below, complete your transfer, and upload the confirmation screenshot.</p>' : ''}
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
           </div>
 
@@ -5083,42 +5114,46 @@
                       ${this.checkoutPage === 'bank-details' && selectedPaymentMethod === 'bank' && this.checkoutFormValues.selectedBankId ? (() => {
                         const selectedBank = this.getBankAccountById(this.checkoutFormValues.selectedBankId);
                         return selectedBank ? `
-                          <div class="checkout-step-content space-y-5">
+                          <div class="checkout-step-content space-y-6 ${isBankTransferPage ? 'bank-transfer-detail-page' : ''}">
                             <div class="flex items-center gap-3">
                               <button type="button" class="back-to-bank-select checkout-action !w-auto px-4 py-2 rounded-lg text-[9px] text-luxuryGold uppercase font-bold bg-black/50 border border-luxuryGold/30 hover:bg-luxuryGold/10 transition">← Back to Bank Accounts</button>
                             </div>
-                            <div class="border-b border-luxuryGold/15 pb-4">
+                            <div class="border-b border-luxuryGold/15 pb-5">
                               <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">STEP 3</p>
                               <div class="flex flex-wrap items-end justify-between gap-3 mt-1">
                                 <h2 class="text-xl sm:text-2xl font-serif text-luxuryGold uppercase tracking-wider">BANK DETAILS</h2>
                                 <span class="text-xl font-serif font-bold text-luxuryGold">${total} MAD</span>
                               </div>
                             </div>
-                            <div class="rounded-2xl border border-luxuryGold/20 bg-black/50 p-5 space-y-4">
-                              <p class="text-lg font-bold font-serif text-white">🏦 ${selectedBank.bankName}</p>
-                              <div class="rounded-xl border border-luxuryGold/15 bg-[#111] p-4 grid gap-4 sm:grid-cols-2">
+                            <div class="rounded-2xl border border-luxuryGold/20 bg-black/50 p-6 sm:p-8 space-y-5 shadow-xl">
+                              <p class="text-2xl font-bold font-serif text-white">🏦 ${selectedBank.bankName}</p>
+                              <div class="rounded-xl border border-luxuryGold/15 bg-[#111] p-5 sm:p-6 grid gap-5 sm:grid-cols-2">
                                 <div class="space-y-1">
                                   <p class="text-[10px] text-gray-400 uppercase tracking-wider">Account Holder</p>
-                                  <p class="text-sm font-bold text-white break-words">${selectedBank.accountHolderName}</p>
+                                  <p class="text-base font-bold text-white break-words">${selectedBank.accountHolderName}</p>
                                 </div>
                                 <div class="space-y-1">
                                   <p class="text-[10px] text-gray-400 uppercase tracking-wider">Account Number</p>
-                                  <p class="font-mono text-xs text-gray-300 break-all">${selectedBank.accountNumber}</p>
+                                  <p class="font-mono text-sm text-gray-300 break-all">${selectedBank.accountNumber}</p>
                                 </div>
                                 <div class="space-y-1">
                                   <p class="text-[10px] text-gray-400 uppercase tracking-wider">RIB</p>
-                                  <p class="font-mono text-xs text-gray-300 break-all">${selectedBank.rib}</p>
+                                  <p class="font-mono text-sm text-gray-300 break-all">${selectedBank.rib}</p>
                                 </div>
                                 <div class="space-y-1">
                                   <p class="text-[10px] text-gray-400 uppercase tracking-wider">IBAN</p>
-                                  <p class="font-mono text-xs text-gray-300 break-all">${selectedBank.iban}</p>
+                                  <p class="font-mono text-sm text-gray-300 break-all">${selectedBank.iban}</p>
                                 </div>
                               </div>
                             </div>
-                            <div class="rounded-2xl border border-luxuryGold/25 bg-gradient-to-br from-luxuryGold/10 to-transparent p-5 space-y-3">
+                            <div class="rounded-2xl border border-luxuryGold/25 bg-gradient-to-br from-luxuryGold/10 to-transparent p-6 space-y-4">
                               <p class="text-sm font-bold text-luxuryGold uppercase tracking-wider">HOW BANK TRANSFER WORKS</p>
-                              <p class="text-sm text-gray-300 leading-relaxed">Please transfer the exact amount shown above to the selected bank account.</p>
-                              <p class="text-sm text-gray-300 leading-relaxed">After completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.</p>
+                              <p class="text-base text-gray-200 leading-relaxed">Please transfer the exact amount shown above to the selected bank account.</p>
+                              <p class="text-base text-gray-200 leading-relaxed">After completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.</p>
+                              <div dir="rtl" lang="ar" class="border-t border-luxuryGold/20 pt-4 text-right text-base text-gray-200 leading-loose">
+                                <p>يرجى تحويل <strong>المبلغ المحدد أعلاه بالضبط</strong> إلى الحساب البنكي الذي اخترته.</p>
+                                <p class="mt-2">بعد إتمام التحويل، يرجى <strong>رفع لقطة شاشة لتأكيد التحويل البنكي</strong> أدناه، حتى نتمكن من التحقق من عملية الدفع ومعالجة طلبك.</p>
+                              </div>
                             </div>
                             <div class="space-y-3 rounded-2xl border border-luxuryGold/20 bg-black/50 p-5">
                               <label class="block text-[11px] uppercase tracking-widest text-luxuryGold font-bold">PAYMENT PROOF SCREENSHOT</label>
@@ -5149,6 +5184,15 @@
           </div>
         </div>
       `;
+
+      if (isBankTransferPage) {
+        const bankPage = container.firstElementChild;
+        const cartSummary = bankPage?.querySelector('[class~="md:col-span-5"]');
+        const bankWorkspace = bankPage?.querySelector('[class~="md:col-span-7"]');
+        cartSummary?.remove();
+        bankWorkspace?.classList.remove('md:col-span-7');
+        bankWorkspace?.classList.add('md:col-span-12', 'max-w-4xl', 'mx-auto', 'w-full');
+      }
 
       const shopBtn = document.getElementById("cart-page-shop-btn");
       if (shopBtn) shopBtn.onclick = () => { this.setPage("shop"); };
@@ -5236,6 +5280,8 @@
             proofUpload.value = '';
             return;
           }
+          this.checkoutFormValues.paymentProofName = file.name;
+          showToast("Payment proof selected. Preparing upload...");
           window.compressImageFile(file, (base64) => {
             const checkoutForm = document.getElementById("cart-page-checkout-form");
             if (checkoutForm && checkoutForm.paymentProofData) checkoutForm.paymentProofData.value = base64;
@@ -5261,7 +5307,11 @@
           }
           this.checkoutFormValues.paymentMethod = method;
           this.checkoutFormValues.selectedBankId = "";
-          this.checkoutPage = "payment-method";
+          this.checkoutPage = method === 'bank' ? "bank-selection" : "payment-method";
+          if (method === 'bank') {
+            this.setPage("bank-transfer");
+            return;
+          }
           this.renderCartPage();
         };
       });
@@ -5290,7 +5340,7 @@
           e.preventDefault();
           this.checkoutPage = "payment-method";
           this.checkoutFormValues.selectedBankId = "";
-          this.renderCartPage();
+          this.setPage("cart");
         };
       });
 
@@ -5998,7 +6048,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'order-confirmation'];
+      const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'bank-transfer', 'order-confirmation'];
       const initialPage = (window.location.pathname || '/').replace(/^\/+/, '') || 'home';
       store.currentPage = validPages.includes(initialPage) ? initialPage : 'home';
       history.scrollRestoration = 'manual';
