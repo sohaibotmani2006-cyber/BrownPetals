@@ -4462,6 +4462,7 @@
                   <div class="space-y-2 mb-4 max-h-64 overflow-y-auto">
                     ${(this.settings?.bankAccounts || this.paymentSettingsDefaults.bankAccounts || []).map((bank, idx) => `
                       <div class="rounded-lg border border-luxuryGold/10 bg-[#111] p-2 flex items-start justify-between gap-2">
+                        ${bank.logoURL ? `<img src="${bank.logoURL}" alt="${bank.bankName} logo" class="w-10 h-10 rounded-lg object-contain bg-white p-1 shrink-0" onerror="this.style.display='none'">` : ''}
                         <div class="flex-1 text-[9px]">
                           <p class="font-bold text-white">${bank.bankName}</p>
                           <p class="text-gray-400">Account: ${bank.accountHolderName}</p>
@@ -4490,6 +4491,12 @@
                   <input type="text" placeholder="Account Number" class="admin-bank-add-number w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <input type="text" placeholder="RIB" class="admin-bank-add-rib w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
                   <input type="text" placeholder="IBAN" class="admin-bank-add-iban w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <input type="url" placeholder="Bank logo image URL (optional)" class="admin-bank-add-logo-url w-full px-2 py-1 text-[9px] rounded bg-black border border-white/10 text-white">
+                  <label class="cursor-pointer w-full px-2 py-1 text-[9px] font-bold rounded uppercase border border-luxuryGold/50 text-luxuryGold text-center">
+                    Upload Bank Logo
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" class="hidden admin-bank-add-logo-file">
+                  </label>
+                  <p class="admin-bank-logo-status text-[9px] text-gray-500">Optional: paste a URL or upload a logo image.</p>
                   <button type="button" class="admin-bank-add-btn w-full px-2 py-1 text-[9px] font-bold rounded uppercase bg-luxuryGold text-black hover:bg-luxuryGold/90">Add Bank Account</button>
                   <button type="button" class="admin-bank-cancel-edit hidden w-full px-2 py-1 text-[9px] font-bold rounded uppercase border border-white/15 text-gray-300">Cancel Edit</button>
                 </div>
@@ -4622,7 +4629,7 @@
       };
 
       const clearBankEditForm = () => {
-        document.querySelectorAll(".admin-bank-add-name, .admin-bank-add-holder, .admin-bank-add-number, .admin-bank-add-rib, .admin-bank-add-iban").forEach(input => { input.value = ''; });
+        document.querySelectorAll(".admin-bank-add-name, .admin-bank-add-holder, .admin-bank-add-number, .admin-bank-add-rib, .admin-bank-add-iban, .admin-bank-add-logo-url").forEach(input => { input.value = ''; });
         const addButton = document.querySelector(".admin-bank-add-btn");
         if (addButton) delete addButton.dataset.editIndex;
         document.getElementById("admin-bank-form-title")?.replaceChildren(document.createTextNode("Add New Bank Account"));
@@ -4640,6 +4647,7 @@
           document.querySelector(".admin-bank-add-number").value = account.accountNumber || '';
           document.querySelector(".admin-bank-add-rib").value = account.rib || '';
           document.querySelector(".admin-bank-add-iban").value = account.iban || '';
+          document.querySelector(".admin-bank-add-logo-url").value = account.logoURL || '';
           const addButton = document.querySelector(".admin-bank-add-btn");
           addButton.dataset.editIndex = String(idx);
           document.getElementById("admin-bank-form-title")?.replaceChildren(document.createTextNode("Edit Bank Account"));
@@ -4648,6 +4656,15 @@
       });
 
       document.querySelector(".admin-bank-cancel-edit")?.addEventListener("click", clearBankEditForm);
+
+      document.querySelector(".admin-bank-add-logo-file")?.addEventListener("change", (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        window.compressImageFile(file, (base64) => {
+          document.querySelector(".admin-bank-add-logo-url").value = base64;
+          document.querySelector(".admin-bank-logo-status").textContent = `Logo selected: ${file.name}`;
+        });
+      });
 
       document.querySelectorAll(".admin-toggle-bank-status").forEach(btn => {
         btn.onclick = (e) => {
@@ -4706,12 +4723,14 @@
           const numberInput = document.querySelector(".admin-bank-add-number");
           const ribInput = document.querySelector(".admin-bank-add-rib");
           const ibanInput = document.querySelector(".admin-bank-add-iban");
+          const logoInput = document.querySelector(".admin-bank-add-logo-url");
 
           const bankName = nameInput?.value.trim();
           const accountHolderName = holderInput?.value.trim();
           const accountNumber = numberInput?.value.trim();
           const rib = ribInput?.value.trim();
           const iban = ibanInput?.value.trim();
+          const logoURL = logoInput?.value.trim() || '';
 
           if (!bankName || !accountHolderName || !accountNumber || !rib || !iban) {
             showToast("Please fill in all bank account fields.", "error");
@@ -4729,6 +4748,7 @@
                 accountNumber,
                 rib,
                 iban,
+                logoURL,
                 isActive: true
               };
               const editIndex = Number(btn.dataset.editIndex);
@@ -5148,6 +5168,7 @@
                               return `
                                 <button type="button" aria-pressed="${isSelected}" class="bank-select-card cursor-pointer w-full p-5 rounded-2xl border-2 text-left transition-all duration-300 ${isSelected ? 'border-luxuryGold bg-luxuryGold/10 shadow-lg shadow-luxuryGold/20' : 'border-white/15 bg-black/40 hover:border-luxuryGold/50 hover:bg-black/60'}" data-bank-id="${bank.id}">
                                   <div class="flex items-start justify-between gap-3">
+                                    ${bank.logoURL ? `<img src="${bank.logoURL}" alt="${bank.bankName} logo" class="w-12 h-12 rounded-lg object-contain bg-white p-1 shrink-0" onerror="this.style.display='none'">` : '<span class="text-3xl shrink-0">🏦</span>'}
                                     <div class="flex-1">
                                       <p class="text-base font-bold font-serif ${isSelected ? 'text-luxuryGold' : 'text-white'} mb-1">${bank.bankName}</p>
                                       <p class="text-xs text-gray-400">Account Holder: <span class="text-gray-300 font-medium">${bank.accountHolderName}</span></p>
@@ -5178,7 +5199,10 @@
                               </div>
                             </div>
                             <div class="rounded-2xl border border-luxuryGold/20 bg-black/50 p-6 sm:p-8 space-y-5 shadow-xl">
-                              <p class="text-2xl font-bold font-serif text-white">🏦 ${selectedBank.bankName}</p>
+                              <div class="flex items-center gap-4">
+                                ${selectedBank.logoURL ? `<img src="${selectedBank.logoURL}" alt="${selectedBank.bankName} logo" class="w-16 h-16 rounded-xl object-contain bg-white p-2" onerror="this.style.display='none'">` : '<span class="text-4xl">🏦</span>'}
+                                <p class="text-2xl font-bold font-serif text-white">${selectedBank.bankName}</p>
+                              </div>
                               <div class="rounded-xl border border-luxuryGold/15 bg-[#111] p-5 sm:p-6 grid gap-5 sm:grid-cols-2">
                                 <div class="space-y-1">
                                   <p class="text-[10px] text-gray-400 uppercase tracking-wider">Account Holder</p>
