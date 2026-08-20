@@ -4,6 +4,7 @@ const SPA_ROUTES = new Set([
   '/contact',
   '/policies',
   '/cart',
+  '/bank-transfer',
   '/order-confirmation',
   '/admin',
 ]);
