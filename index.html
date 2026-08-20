@@ -390,7 +390,18 @@
       products: [],
       orders: [],
       reviews: [],
-      categories: [],
+      categories: (() => {
+        const defaultCategories = [
+          { id: 'default-watches', name: 'Watches', order: 0, isActive: true },
+          { id: 'default-accessories', name: 'Accessories', order: 1, isActive: true }
+        ];
+        try {
+          const cachedCategories = JSON.parse(localStorage.getItem("sovanex_categories_cache") || "null");
+          return Array.isArray(cachedCategories) && cachedCategories.length > 0 ? cachedCategories : defaultCategories;
+        } catch (error) {
+          return defaultCategories;
+        }
+      })(),
       lookbook: [],
       deliveryCities: [],
       cart: JSON.parse(localStorage.getItem("bp_cart")) || [],
@@ -1425,14 +1436,15 @@
         
         if (list.length === 0) {
           const defaults = ["Watches", "Accessories"];
+          store.categories = defaults.map((name, index) => ({ name, order: index, isActive: true }));
+          localStorage.setItem("sovanex_categories_cache", JSON.stringify(store.categories));
           defaults.forEach(async (name, index) => {
             const newCat = { name, order: index, isActive: true, createdAt: new Date() };
-            if (!store.isAdmin) store.categories.push(newCat);
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'categories'), newCat);
           });
-          if (!store.isAdmin) store.categories.sort((a,b) => (a.order || 0) - (b.order || 0));
         } else {
           store.categories = list;
+          localStorage.setItem("sovanex_categories_cache", JSON.stringify(list));
         }
         
         store.loadingCategories = false;
