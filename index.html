@@ -47,7 +47,8 @@
         "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
         "firebase/storage": "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js"
       }
-          </script>
+    }
+  </script>
   <style>
     :root {
       --accent-color: #D4AF37; /* Default Luxury Gold */
@@ -292,6 +293,7 @@
 
     // Global application namespace
     const appId = "sovanex";
+    const STANDARD_DELIVERY_FEE = 35;
     
     // Explicit Firebase credentials
     const firebaseConfig = {
@@ -1508,27 +1510,39 @@
       else getDocs(lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
 
       const citiesRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
+      const moroccanCityDefaults = [
+        ['Agadir', 35], ['Al Hoceima', 45], ['Azemmour', 35], ['Beni Mellal', 40], ['Berkane', 40],
+        ['Berrechid', 35], ['Ben Guerir', 45], ['Casablanca', 35], ['Chefchaouen', 50], ['Dakhla', 80],
+        ['El Jadida', 35], ['Errachidia', 55], ['Essaouira', 50], ['Fes', 40], ['Fnideq', 50],
+        ['Guelmim', 60], ['Ifrane', 50], ['Inezgane', 35], ['Jerada', 55], ['Kelaat M\'Gouna', 55],
+        ['Kenitra', 30], ['Khemisset', 35], ['Khenifra', 45], ['Khouribga', 40], ['Laayoune', 75],
+        ['Larache', 40], ['Marrakech', 45], ['Meknes', 35], ['Midelt', 55], ['Mohammedia', 30],
+        ['Nador', 50], ['Ouarzazate', 55], ['Oujda', 50], ['Rabat', 20], ['Safi', 45],
+        ['Sale', 20], ['Sefrou', 45], ['Settat', 35], ['Sidi Bennour', 40], ['Sidi Ifni', 65],
+        ['Sidi Kacem', 40], ['Sidi Slimane', 35], ['Skhirat', 25], ['Smara', 80], ['Tan-Tan', 70],
+        ['Tangier', 45], ['Taourirt', 50], ['Taroudant', 45], ['Tata', 65], ['Taza', 45],
+        ['Tetouan', 45], ['Tinghir', 60], ['Tiznit', 55], [' Zagora', 65]
+      ].map(([name], index) => ({ id: `default-city-${index}`, name: name.trim(), price: STANDARD_DELIVERY_FEE, isActive: true, freeDelivery: false }));
       const handleCities = (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
 
         if (list.length === 0) {
-          const defaults = [
-            { name: "Casablanca", price: 35, isActive: true },
-            { name: "Rabat", price: 20, isActive: true },
-            { name: "Kénitra", price: 30, isActive: true },
-            { name: "Marrakech", price: 45, isActive: true },
-            { name: "Tanger", price: 45, isActive: true },
-            { name: "Fès", price: 40, isActive: true }
-          ];
-          defaults.forEach(async (city) => {
+          moroccanCityDefaults.forEach(async (city) => {
             const newCity = { ...city, createdAt: new Date() };
             if (!store.isAdmin) store.deliveryCities.push(newCity);
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities'), newCity);
+            if (store.isAdmin) await addDoc(citiesRef, newCity);
           });
           if (!store.isAdmin) store.deliveryCities.sort((a,b) => a.name.localeCompare(b.name));
         } else {
-          store.deliveryCities = list.sort((a,b) => a.name.localeCompare(b.name));
+          const existingNames = new Set(list.map(city => city.name.toLowerCase()));
+          const missingCities = moroccanCityDefaults.filter(city => !existingNames.has(city.name.toLowerCase()));
+          store.deliveryCities = [...list.map(city => ({ ...city, price: STANDARD_DELIVERY_FEE })), ...missingCities].sort((a,b) => a.name.localeCompare(b.name));
+          if (store.isAdmin) {
+            missingCities.forEach(async city => {
+              await addDoc(citiesRef, { ...city, createdAt: new Date() });
+            });
+          }
         }
         store.updateDOM();
       };
@@ -1595,8 +1609,8 @@
               { name: "Oceanic Imperial Nautilus", quantity: 1, price: 1500 }
             ],
             subtotal: 1500,
-            deliveryFee: 20,
-            total: 1520,
+            deliveryFee: 35,
+            total: 1535,
             paymentMethod: "Telegram Automated",
             createdAt: new Date()
           };
@@ -1841,8 +1855,10 @@
     };
 
     store.getCartDeliveryFee = function(city) {
-      if (!city || (this.cart.length > 0 && this.cart.every(item => this.isCartItemFreeDelivery(item)))) return 0;
-      return city.price || 0;
+      if (!city) return 0;
+      if (city.freeDelivery === true) return 0;
+      if (this.cart.length > 0 && this.cart.every(item => this.isCartItemFreeDelivery(item))) return 0;
+      return STANDARD_DELIVERY_FEE;
     };
 
     store.resetCheckoutState = function() {
@@ -3966,6 +3982,7 @@
                 <tr>
                   <th class="p-4">City Name</th>
                   <th class="p-4">Delivery Price</th>
+                  <th class="p-4">Delivery Offer</th>
                   <th class="p-4">Fulfillment Status</th>
                   <th class="p-4 text-right">Actions</th>
                 </tr>
@@ -3974,7 +3991,8 @@
                 ${this.deliveryCities.map(c => `
                   <tr class="hover:bg-white/5 transition">
                     <td class="p-4 font-semibold text-white">${c.name}</td>
-                    <td class="p-4 font-bold text-luxuryGold">${c.price} MAD</td>
+                    <td class="p-4 font-bold text-luxuryGold">${c.freeDelivery ? 'FREE' : '35 DH'}</td>
+                    <td class="p-4">${c.freeDelivery ? '<span class="text-[10px] font-bold uppercase tracking-wider text-luxuryGold">FREE DELIVERY</span>' : '<span class="text-[10px] text-gray-500">Standard</span>'}</td>
                     <td class="p-4">
                       <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.isActive ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}">${c.isActive ? 'Active' : 'Disabled'}</span>
                     </td>
@@ -4002,13 +4020,17 @@
                 <input type="text" name="cityName" required value="${city ? city.name : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
               </div>
               <div>
-                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Delivery Charge (MAD)</label>
-                <input type="number" name="price" required value="${city ? city.price : 40}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-white">
+                <label class="block text-[10px] uppercase mb-1 font-semibold text-luxuryGold">Delivery Charge</label>
+                <input type="text" value="35 DH for standard delivery" readonly class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-[#111] text-gray-400">
               </div>
             </div>
             <div class="flex items-center gap-2">
               <input type="checkbox" name="isActive" ${!city || city.isActive ? 'checked' : ''} class="rounded text-luxuryGold">
               <label class="text-xs text-gray-300 font-semibold">Active for Checkout</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" name="freeDelivery" ${city && city.freeDelivery ? 'checked' : ''} class="rounded text-luxuryGold">
+              <label class="text-xs text-luxuryGold font-semibold">Free Delivery for this city</label>
             </div>
             <div class="flex gap-3 justify-end">
               <button type="button" id="city-form-cancel" class="px-4 py-2 bg-black text-gray-400 rounded-lg text-xs uppercase font-bold border border-white/10">Cancel</button>
@@ -4025,8 +4047,9 @@
           const form = e.target;
           const payload = {
             name: form.cityName.value,
-            price: Number(form.price.value),
+            price: STANDARD_DELIVERY_FEE,
             isActive: form.isActive.checked,
+            freeDelivery: form.freeDelivery.checked,
             updatedAt: new Date()
           };
 
@@ -5139,7 +5162,7 @@
                   ${selectedCityId ? `
                     <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
                       <span class="text-gray-300">Delivery</span>
-                      <span class="font-serif font-bold text-luxuryGold">${deliveryFee === 0 ? 'FREE DELIVERY' : `${deliveryFee} MAD`}</span>
+                      <span class="font-serif font-bold text-luxuryGold">${deliveryFee === 0 ? 'FREE' : `${deliveryFee} DH`}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
                       <span class="text-gray-300">Total</span>
@@ -5155,12 +5178,24 @@
                       <input type="text" name="customerName" required placeholder="${this.t('fullName')}" value="${this.checkoutFormValues.customerName}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
                       <input type="tel" name="phone" required placeholder="${this.t('phoneNumber')}" value="${this.checkoutFormValues.phone}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
                       
-                      <select id="cart-page-city-select" name="cityId" required class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white">
-                        <option value="" disabled ${!selectedCityId ? 'selected' : ''}>${this.t('citySelect')}</option>
-                        ${this.deliveryCities.filter(c => c.isActive).map(c => `
-                          <option value="${c.id}" ${selectedCityId === c.id ? 'selected' : ''}>${c.name} (+${c.price} MAD)</option>
-                        `).join('')}
-                      </select>
+                      <input type="hidden" id="cart-page-city-select" name="cityId" value="${selectedCityId}">
+                      <div class="relative">
+                        <button type="button" id="city-picker-toggle" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white text-left">
+                          <span>${cityObj ? cityObj.name : this.t('citySelect')}</span>
+                          <span class="text-luxuryGold">⌄</span>
+                        </button>
+                        <div id="city-picker-panel" class="hidden absolute left-0 right-0 top-full mt-2 z-30 rounded-xl border border-luxuryGold/30 bg-[#141414] p-3 shadow-2xl">
+                          <input id="city-search-input" type="search" autocomplete="off" placeholder="Search Moroccan city..." class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 bg-black text-white focus:outline-none focus:border-luxuryGold">
+                          <div id="city-options-list" class="mt-2 max-h-56 overflow-y-auto space-y-1">
+                            ${this.deliveryCities.filter(c => c.isActive).map(c => `
+                              <button type="button" class="city-option w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs text-left text-gray-200 hover:bg-luxuryGold/10 hover:text-luxuryGold transition" data-city-id="${c.id}">
+                                <span>${c.name}</span>
+                                <span class="text-[10px] ${c.freeDelivery ? 'text-luxuryGold font-bold' : 'text-gray-500'}">${c.freeDelivery ? 'FREE' : '35 DH'}</span>
+                              </button>
+                            `).join('')}
+                          </div>
+                        </div>
+                      </div>
 
                       <textarea name="address" required placeholder="${this.t('deliveryAddress')}" class="w-full px-3 py-2 text-xs rounded-lg border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-[#111] text-white h-14 resize-none">${this.checkoutFormValues.address}</textarea>
 
@@ -5366,8 +5401,27 @@
       });
 
       const citySelect = document.getElementById("cart-page-city-select");
-      if (citySelect) {
-        citySelect.onchange = (e) => {
+      const cityPickerToggle = document.getElementById("city-picker-toggle");
+      const cityPickerPanel = document.getElementById("city-picker-panel");
+      const citySearchInput = document.getElementById("city-search-input");
+      const cityOptionsList = document.getElementById("city-options-list");
+      if (cityPickerToggle && cityPickerPanel) {
+        cityPickerToggle.onclick = () => {
+          cityPickerPanel.classList.toggle('hidden');
+          if (!cityPickerPanel.classList.contains('hidden')) citySearchInput?.focus();
+        };
+      }
+      if (citySearchInput && cityOptionsList) {
+        citySearchInput.oninput = (event) => {
+          const search = event.target.value.trim().toLowerCase();
+          cityOptionsList.querySelectorAll('.city-option').forEach(option => {
+            option.classList.toggle('hidden', !option.textContent.toLowerCase().includes(search));
+          });
+        };
+      }
+      document.querySelectorAll('.city-option').forEach(option => {
+        option.onclick = () => {
+          const cityId = option.getAttribute('data-city-id');
           const checkoutForm = document.getElementById("cart-page-checkout-form");
           if (checkoutForm) {
             this.checkoutFormValues.customerName = checkoutForm.customerName.value;
@@ -5377,10 +5431,10 @@
             this.checkoutFormValues.paymentProofData = checkoutForm.paymentProofData ? checkoutForm.paymentProofData.value : '';
             this.checkoutFormValues.paymentProofName = checkoutForm.paymentProofName ? checkoutForm.paymentProofName.value : '';
           }
-          this.checkoutFormValues.cityId = e.target.value;
+          this.checkoutFormValues.cityId = cityId;
           this.renderCartPage();
         };
-      }
+      });
 
       const paymentMethodSelect = document.getElementById("cart-page-payment-method");
       if (paymentMethodSelect) {
