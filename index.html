@@ -47,9 +47,7 @@
         "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
         "firebase/storage": "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js"
       }
-    }
-  </script>
-
+          </script>
   <style>
     :root {
       --accent-color: #D4AF37; /* Default Luxury Gold */
@@ -1843,7 +1841,7 @@
     };
 
     store.getCartDeliveryFee = function(city) {
-      if (!city || this.cart.some(item => this.isCartItemFreeDelivery(item))) return 0;
+      if (!city || (this.cart.length > 0 && this.cart.every(item => this.isCartItemFreeDelivery(item)))) return 0;
       return city.price || 0;
     };
 
@@ -3458,8 +3456,29 @@
     };
 
     store.renderAdminProducts = function(container) {
+      const freeDeliveryCount = this.products.filter(product => product.freeDelivery === true).length;
+      const productFilter = this.adminProductFilter || 'all';
+      const visibleProducts = this.products.filter(product =>
+        productFilter === 'free' ? product.freeDelivery === true :
+        productFilter === 'standard' ? product.freeDelivery !== true : true
+      );
       container.innerHTML = `
         <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
+              <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Free Delivery: ${freeDeliveryCount} Products</p>
+              <p class="text-xs text-gray-400 mt-1">Manage delivery eligibility for individual products.</p>
+            </div>
+            <div class="flex gap-1.5 p-1 bg-black/50 rounded-xl border border-white/10">
+              ${[
+                ['all', 'All Products'],
+                ['free', 'Free Delivery'],
+                ['standard', 'Standard Delivery']
+              ].map(([value, label]) => `
+                <button type="button" class="admin-product-filter px-3 py-2 rounded-lg text-[9px] uppercase font-bold tracking-wider transition ${productFilter === value ? 'bg-luxuryGold text-black' : 'text-gray-400 hover:text-white'}" data-filter="${value}">${label}</button>
+              `).join('')}
+            </div>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-white">
               <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold">
@@ -3473,7 +3492,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
-                ${this.products.map(p => {
+                ${visibleProducts.map(p => {
                   const cleanName = p.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
                   return `
                     <tr class="hover:bg-white/5 transition">
@@ -3485,6 +3504,7 @@
                             ${cleanName}
                           </p>
                           <p class="text-[10px] text-gray-400">Rating: ${p.rating} ★</p>
+                          ${p.freeDelivery ? '<p class="text-[9px] text-luxuryGold font-bold uppercase tracking-wider mt-1">FREE DELIVERY</p>' : ''}
                         </div>
                       </td>
                       <td class="p-4">
@@ -3505,8 +3525,16 @@
               </tbody>
             </table>
           </div>
+          ${visibleProducts.length === 0 ? '<p class="text-center text-xs text-gray-500 italic py-8">No products match this filter.</p>' : ''}
         </div>
       `;
+
+      document.querySelectorAll(".admin-product-filter").forEach(btn => {
+        btn.onclick = () => {
+          this.adminProductFilter = btn.getAttribute("data-filter");
+          this.renderAdminProducts(container);
+        };
+      });
 
       document.querySelectorAll(".edit-prod-btn").forEach(btn => {
         btn.onclick = () => {
@@ -3788,14 +3816,19 @@
         try {
           if (product) {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), payload);
+            const productIndex = store.products.findIndex(item => item.id === product.id);
+            if (productIndex >= 0) store.products[productIndex] = { ...store.products[productIndex], ...payload };
             showToast("Product updated successfully.");
           } else {
             payload.createdAt = new Date();
             payload.reviewsCount = 0;
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), payload);
+            const createdProduct = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), payload);
+            store.products.push({ id: createdProduct.id, ...payload });
             showToast("New product created successfully.");
           }
+          localStorage.setItem("sovanex_products_cache", JSON.stringify(store.products));
           container.classList.add("hidden");
+          store.updateDOM();
         } catch (err) {
           showToast("Error writing product.", "error");
         }
@@ -5105,7 +5138,7 @@
 
                   ${selectedCityId ? `
                     <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
-                      <span class="text-gray-300">Delivery Fee</span>
+                      <span class="text-gray-300">Delivery</span>
                       <span class="font-serif font-bold text-luxuryGold">${deliveryFee === 0 ? 'FREE DELIVERY' : `${deliveryFee} MAD`}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
@@ -6017,7 +6050,8 @@
           imageURL: store.activeImg,
           category: product.category,
           gender: product.gender,
-          stock: product.stock
+          stock: product.stock,
+          freeDelivery: product.freeDelivery === true
         };
         store.addToCart(product, itemPayload);
         closeModal();
@@ -6032,6 +6066,7 @@
           category: product.category,
           gender: product.gender,
           stock: product.stock,
+          freeDelivery: product.freeDelivery === true,
           quantity: 1
         };
         store.cart = [itemPayload];
