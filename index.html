@@ -1034,6 +1034,7 @@
         product.discountPrice,
         product.imageURL,
         product.stock,
+        product.freeDelivery,
         product.isPromotion,
         product.isBestSeller,
         product.isPinned
@@ -1619,7 +1620,8 @@
         imageURL: product.imageURL,
         category: product.category,
         gender: product.gender,
-        stock: product.stock
+        stock: product.stock,
+        freeDelivery: product.freeDelivery === true
       };
       
       const match = this.cart.find(item => item.id === itemToSelect.id);
@@ -1833,6 +1835,18 @@
       return accounts.find(acc => acc.id === bankId);
     };
 
+    store.isCartItemFreeDelivery = function(item) {
+      if (item.freeDelivery) return true;
+      const baseProductId = String(item.id || '').replace(/-v\d+$/, '');
+      const product = this.products.find(candidate => candidate.id === baseProductId);
+      return Boolean(product?.freeDelivery);
+    };
+
+    store.getCartDeliveryFee = function(city) {
+      if (!city || this.cart.some(item => this.isCartItemFreeDelivery(item))) return 0;
+      return city.price || 0;
+    };
+
     store.resetCheckoutState = function() {
       this.checkoutLoading = false;
       if (typeof this.updateDOM === 'function') this.updateDOM();
@@ -1875,7 +1889,7 @@
 
       const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
       const cityObj = this.deliveryCities.find(c => c.id === cityId);
-      const deliveryFee = cityObj ? cityObj.price : 0;
+      const deliveryFee = this.getCartDeliveryFee(cityObj);
       const cityName = cityObj ? cityObj.name : "Morocco";
       const total = subtotal + deliveryFee;
       const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
@@ -2831,6 +2845,7 @@
               <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4">
                 ${isPacks ? `<span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">${this.t('packsBadge')}</span>` : ''}
               </div>
+              ${product.freeDelivery ? `<span class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-luxuryGold text-black text-[7px] sm:text-[9px] uppercase font-extrabold tracking-widest px-2 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-lg">FREE DELIVERY</span>` : ''}
             </div>
 
             <div class="p-3 sm:p-6 space-y-1.5 sm:space-y-4">
@@ -2893,6 +2908,7 @@
               category: prod.category,
               gender: prod.gender,
               stock: prod.stock,
+              freeDelivery: prod.freeDelivery === true,
               quantity: 1
             };
             store.cart = [customItem];
@@ -3617,6 +3633,9 @@
             <label class="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="limitedStock" ${product && product.limitedStock ? 'checked' : ''} class="rounded text-luxuryGold"> Limited Stock
             </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer text-luxuryGold font-bold">
+              <input type="checkbox" name="freeDelivery" ${product && product.freeDelivery ? 'checked' : ''} class="rounded text-luxuryGold"> FREE DELIVERY
+            </label>
           </div>
 
           <div class="flex gap-3 justify-end pt-4 border-t border-luxuryGold/20">
@@ -3762,6 +3781,7 @@
           isPromotion: form.isPromotion.checked,
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
+          freeDelivery: form.freeDelivery.checked,
           updatedAt: new Date()
         };
 
@@ -4926,7 +4946,7 @@
 
       const selectedCityId = this.checkoutFormValues.cityId;
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
-      const deliveryFee = cityObj ? cityObj.price : 0;
+      const deliveryFee = this.getCartDeliveryFee(cityObj);
       const total = subtotal + deliveryFee;
       const paymentMethods = this.getAvailablePaymentMethods();
       const selectedPaymentMethod = paymentMethods.some(method => method.id === this.checkoutFormValues.paymentMethod)
@@ -5086,7 +5106,7 @@
                   ${selectedCityId ? `
                     <div class="flex justify-between items-center text-sm font-medium border-t border-white/5 pt-2">
                       <span class="text-gray-300">Delivery Fee</span>
-                      <span class="font-serif font-bold text-luxuryGold">${deliveryFee} MAD</span>
+                      <span class="font-serif font-bold text-luxuryGold">${deliveryFee === 0 ? 'FREE DELIVERY' : `${deliveryFee} MAD`}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm font-bold border-t border-white/10 pt-2">
                       <span class="text-gray-300">Total</span>
@@ -5810,6 +5830,7 @@
           <div class="w-full md:w-[58%] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black h-[220px] sm:h-[300px] md:h-auto md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl flex items-center justify-center" id="zoom-img-btn">
             <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-500 ease-in-out transform group-hover/main:scale-105" alt="${cleanName}">
             ${product.isPromotion ? `<span class="absolute top-4 left-4 bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">Collection Sale</span>` : ''}
+            ${product.freeDelivery ? `<span class="absolute top-4 ${product.isPromotion ? 'left-32' : 'left-4'} bg-luxuryGold text-black text-[10px] uppercase font-extrabold tracking-widest px-3 py-1 rounded-full shadow-lg">FREE DELIVERY</span>` : ''}
             
             <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
               <span>${this.t('tapToZoom')}</span>
