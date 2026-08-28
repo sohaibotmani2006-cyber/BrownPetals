@@ -208,6 +208,65 @@
         font-size: 0.8rem;
       }
     }
+    @media (min-width: 1024px) {
+      #app-header .announcement-message {
+        font-size: 10px;
+      }
+      #app-header #nav-brand > span {
+        font-size: 1.65rem;
+      }
+      #app-header #nav-link-home,
+      #app-header #nav-link-shop,
+      #app-header #nav-link-contact,
+      #app-header #nav-link-policies {
+        padding: 0.75rem 1.35rem;
+        font-size: 0.88rem;
+      }
+      #app-header #nav-lang-btn,
+      #app-header #nav-cart-btn {
+        font-size: 0.8rem;
+      }
+      #app-header #nav-cart-btn svg {
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+      #shop-search-input {
+        font-size: 0.84rem;
+      }
+      #app-content .category-filter-btn {
+        font-size: 0.84rem;
+        padding-top: 0.7rem;
+        padding-bottom: 0.7rem;
+      }
+      #app-content .card-title-trigger {
+        font-size: 1.2rem;
+      }
+      #app-content .product-card-category,
+      #app-content .product-card-rating {
+        font-size: 0.82rem;
+      }
+      #app-content .add-to-cart-btn,
+      #app-content .order-now-btn {
+        font-size: 0.7rem;
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+      }
+      #app-content .product-card-rating span.text-amber-500 {
+        font-size: 0.82rem;
+      }
+      #app-content .product-card-rating span.text-gray-400 {
+        font-size: 0.78rem;
+      }
+      #app-content .product-card-delivery {
+        font-size: 0.68rem;
+      }
+      #app-content .product-card-price {
+        font-size: 1.2rem;
+      }
+      #app-content .product-card-old-price {
+        font-size: 0.78rem;
+      }
+    }
     @keyframes announcement-marquee {
       from { transform: translateX(0); }
       to { transform: translateX(-50%); }
@@ -2971,23 +3030,23 @@
             </div>
 
             <div class="p-3 sm:p-6 space-y-1.5 sm:space-y-4">
-              <span class="text-[8px] sm:text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
+              <span class="product-card-category text-[8px] sm:text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
               <h3 class="font-serif text-sm sm:text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-10 sm:h-14 overflow-hidden" data-id="${product.id}">${cleanName}</h3>
               
-              <div class="flex items-center gap-1 text-[10px] sm:text-xs">
+              <div class="product-card-rating flex items-center gap-1 text-[10px] sm:text-xs">
                 <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
                 <span class="text-gray-400 font-light">(${product.reviewsCount || 12})</span>
               </div>
-              ${product.freeDelivery ? `<p class="text-[9px] text-luxuryGold font-bold uppercase tracking-wider">🚚 Free delivery</p>` : ''}
+              ${product.freeDelivery ? `<p class="product-card-delivery text-[9px] text-luxuryGold font-bold uppercase tracking-wider">🚚 Free delivery</p>` : ''}
             </div>
           </div>
 
           <div class="p-3 sm:p-6 pt-0 space-y-2 sm:space-y-3">
             <div class="flex items-baseline gap-1.5 sm:gap-2">
               ${product.discountPrice ? `
-                <span class="text-sm sm:text-lg font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                <span class="text-[9px] sm:text-xs line-through text-gray-500">${product.price} MAD</span>
-              ` : `<span class="text-sm sm:text-lg font-bold text-white">${product.price} MAD</span>`}
+                <span class="product-card-price text-sm sm:text-lg font-bold text-luxuryGold">${product.discountPrice} MAD</span>
+                <span class="product-card-old-price text-[9px] sm:text-xs line-through text-gray-500">${product.price} MAD</span>
+              ` : `<span class="product-card-price text-sm sm:text-lg font-bold text-white">${product.price} MAD</span>`}
             </div>
 
             <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
