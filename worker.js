@@ -1,14 +1,3 @@
-const SPA_ROUTES = new Set([
-  '/',
-  '/shop',
-  '/contact',
-  '/policies',
-  '/cart',
-  '/bank-transfer',
-  '/order-confirmation',
-  '/admin',
-]);
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -46,7 +35,9 @@ export default {
       return new Response('Not Found', { status: 404 });
     }
 
-    if (pathname.includes('.') || !SPA_ROUTES.has(pathname)) {
+    // Every extensionless URL belongs to the client-side application. This is
+    // important on refresh because the browser requests the nested URL first.
+    if (pathname.includes('.') && pathname !== '/favicon.ico') {
       return new Response('Not Found', { status: 404 });
     }
 
