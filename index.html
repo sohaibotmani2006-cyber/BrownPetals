@@ -852,6 +852,7 @@
         paymentProofName: ""
       },
       
+      currentCheckoutProduct: null,
       checkoutPage: "payment-method",
 
       bankAccounts: [],
@@ -931,7 +932,7 @@
         // Normalize path to page key
         const raw = pathname.replace(/^\/+/, '');
         const page = raw === '' ? 'home' : raw;
-        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'bank-transfer', 'order-confirmation'];
+        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'checkout', 'payment', 'bank-transfer', 'order-confirmation'];
         if (validPages.includes(page)) {
           const pageChanged = (this.currentPage !== page);
           this.currentPage = page;
@@ -2303,6 +2304,10 @@
         this.renderPoliciesPage();
       } else if (this.currentPage === "admin") {
         this.renderAdminPage();
+      } else if (this.currentPage === "checkout") {
+        this.renderCheckoutPage();
+      } else if (this.currentPage === "payment") {
+        this.renderPaymentPage();
       } else if (this.currentPage === "cart" || this.currentPage === "bank-transfer") {
         this.renderCartPage();
       } else if (this.currentPage === "order-confirmation") {
@@ -3095,7 +3100,10 @@
             };
             store.cart = [customItem];
             localStorage.setItem("bp_cart", JSON.stringify(store.cart));
-            store.setPage("cart");
+            // Store the current checkout product for displaying in checkout page
+            store.currentCheckoutProduct = prod;
+            store.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
+            store.setPage("checkout");
           }
         };
       });
@@ -5262,11 +5270,415 @@
       // Keep renderCartDrawer for backwards-compatible state preservation but let it remain hidden when using pages.
     };
 
-    store.renderCartPage = function() {
+    store.renderCheckoutPage = function() {
       if (typeof fbq !== 'undefined') {
-        fbq('track', 'PageView', { page_path: '/cart' });
+        fbq('track', 'PageView', { page_path: '/checkout' });
       }
 
+      const container = document.getElementById("app-content");
+      if (!container) return;
+
+      const selectedCityId = this.checkoutFormValues.cityId;
+      const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
+
+      // Get the current checkout product (either from selection or cart)
+      const cartItem = this.cart.length > 0 ? this.cart[0] : null;
+      const productImage = cartItem?.imageURL;
+      const productName = cartItem?.name;
+      const productPrice = cartItem?.price;
+      const productColor = cartItem?.color;
+
+      container.innerHTML = `
+        <div class="max-w-6xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+          
+          <!-- STICKY FLOATING BACK BUTTON -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="checkout-back-shop" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+              ← ${this.t('backToHome')}
+            </button>
+          </div>
+
+          <!-- PAGE TITLE -->
+          <div class="text-center space-y-3 pt-8">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('shippingInfo')}</span>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Finalize Your Selection</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-8">
+            <!-- Product Summary (Left) -->
+            <div class="md:col-span-2 space-y-6">
+              <div class="sticky top-[180px] space-y-6">
+                <!-- Product Card -->
+                <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 overflow-hidden">
+                  <div class="relative w-full aspect-square mb-6 rounded-2xl overflow-hidden">
+                    <img src="${productImage || fallbackImage}" alt="${productName || 'Product'}" class="w-full h-full object-cover">
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <p class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Your Selection</p>
+                    <h3 class="text-2xl font-serif text-white font-bold line-clamp-2">${productName || 'Selected Product'}</h3>
+                    
+                    ${productColor ? `
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400">Color:</span>
+                        <div class="w-5 h-5 rounded-full border-2 border-luxuryGold" style="background-color:${productColor.value || productColor.hex || '#000'}"></div>
+                        <span class="text-xs text-gray-300 font-medium">${productColor.name}</span>
+                      </div>
+                    ` : ''}
+                    
+                    <p class="text-sm text-luxuryGold font-bold pt-2 border-t border-luxuryGold/20">
+                      ${productPrice} MAD
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Quick Summary Box -->
+                <div class="bg-black/50 rounded-2xl border border-luxuryGold/20 p-4 space-y-2">
+                  <p class="text-xs text-gray-400 font-semibold">Order Summary</p>
+                  <div class="flex justify-between text-xs">
+                    <span class="text-gray-300">Subtotal:</span>
+                    <span class="text-luxuryGold font-bold">${productPrice || 0} MAD</span>
+                  </div>
+                  ${selectedCityId ? `
+                    <div class="flex justify-between text-xs border-t border-white/10 pt-2 mt-2">
+                      <span class="text-gray-300">Delivery:</span>
+                      <span class="text-luxuryGold font-bold">${cityObj?.freeDelivery ? 'FREE' : STANDARD_DELIVERY_FEE + ' DH'}</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold border-t border-white/20 pt-3 mt-3">
+                      <span class="text-gray-200">Total:</span>
+                      <span class="text-luxuryGold">${(Number(productPrice || 0) + (this.getCartDeliveryFee(cityObj))) || 0} MAD</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Checkout Form (Right) -->
+            <div class="md:col-span-3">
+              <form id="checkout-customer-form" class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 sm:p-8 space-y-6">
+                
+                <div class="space-y-1 border-b border-luxuryGold/15 pb-5">
+                  <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">STEP 1 OF 2</p>
+                  <h2 class="text-2xl font-serif text-luxuryGold uppercase tracking-wider">Delivery Information</h2>
+                </div>
+
+                <!-- Name Field -->
+                <div class="space-y-2">
+                  <label class="text-xs uppercase tracking-wider text-gray-300 font-semibold">Full Name *</label>
+                  <input type="text" name="customerName" required placeholder="Enter your full name" value="${this.checkoutFormValues.customerName}" class="w-full px-4 py-3 text-sm rounded-xl border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-black text-white placeholder:text-gray-500 transition">
+                </div>
+
+                <!-- Phone Field -->
+                <div class="space-y-2">
+                  <label class="text-xs uppercase tracking-wider text-gray-300 font-semibold">Phone Number *</label>
+                  <input type="tel" name="phone" required placeholder="0612345678" value="${this.checkoutFormValues.phone}" class="w-full px-4 py-3 text-sm rounded-xl border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-black text-white placeholder:text-gray-500 transition">
+                </div>
+
+                <!-- City Selection -->
+                <div class="space-y-2">
+                  <label class="text-xs uppercase tracking-wider text-gray-300 font-semibold">Delivery City *</label>
+                  <div class="relative">
+                    <button type="button" id="checkout-city-picker-toggle" class="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm rounded-xl border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-black text-white text-left transition">
+                      <span>${cityObj ? cityObj.name : 'Select your city'}</span>
+                      <span class="text-luxuryGold">⌄</span>
+                    </button>
+                    <div id="checkout-city-picker-panel" class="hidden absolute left-0 right-0 top-full mt-2 z-30 rounded-xl border border-luxuryGold/30 bg-[#141414] p-3 shadow-2xl">
+                      <input id="checkout-city-search-input" type="search" autocomplete="off" placeholder="Search city..." class="w-full px-4 py-2 text-xs rounded-lg border border-luxuryGold/30 bg-black text-white focus:outline-none focus:border-luxuryGold">
+                      <div id="checkout-city-options-list" class="mt-3 max-h-56 overflow-y-auto space-y-1">
+                        ${this.deliveryCities.filter(c => c.isActive).map(c => `
+                          <button type="button" class="checkout-city-option w-full flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-xs text-left text-gray-200 hover:bg-luxuryGold/10 hover:text-luxuryGold transition" data-city-id="${c.id}">
+                            <span>${c.name}</span>
+                            <span class="text-[10px] ${c.freeDelivery ? 'text-luxuryGold font-bold' : 'text-gray-500'}">${c.freeDelivery ? 'FREE' : STANDARD_DELIVERY_FEE + ' DH'}</span>
+                          </button>
+                        `).join('')}
+                      </div>
+                    </div>
+                  </div>
+                  <input type="hidden" id="checkout-city-select" name="cityId" value="${selectedCityId}">
+                </div>
+
+                <!-- Address Field -->
+                <div class="space-y-2">
+                  <label class="text-xs uppercase tracking-wider text-gray-300 font-semibold">Delivery Address *</label>
+                  <textarea name="address" required placeholder="Apartment, street, neighborhood, postal code..." class="w-full px-4 py-3 text-sm rounded-xl border border-luxuryGold/30 focus:outline-none focus:border-luxuryGold bg-black text-white placeholder:text-gray-500 resize-none h-20 transition">${this.checkoutFormValues.address}</textarea>
+                </div>
+
+                <!-- Continue Button -->
+                <button type="submit" class="w-full py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition flex items-center justify-center gap-2">
+                  <span>Continue to Payment</span>
+                  ${getIconSvg('send', 'w-4 h-4')}
+                </button>
+
+                <p class="text-[10px] text-center text-gray-400">Your information is secure and encrypted</p>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const backBtn = document.getElementById("checkout-back-shop");
+      if (backBtn) {
+        backBtn.onclick = () => { this.setPage("shop"); };
+      }
+
+      const cityPickerToggle = document.getElementById("checkout-city-picker-toggle");
+      const cityPickerPanel = document.getElementById("checkout-city-picker-panel");
+      const citySearchInput = document.getElementById("checkout-city-search-input");
+      const cityOptionsList = document.getElementById("checkout-city-options-list");
+
+      if (cityPickerToggle && cityPickerPanel) {
+        cityPickerToggle.onclick = () => {
+          cityPickerPanel.classList.toggle('hidden');
+          if (!cityPickerPanel.classList.contains('hidden')) citySearchInput?.focus();
+        };
+      }
+
+      if (citySearchInput && cityOptionsList) {
+        citySearchInput.oninput = (event) => {
+          const search = event.target.value.trim().toLowerCase();
+          cityOptionsList.querySelectorAll('.checkout-city-option').forEach(option => {
+            option.classList.toggle('hidden', !option.textContent.toLowerCase().includes(search));
+          });
+        };
+      }
+
+      document.querySelectorAll('.checkout-city-option').forEach(option => {
+        option.onclick = (e) => {
+          e.preventDefault();
+          const cityId = option.getAttribute('data-city-id');
+          const form = document.getElementById("checkout-customer-form");
+          if (form) {
+            this.checkoutFormValues.customerName = form.customerName.value;
+            this.checkoutFormValues.phone = form.phone.value;
+            this.checkoutFormValues.address = form.address.value;
+          }
+          this.checkoutFormValues.cityId = cityId;
+          this.renderCheckoutPage();
+        };
+      });
+
+      const checkoutForm = document.getElementById("checkout-customer-form");
+      if (checkoutForm) {
+        checkoutForm.onsubmit = (e) => {
+          e.preventDefault();
+          
+          const name = checkoutForm.customerName.value.trim();
+          const phone = checkoutForm.phone.value.trim();
+          const cityId = checkoutForm.cityId.value.trim();
+          const address = checkoutForm.address.value.trim();
+
+          if (!name || !phone || !cityId || !address) {
+            showToast("Please fill in all required fields", "error");
+            return;
+          }
+
+          // Save form values
+          this.checkoutFormValues.customerName = name;
+          this.checkoutFormValues.phone = phone;
+          this.checkoutFormValues.cityId = cityId;
+          this.checkoutFormValues.address = address;
+          this.checkoutFormValues.paymentMethod = "cod"; // Reset to default
+
+          // Go to payment method selection page
+          this.checkoutPage = "payment-method";
+          this.setPage("payment");
+        };
+      }
+    };
+
+    store.renderPaymentPage = function() {
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'PageView', { page_path: '/payment' });
+      }
+
+      const container = document.getElementById("app-content");
+      if (!container) return;
+
+      const cartItem = this.cart.length > 0 ? this.cart[0] : null;
+      const subtotal = cartItem?.price || 0;
+      const selectedCityId = this.checkoutFormValues.cityId;
+      const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
+      const deliveryFee = this.getCartDeliveryFee(cityObj);
+      const total = subtotal + deliveryFee;
+      const paymentMethods = this.getAvailablePaymentMethods();
+      const selectedPaymentMethod = this.checkoutFormValues.paymentMethod;
+      const activePaymentMethod = paymentMethods.find(method => method.id === selectedPaymentMethod) || paymentMethods[0];
+
+      container.innerHTML = `
+        <div class="max-w-4xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+          
+          <!-- STICKY FLOATING BACK BUTTON -->
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="payment-back-checkout" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+              ← Back to Delivery Info
+            </button>
+          </div>
+
+          <!-- PAGE TITLE -->
+          <div class="text-center space-y-3 pt-8">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">STEP 2 OF 2</span>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Select Payment Method</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
+          </div>
+
+          <!-- ORDER SUMMARY -->
+          <div class="bg-[#141414] rounded-2xl border border-luxuryGold/20 p-6 space-y-4 max-w-2xl mx-auto w-full">
+            <p class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Order Summary</p>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-300">Subtotal</span>
+                <span class="text-luxuryGold font-bold">${subtotal} MAD</span>
+              </div>
+              <div class="flex justify-between items-center text-sm border-t border-white/10 pt-3">
+                <span class="text-gray-300">Delivery to ${cityObj?.name || 'Selected City'}</span>
+                <span class="text-luxuryGold font-bold">${deliveryFee === 0 ? 'FREE' : deliveryFee + ' DH'}</span>
+              </div>
+              <div class="flex justify-between items-center text-lg font-bold border-t border-luxuryGold/20 pt-4 mt-4">
+                <span class="text-gray-200">Total</span>
+                <span class="text-2xl text-luxuryGold font-serif">${total} MAD</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAYMENT METHOD SELECTION -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto w-full">
+            ${paymentMethods.map(method => {
+              const isSelected = selectedPaymentMethod === method.id;
+              const icon = method.id === 'cod' ? '💵' : '🏦';
+              const title = method.id === 'cod' ? 'CASH ON DELIVERY' : 'BANK TRANSFER';
+              const description = method.id === 'cod' 
+                ? 'Pay when your order arrives safely at your doorstep'
+                : 'Transfer funds to our bank account and upload proof';
+              
+              return `
+                <button type="button" class="payment-method-selection w-full cursor-pointer p-6 rounded-2xl border-2 text-left transition-all duration-300 ${isSelected ? 'border-luxuryGold bg-gradient-to-br from-luxuryGold/20 to-luxuryGold/5 shadow-[0_0_20px_rgba(212,175,55,0.3)]' : 'border-white/20 bg-black/40 hover:border-luxuryGold/50 hover:bg-black/60'}" data-method="${method.id}">
+                  <div class="flex h-full items-start gap-4">
+                    <span class="text-4xl leading-none flex-shrink-0">${icon}</span>
+                    <div class="flex-1">
+                      <p class="text-base font-bold font-serif ${isSelected ? 'text-luxuryGold' : 'text-white'} mb-2 uppercase tracking-wider">${title}</p>
+                      <p class="text-xs text-gray-400 leading-relaxed">${description}</p>
+                    </div>
+                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-luxuryGold bg-luxuryGold shadow-lg shadow-luxuryGold/40' : 'border-gray-600 hover:border-luxuryGold/60'}">
+                      ${isSelected ? '<span class="text-black text-sm font-bold leading-none">✓</span>' : ''}
+                    </div>
+                  </div>
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- CONFIRM BUTTON -->
+          <div class="max-w-2xl mx-auto w-full">
+            <button id="payment-confirm-btn" class="w-full py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition flex items-center justify-center gap-2">
+              <span>Continue to ${selectedPaymentMethod === 'bank' ? 'Bank Details' : 'Confirmation'}</span>
+              ${getIconSvg('send', 'w-4 h-4')}
+            </button>
+          </div>
+        </div>
+      `;
+
+      const backBtn = document.getElementById("payment-back-checkout");
+      if (backBtn) {
+        backBtn.onclick = () => { this.setPage("checkout"); };
+      }
+
+      // Handle payment method selection
+      document.querySelectorAll(".payment-method-selection").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const method = btn.getAttribute("data-method");
+          this.checkoutFormValues.paymentMethod = method;
+          this.checkoutFormValues.selectedBankId = "";
+          this.renderPaymentPage();
+        };
+      });
+
+      // Handle confirmation
+      document.getElementById("payment-confirm-btn").onclick = () => {
+        const selectedMethod = this.checkoutFormValues.paymentMethod;
+        
+        if (selectedMethod === 'bank') {
+          // Go to bank selection
+          this.checkoutPage = "bank-selection";
+          this.setPage("bank-transfer");
+        } else {
+          // For COD, proceed directly to order submission
+          const name = this.checkoutFormValues.customerName;
+          const phone = this.checkoutFormValues.phone;
+          const cityId = this.checkoutFormValues.cityId;
+          const address = this.checkoutFormValues.address;
+          
+          this.submitCheckoutOrder(name, phone, cityId, address);
+        }
+      };
+    };
+
+    store.submitCheckoutOrder = async function(name, phone, cityId, address) {
+      if (this.checkoutLoading) {
+        console.warn('Checkout already in progress, preventing double submission');
+        return;
+      }
+
+      const paymentMethod = this.checkoutFormValues.paymentMethod || 'cod';
+      const paymentProofData = this.checkoutFormValues.paymentProofData || '';
+      const paymentProofName = this.checkoutFormValues.paymentProofName || '';
+      const selectedBankId = this.checkoutFormValues.selectedBankId || '';
+
+      this.checkoutLoading = true;
+
+      try {
+        let bankSnapshot = null;
+        if (paymentMethod === 'bank' && selectedBankId) {
+          bankSnapshot = this.getBankAccountById(selectedBankId);
+        }
+
+        const result = await this.submitUnifiedOrder({
+          customerName: name,
+          phone,
+          cityId,
+          address,
+          paymentMethod,
+          paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Proof Submitted',
+          paymentProofData,
+          paymentProofName,
+          selectedBankId,
+          bankSnapshot
+        });
+
+        if (!result) {
+          this.checkoutLoading = false;
+          showToast("Order submission failed. Please try again.", "error");
+          return;
+        }
+
+        const purchasedItemIds = this.cart.map(item => item.id);
+        localStorage.setItem("sovanex_last_purchased_ids", JSON.stringify(purchasedItemIds));
+
+        if (typeof fbq !== 'undefined') {
+          fbq('track', 'Purchase', {
+            value: result.orderData.total,
+            currency: 'MAD',
+            contents: result.orderData.items.map(item => ({ id: item.id, quantity: item.quantity })),
+            content_type: 'product'
+          });
+        }
+
+        this.cart = [];
+        localStorage.setItem("bp_cart", JSON.stringify([]));
+        this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
+        this.checkoutPage = "payment-method";
+        this.currentCheckoutProduct = null;
+        this.setPage("order-confirmation");
+
+      } catch (err) {
+        console.error(err);
+        showToast("Order checkout pipeline failed. Please try again.", "error");
+        this.checkoutLoading = false;
+      }
+    };
+
+    store.renderCartPage = function() {
       const container = document.getElementById("app-content");
       if (!container) return;
 
@@ -6482,8 +6894,11 @@
         };
         store.cart = [itemPayload];
         localStorage.setItem("bp_cart", JSON.stringify(store.cart));
+        // Store the current checkout product for displaying in checkout page
+        store.currentCheckoutProduct = product;
+        store.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
         closeModal();
-        store.setPage("cart");
+        store.setPage("checkout");
       };
 
       modal.classList.remove("hidden");
