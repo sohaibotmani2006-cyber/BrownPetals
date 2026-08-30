@@ -855,8 +855,14 @@
         heroDescEn: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
         heroDescAr: "وجهة فاخرة أصيلة للساعات الراقية، الإكسسوارات المصنوعة يدويًا، والمحافظ الجلدية المتقنة والمصممة وفقًا للمعايير الملكية الأكثر رقيًا.",
         heroImg1: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=400",
+        heroImg1Mobile: "",
+        heroImg1Desktop: "",
         heroImg2: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=400",
+        heroImg2Mobile: "",
+        heroImg2Desktop: "",
         heroImg3: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400",
+        heroImg3Mobile: "",
+        heroImg3Desktop: "",
         heroProdId1: "prod-1",
         heroProdId2: "prod-2",
         heroProdId3: "prod-4",
@@ -1021,6 +1027,32 @@
       return "All";
     };
 
+    const getProductImageByPlacement = (product, placement = 'store', fallback = fallbackImage) => {
+      if (!product || typeof product !== 'object') return fallback;
+      const value = {
+        store: product.storeImage || product.imageURL || product.desktopImage || product.mobileImage || product.tabletImage || product.homeImage,
+        home: product.homeImage || product.desktopImage || product.mobileImage || product.imageURL || product.storeImage,
+        mobile: product.mobileImage || product.desktopImage || product.imageURL || product.storeImage || product.homeImage,
+        desktop: product.desktopImage || product.imageURL || product.storeImage || product.homeImage || product.mobileImage,
+        tablet: product.tabletImage || product.desktopImage || product.mobileImage || product.imageURL || product.storeImage || product.homeImage,
+        default: product.imageURL || product.storeImage || product.homeImage || product.desktopImage || product.mobileImage || product.tabletImage || fallback
+      }[placement] || fallback;
+      return value || fallback;
+    };
+
+    const getResponsiveImageValue = ({ mobile, tablet, desktop, fallback }) => {
+      if (typeof window === 'undefined' || !window.matchMedia) {
+        return desktop || mobile || tablet || fallback || '';
+      }
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        return mobile || desktop || tablet || fallback || '';
+      }
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        return tablet || desktop || mobile || fallback || '';
+      }
+      return desktop || mobile || tablet || fallback || '';
+    };
+
     try {
       const cachedSettings = JSON.parse(localStorage.getItem("sovanex_settings") || "null");
       if (cachedSettings && typeof cachedSettings === "object") {
@@ -1048,7 +1080,7 @@
         img.onerror = () => complete(originalDataUrl);
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 800; // Optimal constraint to stay under Firestore document limitations
+          const maxDim = 1600;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -1074,7 +1106,7 @@
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); // 0.7 quality for superb optimization
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
           complete(compressedBase64);
         };
         img.src = originalDataUrl;
@@ -1838,6 +1870,24 @@
       }, (err) => console.error("Admin orders error:", err));
     };
 
+    store.getProductSizes = function(product) {
+      if (!product || !Array.isArray(product.sizes) || product.sizes.length === 0) return [];
+      return product.sizes
+        .map(size => {
+          const label = String(size?.label ?? size?.name ?? size?.size ?? '').trim();
+          const stock = Number(size?.stock ?? 0);
+          return label ? { label, stock: Number.isFinite(stock) ? stock : 0 } : null;
+        })
+        .filter(Boolean);
+    };
+
+    store.getProductSizeStock = function(product, sizeLabel) {
+      if (!product) return Number(product?.stock || 0);
+      if (!sizeLabel) return Number(product.stock || 0);
+      const sizeMatch = this.getProductSizes(product).find(size => size.label.toLowerCase() === String(sizeLabel).trim().toLowerCase());
+      return sizeMatch ? Number(sizeMatch.stock || 0) : Number(product.stock || 0);
+    };
+
     store.addToCart = function(product, customItem = null) {
       const itemToSelect = customItem || {
         id: product.id,
@@ -1849,17 +1899,23 @@
         stock: product.stock,
         freeDelivery: product.freeDelivery === true
       };
-      
-      const match = this.cart.find(item => item.id === itemToSelect.id);
+
+      const itemStock = Number(itemToSelect.stock ?? product.stock ?? 0);
+      const hasExplicitQuantity = Boolean(customItem && Number.isFinite(Number(customItem.quantity)));
+      const requestedQuantity = Math.max(1, Math.floor(Number(itemToSelect.quantity) || 1));
+      const itemSizeKey = String(itemToSelect.size || '').trim();
+      const match = this.cart.find(item => item.id === itemToSelect.id && String(item.size || '') === itemSizeKey);
+      const currentQuantity = match ? Number(match.quantity || 0) : 0;
+      const nextQuantity = hasExplicitQuantity ? requestedQuantity : currentQuantity + requestedQuantity;
+      if (Number.isFinite(itemStock) && itemStock >= 0 && nextQuantity > itemStock) {
+        showToast("You have reached the maximum available stock.", "error");
+        return;
+      }
       if (match) {
-        if (product.stock && match.quantity >= product.stock) {
-          showToast("Only " + product.stock + " " + this.t('onlyItemsLeft'), "error");
-          return;
-        }
-        match.quantity += 1;
+        match.quantity = nextQuantity;
         if (itemToSelect.color) match.color = itemToSelect.color;
       } else {
-        this.cart.push({ ...itemToSelect, quantity: 1 });
+        this.cart.push({ ...itemToSelect, quantity: requestedQuantity });
       }
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
       showToast('"' + itemToSelect.name + '" added to cart.');
@@ -1906,7 +1962,16 @@
     store.updateQty = function(id, delta) {
       const match = this.cart.find(item => item.id === id);
       if (!match) return;
-      match.quantity += delta;
+
+      const stockLimit = Number(match.stock);
+      const currentQuantity = Number(match.quantity || 0);
+      const nextQuantity = currentQuantity + delta;
+      if (delta > 0 && Number.isFinite(stockLimit) && stockLimit >= 0 && nextQuantity > stockLimit) {
+        showToast("You have reached the maximum available stock.", "error");
+        return;
+      }
+
+      match.quantity = nextQuantity;
       if (match.quantity <= 0) {
         this.cart = this.cart.filter(item => item.id !== id);
       }
@@ -2134,7 +2199,9 @@
         name: item.name,
         quantity: item.quantity,
         price: item.discountPrice || item.price,
-        color: item.color ? { name: item.color.name, value: item.color.value || item.color.hex } : null
+        imageURL: item.imageURL || item.image || fallbackImage,
+        color: item.color ? { name: item.color.name, value: item.color.value || item.color.hex } : null,
+        size: item.size || null
       }));
 
       const orderData = {
@@ -2363,8 +2430,10 @@
         this.renderCheckoutPage();
       } else if (this.currentPage === "payment") {
         this.renderPaymentPage();
-      } else if (this.currentPage === "cart" || this.currentPage === "bank-transfer") {
+      } else if (this.currentPage === "cart") {
         this.renderCartPage();
+      } else if (this.currentPage === "bank-transfer") {
+        this.renderBankTransferPage();
       } else if (this.currentPage === "order-confirmation") {
         this.renderOrderConfirmationPage();
       }
@@ -2380,6 +2449,27 @@
       }
 
       const orders = this.myOrders.length > 0 ? this.myOrders : [];
+
+      const resolveOrderItemImage = (item) => {
+        if (!item) return fallbackImage;
+
+        const normalizedBaseId = String(item.id || '').replace(/-v\d+$/, '');
+        const byId = this.products.find(product => String(product.id) === normalizedBaseId || String(product.id) === String(item.productId || ''));
+        if (byId) {
+          return getProductImageByPlacement(byId, 'store', byId.imageURL || fallbackImage);
+        }
+
+        const itemName = String(item.name || '').replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
+        const matchByName = this.products.find(product => {
+          const productName = String(product.name || '').replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
+          return productName && (productName.toLowerCase() === itemName.toLowerCase() || productName.toLowerCase().includes(itemName.toLowerCase()) || itemName.toLowerCase().includes(productName.toLowerCase()));
+        });
+        if (matchByName) {
+          return getProductImageByPlacement(matchByName, 'store', matchByName.imageURL || fallbackImage);
+        }
+
+        return item.imageURL || item.image || fallbackImage;
+      };
 
       const statusLabel = (status) => {
         const text = String(status || 'pending').toLowerCase();
@@ -2451,7 +2541,7 @@
                       ${items.map(item => {
                         const itemName = String(item.name || 'Product').replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
                         const itemPrice = Number(item.price || 0);
-                        const img = item.imageURL || item.image || fallbackImage;
+                        const img = resolveOrderItemImage(item);
                         const itemColor = item.color?.name ? `Color: ${item.color.name}` : '';
                         const itemSize = item.size ? `Size: ${item.size}` : '';
                         const variants = [itemColor, itemSize].filter(Boolean);
@@ -2692,7 +2782,7 @@
       if (this.loadingProducts && promoItems.length === 0) {
         promoGrid = Array(3).fill(this.createSkeletonCardMarkup()).join('');
       } else {
-        promoGrid = promoItems.map(p => this.createProductCardMarkup(p)).join('');
+        promoGrid = promoItems.map(p => this.createProductCardMarkup(p, 'home')).join('');
       }
 
       let bestItems = this.products.filter(p => p.isBestSeller).slice(0, 3);
@@ -2700,7 +2790,7 @@
       if (this.loadingProducts && bestItems.length === 0) {
         bestGrid = Array(3).fill(this.createSkeletonCardMarkup()).join('');
       } else {
-        bestGrid = bestItems.map(p => this.createProductCardMarkup(p)).join('');
+        bestGrid = bestItems.map(p => this.createProductCardMarkup(p, 'home')).join('');
       }
 
       let reviewsMarkup = this.reviews.slice(0, 6).map(r => {
@@ -2893,7 +2983,7 @@
                   
                   <!-- 1. Gold Empress Watch (Left/Back) -->
                   <div id="hero-prod-slot-1" class="absolute top-[10%] left-[5%] w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden animate-float-medium z-10 border border-luxuryGold/30 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium cursor-pointer group/slot">
-                    <img src="${this.settings.heroImg1 || 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=400'}" alt="Sovereign Watch Collection" class="w-full h-full object-cover">
+                    <img src="${getResponsiveImageValue({ mobile: this.settings.heroImg1Mobile, tablet: this.settings.heroImg1Desktop || this.settings.heroImg1, desktop: this.settings.heroImg1Desktop || this.settings.heroImg1, fallback: this.settings.heroImg1 || 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=400' })}" alt="Sovereign Watch Collection" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent"></div>
                     <div class="absolute bottom-2 left-2 right-2 text-[9px] sm:text-[10px] text-center font-bold text-white tracking-wide truncate bg-black/75 px-1 py-1 sm:py-1.5 rounded border border-luxuryGold/20 group-hover/slot:text-luxuryGold group-hover/slot:border-luxuryGold transition-all duration-300">
                       ${this.settings.heroProdName1 || 'Rose Empress Gold Chrono'}
@@ -2902,7 +2992,7 @@
                   
                   <!-- 2. Imperial Nautilus (Right/Back) -->
                   <div id="hero-prod-slot-2" class="absolute top-[20%] right-[5%] w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden animate-float-fast z-10 border border-luxuryGold/30 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium cursor-pointer group/slot" style="animation-delay: 1.5s;">
-                    <img src="${this.settings.heroImg2 || 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=400'}" alt="Nautilus Chrono Collection" class="w-full h-full object-cover">
+                    <img src="${getResponsiveImageValue({ mobile: this.settings.heroImg2Mobile, tablet: this.settings.heroImg2Desktop || this.settings.heroImg2, desktop: this.settings.heroImg2Desktop || this.settings.heroImg2, fallback: this.settings.heroImg2 || 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=400' })}" alt="Nautilus Chrono Collection" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent"></div>
                     <div class="absolute bottom-2 left-2 right-2 text-[9px] sm:text-[10px] text-center font-bold text-white tracking-wide truncate bg-black/75 px-1 py-1 sm:py-1.5 rounded border border-luxuryGold/20 group-hover/slot:text-luxuryGold group-hover/slot:border-luxuryGold transition-all duration-300">
                       ${this.settings.heroProdName2 || 'Oceanic Imperial Nautilus'}
@@ -2911,7 +3001,7 @@
 
                   <!-- 3. Premium Gilded Ring / Accessory (Center Foreground) -->
                   <div id="hero-prod-slot-3" class="absolute top-[42%] left-[30%] w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden animate-float-slow z-20 border-2 border-luxuryGold/40 shadow-2xl hover:border-luxuryGold hover:z-30 transition-premium cursor-pointer group/slot" style="animation-delay: 3s;">
-                    <img src="${this.settings.heroImg3 || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400'}" alt="Tungsten Signature Ring" class="w-full h-full object-cover">
+                    <img src="${getResponsiveImageValue({ mobile: this.settings.heroImg3Mobile, tablet: this.settings.heroImg3Desktop || this.settings.heroImg3, desktop: this.settings.heroImg3Desktop || this.settings.heroImg3, fallback: this.settings.heroImg3 || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400' })}" alt="Tungsten Signature Ring" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent"></div>
                     <div class="absolute bottom-2 left-2 right-2 text-[9px] sm:text-[10px] text-center font-bold text-white tracking-wide truncate bg-black/75 px-1 py-1 sm:py-1.5 rounded border border-luxuryGold/20 group-hover/slot:text-luxuryGold group-hover/slot:border-luxuryGold transition-all duration-300">
                       ${this.settings.heroProdName3 || 'Sovereign Gold Carbon Ring'}
@@ -3191,7 +3281,7 @@
       }, 200);
     };
 
-    store.createProductCardMarkup = function(product) {
+    store.createProductCardMarkup = function(product, placement = 'store') {
       const normalizedGender = getNormalizedGender(product.gender);
       const isGirls = normalizedGender === "Women";
       const isPacks = normalizedGender === "Men's Packs" || normalizedGender === "Women's Packs";
@@ -3199,6 +3289,9 @@
       const badgeColor = isGirls ? 'bg-luxuryGold/10 text-luxuryGold' : (isPacks ? 'bg-luxuryGold text-black' : 'bg-white/10 text-white');
       const btnOutlineColor = 'border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black';
       const btnSolidColor = 'bg-luxuryGold hover:bg-luxuryGold/90 text-black';
+      const cardImageSource = placement === 'home'
+        ? getProductImageByPlacement(product, 'home', product.imageURL || fallbackImage)
+        : getProductImageByPlacement(product, 'store', product.imageURL || fallbackImage);
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
@@ -3206,7 +3299,7 @@
         <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           <div>
             <div class="h-44 sm:h-64 md:h-80 overflow-hidden relative cursor-pointer card-img-trigger flex items-center justify-center bg-transparent" data-id="${product.id}">
-              <img src="${product.imageURL || fallbackImage}" alt="${cleanName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" loading="lazy" decoding="async">
+              <img src="${cardImageSource}" alt="${cleanName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" loading="lazy" decoding="async">
               <div class="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition"></div>
               ${product.discountPrice && Number(product.price) > Number(product.discountPrice) ? `<span class="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 bg-red-700 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">-${Math.round((1 - (Number(product.discountPrice) / Number(product.price))) * 100)}%</span>` : ''}
               
@@ -3261,7 +3354,7 @@
           e.stopPropagation();
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
-          if (prod) store.addToCart(prod);
+          if (prod) store.openProductDetailsModal(prod, 'add-to-cart');
         };
       });
 
@@ -3270,25 +3363,7 @@
           e.stopPropagation();
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
-          if (prod) {
-            const customItem = {
-              id: prod.id,
-              name: prod.name,
-              price: prod.discountPrice || prod.price,
-              imageURL: prod.imageURL,
-              category: prod.category,
-              gender: prod.gender,
-              stock: prod.stock,
-              freeDelivery: prod.freeDelivery === true,
-              quantity: 1
-            };
-            store.cart = [customItem];
-            localStorage.setItem("bp_cart", JSON.stringify(store.cart));
-            // Store the current checkout product for displaying in checkout page
-            store.currentCheckoutProduct = prod;
-            store.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
-            store.setPage("checkout");
-          }
+          if (prod) store.openProductDetailsModal(prod, 'order');
         };
       });
     };
@@ -3325,7 +3400,7 @@
           </div>
         `;
       } else {
-        productsGrid = filtered.map(p => this.createProductCardMarkup(p)).join('');
+        productsGrid = filtered.map(p => this.createProductCardMarkup(p, 'store')).join('');
       }
 
       // Check if products grid container is already rendered in the DOM to keep input focus intact
@@ -3980,15 +4055,72 @@
             <input type="number" name="discountPrice" value="${product && product.discountPrice ? product.discountPrice : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <div>
-              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">High-Res Image URL</label>
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Default / Main Product Image</label>
               <div class="flex gap-2">
                 <input type="text" id="prod-form-img-url" name="imageURL" required value="${product ? product.imageURL : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
                 <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
                   Upload
                   <input type="file" accept="image/*" class="hidden" id="prod-form-img-file">
                 </label>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Store Image</label>
+                <div class="flex gap-2">
+                  <input type="text" id="store-image-url" name="storeImage" value="${product ? product.storeImage || '' : ''}" placeholder="Store page image" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden image-upload-trigger" data-target="storeImage">
+                  </label>
+                </div>
+                <p class="text-[8px] text-gray-400 mt-1">Recommended: 800 × 800 px • 1:1</p>
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Home Image</label>
+                <div class="flex gap-2">
+                  <input type="text" id="home-image-url" name="homeImage" value="${product ? product.homeImage || '' : ''}" placeholder="Home page image" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden image-upload-trigger" data-target="homeImage">
+                  </label>
+                </div>
+                <p class="text-[8px] text-gray-400 mt-1">Recommended: 1200 × 800 px • 3:2</p>
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Mobile Image</label>
+                <div class="flex gap-2">
+                  <input type="text" id="mobile-image-url" name="mobileImage" value="${product ? product.mobileImage || '' : ''}" placeholder="Phone specific image" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden image-upload-trigger" data-target="mobileImage">
+                  </label>
+                </div>
+                <p class="text-[8px] text-gray-400 mt-1">Recommended: 750 × 1000 px • 3:4</p>
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Desktop Image</label>
+                <div class="flex gap-2">
+                  <input type="text" id="desktop-image-url" name="desktopImage" value="${product ? product.desktopImage || '' : ''}" placeholder="Desktop specific image" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden image-upload-trigger" data-target="desktopImage">
+                  </label>
+                </div>
+                <p class="text-[8px] text-gray-400 mt-1">Recommended: 1600 × 900 px • 16:9</p>
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Tablet Image</label>
+                <div class="flex gap-2">
+                  <input type="text" id="tablet-image-url" name="tabletImage" value="${product ? product.tabletImage || '' : ''}" placeholder="Tablet specific image" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden image-upload-trigger" data-target="tabletImage">
+                  </label>
+                </div>
+                <p class="text-[8px] text-gray-400 mt-1">Recommended: 1024 × 768 px • 4:3</p>
               </div>
             </div>
             <div>
@@ -4009,6 +4141,14 @@
               <button type="button" id="add-variation-row-btn" class="px-3 py-1 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black rounded text-[10px] uppercase font-bold transition">Add Variant</button>
             </div>
             <div id="variations-form-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
+          </div>
+
+          <div class="border-t border-luxuryGold/20 pt-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs uppercase font-bold text-luxuryGold tracking-wider">Sizes</span>
+              <button type="button" id="add-size-row-btn" class="px-3 py-1 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black rounded text-[10px] uppercase font-bold transition">Add Size</button>
+            </div>
+            <div id="sizes-form-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
           </div>
 
           <div class="border-t border-luxuryGold/20 pt-4 space-y-3">
@@ -4090,9 +4230,19 @@
                 </div>
               </div>
               <div>
-                <label class="block text-[9px] text-gray-400 uppercase">Description Override</label>
-                <input type="text" class="var-desc-input w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${v.description || ''}" data-index="${i}">
+                <label class="block text-[9px] text-gray-400 uppercase">Mobile Image</label>
+                <div class="flex gap-2">
+                  <input type="text" class="var-mobile-img-input w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${v.mobileImage || ''}" id="var-mobile-img-${i}" data-index="${i}">
+                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[9px] uppercase font-bold px-2 py-1 rounded flex items-center justify-center shrink-0">
+                    Upload
+                    <input type="file" accept="image/*" class="hidden var-mobile-file-upload" data-index="${i}">
+                  </label>
+                </div>
               </div>
+            </div>
+            <div>
+              <label class="block text-[9px] text-gray-400 uppercase">Description Override</label>
+              <input type="text" class="var-desc-input w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${v.description || ''}" data-index="${i}">
             </div>
           </div>
         `).join('');
@@ -4105,6 +4255,9 @@
         });
         listContainer.querySelectorAll(".var-img-input").forEach(input => {
           input.oninput = (e) => { tempVariations[parseInt(input.dataset.index)].imageURL = e.target.value; };
+        });
+        listContainer.querySelectorAll(".var-mobile-img-input").forEach(input => {
+          input.oninput = (e) => { tempVariations[parseInt(input.dataset.index)].mobileImage = e.target.value; };
         });
         listContainer.querySelectorAll(".var-desc-input").forEach(input => {
           input.oninput = (e) => { tempVariations[parseInt(input.dataset.index)].description = e.target.value; };
@@ -4125,12 +4278,58 @@
           };
         });
 
+        listContainer.querySelectorAll(".var-mobile-file-upload").forEach(upload => {
+          upload.onchange = (e) => {
+            const file = e.target.files[0];
+            const idx = parseInt(upload.dataset.index);
+            if (file) {
+              window.compressImageFile(file, (base64) => {
+                tempVariations[idx].mobileImage = base64;
+                const inputField = document.getElementById(`var-mobile-img-${idx}`);
+                if (inputField) inputField.value = base64;
+                showToast(`Variant #${idx+1} mobile image uploaded.`);
+              });
+            }
+          };
+        });
+
         listContainer.querySelectorAll(".remove-var-btn").forEach(btn => {
           btn.onclick = () => {
             const idx = parseInt(btn.dataset.index);
             tempVariations.splice(idx, 1);
             renderVariationsList();
           };
+        });
+      };
+
+      let tempSizes = Array.isArray(product?.sizes) && product.sizes.length > 0
+        ? product.sizes.map(size => ({ label: String(size?.label ?? size?.name ?? size?.size ?? '').trim(), stock: Number(size?.stock ?? 0) })).filter(size => size.label)
+        : [];
+
+      const renderSizesList = () => {
+        const listContainer = document.getElementById("sizes-form-list");
+        if (!listContainer) return;
+        listContainer.innerHTML = tempSizes.length === 0 ? `
+          <div class="rounded-xl border border-dashed border-luxuryGold/30 bg-black/30 p-3 text-[10px] uppercase tracking-[0.2em] text-gray-400 text-center">
+            No sizes added yet
+          </div>
+        ` : tempSizes.map((size, index) => `
+          <div class="grid grid-cols-[1fr_120px_auto] gap-2 items-end bg-black/60 p-3 rounded-xl border border-luxuryGold/20">
+            <label class="text-[9px] text-gray-400 uppercase">Size<input type="text" class="size-label-input mt-1 w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${size.label || ''}" data-index="${index}"></label>
+            <label class="text-[9px] text-gray-400 uppercase">Stock<input type="number" min="0" class="size-stock-input mt-1 w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${size.stock || 0}" data-index="${index}"></label>
+            <button type="button" class="remove-size-btn px-2 py-1 text-red-400 text-xs" data-index="${index}" aria-label="Delete size">✕</button>
+          </div>
+        `).join('');
+
+        listContainer.querySelectorAll('.size-label-input').forEach(input => input.oninput = e => {
+          tempSizes[Number(input.dataset.index)].label = e.target.value;
+        });
+        listContainer.querySelectorAll('.size-stock-input').forEach(input => input.oninput = e => {
+          tempSizes[Number(input.dataset.index)].stock = Number(e.target.value || 0);
+        });
+        listContainer.querySelectorAll('.remove-size-btn').forEach(button => button.onclick = () => {
+          tempSizes.splice(Number(button.dataset.index), 1);
+          renderSizesList();
         });
       };
 
@@ -4174,11 +4373,17 @@
       };
 
       document.getElementById("add-variation-row-btn").onclick = () => {
-        tempVariations.push({ name: '', price: '', imageURL: '', description: '' });
+        tempVariations.push({ name: '', price: '', imageURL: '', mobileImage: '', description: '' });
         renderVariationsList();
       };
 
+      document.getElementById("add-size-row-btn").onclick = () => {
+        tempSizes.push({ label: '', stock: 0 });
+        renderSizesList();
+      };
+
       renderVariationsList();
+      renderSizesList();
       renderColorsList();
 
       document.getElementById("add-color-row-btn").onclick = () => {
@@ -4220,11 +4425,34 @@
         };
       }
 
+      document.querySelectorAll(".image-upload-trigger").forEach((uploadInput) => {
+        uploadInput.onchange = (e) => {
+          const file = e.target.files[0];
+          const targetName = uploadInput.dataset.target;
+          if (!file || !targetName) return;
+
+          window.compressImageFile(file, (base64) => {
+            const targetField = document.querySelector(`[name="${targetName}"]`);
+            if (targetField) {
+              targetField.value = base64;
+              showToast(`${targetName.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())} image uploaded successfully!`);
+            }
+          });
+        };
+      });
+
       document.getElementById("form-cancel-btn").onclick = () => container.classList.add("hidden");
 
       document.getElementById("product-edit-form").onsubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
+        const validSizes = tempSizes
+          .map(size => ({
+            label: String(size.label || '').trim(),
+            stock: Number(size.stock || 0)
+          }))
+          .filter(size => size.label && size.stock >= 0);
+
         const payload = {
           name: form.name.value,
           category: form.category.value,
@@ -4232,13 +4460,22 @@
           price: Number(form.price.value),
           discountPrice: form.discountPrice.value ? Number(form.discountPrice.value) : null,
           imageURL: form.imageURL.value,
+          storeImage: form.storeImage?.value || '',
+          homeImage: form.homeImage?.value || '',
+          mobileImage: form.mobileImage?.value || '',
+          desktopImage: form.desktopImage?.value || '',
+          tabletImage: form.tabletImage?.value || '',
           galleryImages: form.galleryImages.value,
-          variations: tempVariations.filter(v => v.imageURL || v.name),
+          variations: tempVariations.filter(v => v.imageURL || v.mobileImage || v.name).map(v => ({
+            ...v,
+            mobileImage: v.mobileImage || ''
+          })),
           colors: tempColors.filter(color => color.name && color.value).map(color => ({
             ...color,
             variantIndex: color.variantName === 'main' ? null : (tempVariations.length > 0 ? (Number.isInteger(color.variantIndex) ? color.variantIndex : 0) : null),
             variantName: color.variantName === 'main' ? 'main' : (tempVariations.length > 0 ? (tempVariations[Number.isInteger(color.variantIndex) ? color.variantIndex : 0]?.name || color.variantName || '') : '')
           })),
+          sizes: validSizes,
           description: form.description.value,
           stock: Number(form.stock.value),
           rating: Number(form.rating.value),
@@ -4931,32 +5168,53 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-luxuryGold/20 pt-4">
               <div>
                 <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Hero Right Image 1 (Left Back)</label>
-                <div class="flex gap-2">
-                  <input type="text" id="settings-hero1-url" name="heroImg1" placeholder="https://..." value="${this.settings.heroImg1 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
-                    Upload
-                    <input type="file" accept="image/*" class="hidden" id="settings-hero1-file">
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex gap-2">
+                    <input type="text" id="settings-hero1-url" name="heroImg1" placeholder="Default / fallback" value="${this.settings.heroImg1 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                    <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                      Upload
+                      <input type="file" accept="image/*" class="hidden" id="settings-hero1-file">
+                    </label>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="settings-hero1-mobile-url" name="heroImg1Mobile" placeholder="Mobile image" value="${this.settings.heroImg1Mobile || ''}" class="w-full px-2 py-1.5 text-[9px] rounded-lg border border-luxuryGold/20 bg-black text-white">
+                    <input type="text" id="settings-hero1-desktop-url" name="heroImg1Desktop" placeholder="Desktop image" value="${this.settings.heroImg1Desktop || ''}" class="w-full px-2 py-1.5 text-[9px] rounded-lg border border-luxuryGold/20 bg-black text-white">
+                  </div>
+                  <p class="text-[8px] text-gray-400">Recommended: 800 × 1000 mobile, 1200 × 800 desktop, cover-fit crop.</p>
                 </div>
               </div>
               <div>
                 <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Hero Right Image 2 (Right Back)</label>
-                <div class="flex gap-2">
-                  <input type="text" id="settings-hero2-url" name="heroImg2" placeholder="https://..." value="${this.settings.heroImg2 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
-                    Upload
-                    <input type="file" accept="image/*" class="hidden" id="settings-hero2-file">
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex gap-2">
+                    <input type="text" id="settings-hero2-url" name="heroImg2" placeholder="Default / fallback" value="${this.settings.heroImg2 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                    <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                      Upload
+                      <input type="file" accept="image/*" class="hidden" id="settings-hero2-file">
+                    </label>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="settings-hero2-mobile-url" name="heroImg2Mobile" placeholder="Mobile image" value="${this.settings.heroImg2Mobile || ''}" class="w-full px-2 py-1.5 text-[9px] rounded-lg border border-luxuryGold/20 bg-black text-white">
+                    <input type="text" id="settings-hero2-desktop-url" name="heroImg2Desktop" placeholder="Desktop image" value="${this.settings.heroImg2Desktop || ''}" class="w-full px-2 py-1.5 text-[9px] rounded-lg border border-luxuryGold/20 bg-black text-white">
+                  </div>
+                  <p class="text-[8px] text-gray-400">Recommended: 800 × 1000 mobile, 1200 × 800 desktop, cover-fit crop.</p>
                 </div>
               </div>
               <div>
                 <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Hero Right Image 3 (Center Foreground)</label>
-                <div class="flex gap-2">
-                  <input type="text" id="settings-hero3-url" name="heroImg3" placeholder="https://..." value="${this.settings.heroImg3 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-                  <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
-                    Upload
-                    <input type="file" accept="image/*" class="hidden" id="settings-hero3-file">
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex gap-2">
+                    <input type="text" id="settings-hero3-url" name="heroImg3" placeholder="Default / fallback" value="${this.settings.heroImg3 || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                    <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
+                      Upload
+                      <input type="file" accept="image/*" class="hidden" id="settings-hero3-file">
+                    </label>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="settings-hero3-mobile-url" name="heroImg3Mobile" placeholder="Mobile image" value="${this.settings.heroImg3Mobile || ''}" class="w-full px-2 py-1.5 text-[9px] rounded-lg border border-luxuryGold/20 bg-black text-white">
+                    <input type="text" id="settings-hero3-desktop-url" name="heroImg3Desktop" placeholder="Desktop image" value="${this.settings.heroImg3Desktop || ''}" class="w-full px-2 py-1.5 text-[9px] rounded-lg border border-luxuryGold/20 bg-black text-white">
+                  </div>
+                  <p class="text-[8px] text-gray-400">Recommended: 800 × 1000 mobile, 1200 × 800 desktop, cover-fit crop.</p>
                 </div>
               </div>
             </div>
@@ -6081,6 +6339,200 @@
       }
     };
 
+    store.renderBankTransferPage = function() {
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'PageView', { page_path: '/bank-transfer' });
+      }
+
+      const container = document.getElementById("app-content");
+      if (!container) return;
+
+      const subtotal = this.cart.reduce((sum, item) => {
+        const unitPrice = Number(item.discountPrice || item.price || 0);
+        return sum + (unitPrice * Number(item.quantity || 1));
+      }, 0);
+
+      const selectedCityId = this.checkoutFormValues.cityId;
+      const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
+      const deliveryFee = this.getCartDeliveryFee(cityObj);
+      const total = subtotal + deliveryFee;
+      const activeBanks = this.getActiveBankAccounts();
+      const selectedBankId = this.checkoutFormValues.selectedBankId || activeBanks[0]?.id || '';
+      if (selectedBankId && !activeBanks.some(bank => bank.id === selectedBankId)) {
+        this.checkoutFormValues.selectedBankId = '';
+      }
+      this.checkoutFormValues.selectedBankId = selectedBankId;
+      const selectedBank = activeBanks.find(bank => bank.id === selectedBankId) || activeBanks[0] || null;
+      const proofPreview = this.checkoutFormValues.paymentProofData
+        ? `<img src="${this.checkoutFormValues.paymentProofData}" alt="Bank proof preview" class="h-28 w-full rounded-2xl object-cover border border-luxuryGold/30 bg-black/30">`
+        : `<div class="flex h-28 items-center justify-center rounded-2xl border border-dashed border-luxuryGold/30 bg-black/20 text-[10px] uppercase tracking-[0.2em] text-gray-400">Upload proof</div>`;
+
+      container.innerHTML = `
+        <div class="max-w-5xl mx-auto px-4 py-12 space-y-8 min-h-screen" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
+          <div class="sticky top-[95px] z-30 pointer-events-none h-0 mb-4 flex justify-start">
+            <button id="bank-transfer-back-payment" class="pointer-events-auto flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-luxuryGold hover:text-white bg-black/90 backdrop-blur-md border border-luxuryGold/30 px-4 py-2.5 rounded-full shadow-lg transition-premium font-bold">
+              ← Back to Payment
+            </button>
+          </div>
+
+          <div class="text-center space-y-3 pt-8">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">STEP 3 OF 3</span>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Bank Details</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
+            <div class="space-y-6">
+              <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Selected Bank Account</p>
+                ${activeBanks.length > 0 ? activeBanks.map((bank) => `
+                  <button type="button" class="bank-option w-full rounded-2xl border p-4 text-left transition ${selectedBankId === bank.id ? 'border-luxuryGold bg-luxuryGold/10' : 'border-white/10 bg-black/20 hover:border-luxuryGold/50'}" data-bank-id="${bank.id}">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-start gap-3 flex-1 min-w-0">
+                        ${bank.logoURL ? `<img src="${bank.logoURL}" alt="${bank.bankName} logo" class="h-12 w-12 rounded-xl object-contain border border-white/10 bg-white p-1 shrink-0" onerror="this.style.display='none'">` : ''}
+                        <div class="min-w-0">
+                          <p class="text-xs uppercase tracking-wider text-luxuryGold font-bold">${bank.bankName}</p>
+                          <p class="mt-2 text-sm text-white font-semibold">${bank.accountHolderName}</p>
+                          <p class="mt-1 text-[11px] text-gray-400">Account: ${bank.accountNumber || '—'}</p>
+                        </div>
+                      </div>
+                      <span class="text-[10px] uppercase tracking-[0.2em] ${selectedBankId === bank.id ? 'text-luxuryGold' : 'text-gray-500'}">${selectedBankId === bank.id ? 'Selected' : 'Select'}</span>
+                    </div>
+                  </button>
+                `).join('') : `
+                  <div class="rounded-2xl border border-dashed border-red-500/40 bg-red-500/5 p-4 text-sm text-red-200">
+                    No bank accounts are available right now. Please return to payment and try again later.
+                  </div>
+                `}
+              </div>
+
+              ${selectedBank ? `
+                <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
+                  <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Bank Transfer Details</p>
+                  <div class="flex items-center gap-3 rounded-2xl border border-luxuryGold/20 bg-black/20 p-3">
+                    ${selectedBank.logoURL ? `<img src="${selectedBank.logoURL}" alt="${selectedBank.bankName} logo" class="h-14 w-14 rounded-xl object-contain border border-white/10 bg-white p-1" onerror="this.style.display='none'">` : ''}
+                    <div>
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Bank</p>
+                      <p class="mt-1 font-semibold text-white">${selectedBank.bankName}</p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-200">
+                    <div class="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Bank</p>
+                      <p class="mt-2 font-semibold text-white">${selectedBank.bankName}</p>
+                    </div>
+                    <div class="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Account holder</p>
+                      <p class="mt-2 font-semibold text-white">${selectedBank.accountHolderName}</p>
+                    </div>
+                    <div class="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Account number</p>
+                      <p class="mt-2 font-semibold text-white">${selectedBank.accountNumber || '—'}</p>
+                    </div>
+                    <div class="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">RIB</p>
+                      <p class="mt-2 font-semibold text-white">${selectedBank.rib || '—'}</p>
+                    </div>
+                    <div class="rounded-xl border border-white/10 bg-black/20 p-3 sm:col-span-2">
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">IBAN</p>
+                      <p class="mt-2 font-semibold text-white">${selectedBank.iban || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="space-y-6">
+              <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Order Details</p>
+                <div class="space-y-3 text-sm text-gray-200">
+                  <div class="flex items-center justify-between"><span>Subtotal</span><span class="text-luxuryGold font-bold">${subtotal} MAD</span></div>
+                  <div class="flex items-center justify-between"><span>Delivery</span><span class="text-luxuryGold font-bold">${deliveryFee === 0 ? 'FREE' : `${deliveryFee} DH`}</span></div>
+                  <div class="flex items-center justify-between border-t border-white/10 pt-3 mt-2 text-base font-bold text-white"><span>Total</span><span class="text-luxuryGold">${total} MAD</span></div>
+                </div>
+              </div>
+
+              <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Transfer Instructions</p>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                  Please transfer the exact amount shown above to the selected bank account. After completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.
+                </p>
+                <p dir="rtl" class="text-sm text-gray-300 leading-relaxed">
+                  يرجى تحويل المبلغ الموضح أعلاه بالضبط إلى الحساب البنكي المحدد. بعد إتمام عملية التحويل، يرجى تحميل لقطة شاشة لتأكيد التحويل البنكي أدناه حتى نتمكن من التحقق من عملية الدفع ومعالجة طلبك.
+                </p>
+                <div class="rounded-2xl border border-luxuryGold/20 bg-black/20 p-4 text-sm text-gray-200">
+                  <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Amount to transfer</p>
+                  <p class="mt-2 text-2xl font-serif text-luxuryGold">${total} MAD</p>
+                </div>
+              </div>
+
+              <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Payment Proof</p>
+                ${proofPreview}
+                <input id="bank-proof-upload" type="file" accept="image/*" class="block w-full text-xs text-gray-300 file:mr-3 file:rounded-full file:border-0 file:bg-luxuryGold file:px-4 file:py-2 file:text-[10px] file:font-bold file:uppercase file:text-black">
+              </div>
+            </div>
+          </div>
+
+          <div class="max-w-2xl mx-auto w-full pt-2">
+            <button id="bank-transfer-submit" class="w-full py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition flex items-center justify-center gap-2">
+              <span>Confirm Order</span>
+              ${getIconSvg('send', 'w-4 h-4')}
+            </button>
+          </div>
+        </div>
+      `;
+
+      const backBtn = document.getElementById('bank-transfer-back-payment');
+      if (backBtn) {
+        backBtn.onclick = () => this.setPage('payment');
+      }
+
+      document.querySelectorAll('.bank-option').forEach((btn) => {
+        btn.onclick = () => {
+          const bankId = btn.getAttribute('data-bank-id');
+          this.checkoutFormValues.selectedBankId = bankId || '';
+          this.renderBankTransferPage();
+        };
+      });
+
+      const proofInput = document.getElementById('bank-proof-upload');
+      if (proofInput) {
+        proofInput.onchange = (event) => {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.checkoutFormValues.paymentProofData = String(reader.result || '');
+            this.checkoutFormValues.paymentProofName = file.name || 'bank-proof';
+            this.renderBankTransferPage();
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      const submitBtn = document.getElementById('bank-transfer-submit');
+      if (submitBtn) {
+        submitBtn.onclick = () => {
+          if (!this.checkoutFormValues.selectedBankId) {
+            showToast('Please select a bank account before continuing.', 'error');
+            return;
+          }
+          if (!this.checkoutFormValues.paymentProofData) {
+            showToast('Please upload your bank transfer proof before confirming the order.', 'error');
+            return;
+          }
+
+          this.checkoutFormValues.paymentMethod = 'bank';
+          const name = this.checkoutFormValues.customerName;
+          const phone = this.checkoutFormValues.phone;
+          const cityId = this.checkoutFormValues.cityId;
+          const address = this.checkoutFormValues.address;
+          this.submitCheckoutOrder(name, phone, cityId, address);
+        };
+      }
+    };
+
     store.renderCartPage = function() {
       if (typeof fbq !== 'undefined') {
         fbq('track', 'PageView', { page_path: '/cart' });
@@ -6455,10 +6907,15 @@
       });
     };
 
-    store.openProductDetailsModal = function(product) {
+    store.openProductDetailsModal = function(product, action = null) {
       const isProductPage = window.location.pathname.startsWith('/product/');
       const modal = isProductPage ? document.getElementById("app-content") : document.getElementById("product-detail-container");
       if (!modal) return;
+
+      const isMobileViewport = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+      const initialProductImage = isMobileViewport
+        ? getProductImageByPlacement(product, 'mobile', product.imageURL || fallbackImage)
+        : getProductImageByPlacement(product, 'desktop', product.imageURL || fallbackImage);
 
       // Prevent duplicate rendering and lag if modal is already open for this product
       if (store.currentlyOpenProductId === product.id && !modal.classList.contains("hidden")) {
@@ -6466,13 +6923,14 @@
       }
       store.currentlyOpenProductId = product.id;
 
-      this.activeImg = product.imageURL;
+      this.activeImg = initialProductImage;
       this.activeName = product.name;
       this.activePrice = product.discountPrice || product.price;
       this.activeDescription = product.description;
       this.activeVariationIndex = null;
-      this.activeColor = null;
       const orderedColors = this.getProductColorsInPictureOrder(product);
+      const mainColor = orderedColors.find(color => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL) || orderedColors[0] || null;
+      this.activeColor = mainColor;
 
       // Reference to the user-specified high-fidelity layout
       const referenceAsset = "image_00ef48.jpg";
@@ -6483,19 +6941,23 @@
       }
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
+      const mainProductImage = mainColor?.imageURL || product.imageURL || fallbackImage;
+      const defaultProductImage = isMobileViewport ? getProductImageByPlacement(product, 'mobile', mainProductImage) : getProductImageByPlacement(product, 'desktop', mainProductImage);
+      this.activeImg = defaultProductImage;
 
       let galleryMarkup = `
-        <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-luxuryGold scale-105" data-img="${product.imageURL || fallbackImage}" data-is-variation="false">
-          <img src="${product.imageURL || fallbackImage}" class="w-full h-full object-cover">
+        <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-luxuryGold scale-105" data-img="${defaultProductImage}" data-is-variation="false">
+          <img src="${defaultProductImage}" class="w-full h-full object-cover">
         </div>
       `;
 
       // Render Dynamic variations as gallery elements
       const productVars = product.variations || [];
       productVars.forEach((v, index) => {
+        const variantImage = isMobileViewport ? (v.mobileImage || v.imageURL || fallbackImage) : (v.imageURL || fallbackImage);
         galleryMarkup += `
-          <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-transparent opacity-65 hover:opacity-100" data-img="${v.imageURL}" data-is-variation="true" data-index="${index}">
-            <img src="${v.imageURL}" class="w-full h-full object-cover">
+          <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-transparent opacity-65 hover:opacity-100" data-img="${variantImage}" data-is-variation="true" data-index="${index}">
+            <img src="${variantImage}" class="w-full h-full object-cover">
           </div>
         `;
       });
@@ -6529,6 +6991,10 @@
       });
 
       const normalizedGender = getNormalizedGender(product.gender);
+      const sizeOptions = this.getProductSizes(product);
+      let selectedProductSize = null;
+      let selectedQty = 1;
+      const getCurrentAvailableStock = () => selectedProductSize ? this.getProductSizeStock(product, selectedProductSize) : Number(product.stock || 0);
 
       modal.innerHTML = `
         ${isProductPage ? '' : '<div class="fixed inset-0 bg-black/85 backdrop-blur-xs transition-opacity duration-300 opacity-0" id="product-modal-backdrop"></div>'}
@@ -6554,6 +7020,7 @@
                 ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
               </div>
               <h2 id="modal-product-title" class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
+              ${action ? `<p id="product-details-prompt" class="rounded-lg border border-luxuryGold/40 bg-luxuryGold/10 px-3 py-2 text-[11px] font-semibold text-luxuryGold">Please select the product details first.</p>` : ''}
               
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1">
@@ -6583,16 +7050,40 @@
                   <div class="pt-3 space-y-2">
                     <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Select Color</p>
                     <div class="flex flex-wrap gap-2" id="modal-colors-container">
-                      ${orderedColors.map((color, index) => `<button type="button" class="product-color-swatch w-8 h-8 rounded-full border-2 border-white/20 transition" style="background-color:${color.value || color.hex || '#000000'}" data-color-index="${index}" title="${color.name || 'Color'}" aria-label="${color.name || 'Color'}"></button>`).join('')}
+                      ${orderedColors.map((color, index) => `<button type="button" class="product-color-swatch w-8 h-8 rounded-full border-2 ${color === mainColor ? 'border-luxuryGold scale-110' : 'border-white/20'} transition" style="background-color:${color.value || color.hex || '#000000'}" data-color-index="${index}" title="${color.name || 'Color'}" aria-label="${color.name || 'Color'}"></button>`).join('')}
                     </div>
-                    <p id="selected-color-label" class="text-[10px] text-gray-400">No color selected</p>
+                    <p id="selected-color-label" class="text-[10px] text-gray-400">${mainColor?.name || 'No color selected'}</p>
                   </div>
                 ` : ''}
               </div>
 
               <p id="modal-product-description" class="text-xs md:text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
+
+              ${sizeOptions.length > 0 ? `
+                <div class="space-y-2">
+                  <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Size</p>
+                  <div id="modal-size-options" class="flex flex-wrap gap-2">
+                    ${sizeOptions.map(size => `
+                      <button type="button" class="modal-size-btn rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${selectedProductSize === size.label ? 'border-luxuryGold bg-luxuryGold text-black' : 'border-white/15 bg-black/30 text-gray-300 hover:border-luxuryGold/60'}" data-size="${size.label}">
+                        ${size.label}
+                      </button>
+                    `).join('')}
+                  </div>
+                  <p id="modal-size-stock" class="text-[10px] text-gray-400">Available: ${this.getProductSizeStock(product, selectedProductSize)} pieces</p>
+                </div>
+              ` : ''}
+
+              <div class="space-y-2">
+                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Quantity</p>
+                <div class="flex items-center gap-3">
+                  <button type="button" id="modal-qty-decrease" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">−</button>
+                  <span id="modal-qty-value" class="min-w-6 text-center text-lg font-bold text-white">${selectedQty}</span>
+                  <button type="button" id="modal-qty-increase" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">+</button>
+                </div>
+              </div>
+
               <p class="text-[11px] font-medium text-gray-400">
-                Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${product.stock} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
+                Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${getCurrentAvailableStock()} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
               </p>
             </div>
 
@@ -6648,6 +7139,7 @@
             mainImg.style.opacity = '1';
 
             if (isVariation) {
+              resetVariantSelection();
               const activeVariant = product.variations[varIndex];
               const colors = orderedColors;
               const hasMainColor = colors.some(color => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL);
@@ -6707,6 +7199,7 @@
         swatch.onclick = () => {
           const colorIndex = Number(swatch.dataset.colorIndex);
           const color = orderedColors[colorIndex];
+          resetVariantSelection();
           store.activeColor = color;
           document.querySelectorAll('.product-color-swatch').forEach(item => item.classList.remove('border-luxuryGold', 'scale-110'));
           swatch.classList.add('border-luxuryGold', 'scale-110');
@@ -6740,9 +7233,11 @@
             if (priceWrapperEl) priceWrapperEl.innerHTML = product.discountPrice ? `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span><span class="text-xs line-through text-gray-500">${product.price} MAD</span>` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`;
           }
           const selectedImage = isMainColor ? product.imageURL : (color.imageURL || variant?.imageURL);
-          if (selectedImage) {
-            store.activeImg = selectedImage;
-            if (mainImg) mainImg.src = selectedImage;
+          const mobileSelectedImage = isMainColor ? (getProductImageByPlacement(product, 'mobile', product.imageURL || fallbackImage)) : (color.imageURL || variant?.mobileImage || variant?.imageURL);
+          const imageToUse = isMobileViewport ? (mobileSelectedImage || selectedImage) : selectedImage;
+          if (imageToUse) {
+            store.activeImg = imageToUse;
+            if (mainImg) mainImg.src = imageToUse;
           }
         };
       });
@@ -6791,6 +7286,86 @@
         document.getElementById("lightbox-close").onclick = closeLightbox;
       };
 
+      const updateSizeAndQtyState = () => {
+        const sizeStockEl = document.getElementById('modal-size-stock');
+        const qtyValueEl = document.getElementById('modal-qty-value');
+        const maxAvailable = getCurrentAvailableStock();
+        if (sizeStockEl) {
+          sizeStockEl.textContent = `Available: ${maxAvailable} pieces`;
+        }
+        if (qtyValueEl) {
+          selectedQty = Math.min(Math.max(selectedQty, 0), Math.max(maxAvailable, 0));
+          qtyValueEl.textContent = String(selectedQty);
+        }
+      };
+
+      const resetVariantSelection = () => {
+        selectedProductSize = null;
+        selectedQty = 0;
+        document.querySelectorAll('.modal-size-btn').forEach(button => {
+          button.classList.remove('border-luxuryGold', 'bg-luxuryGold', 'text-black');
+          button.classList.add('border-white/15', 'bg-black/30', 'text-gray-300');
+        });
+        updateSizeAndQtyState();
+      };
+
+      const validateProductDetails = () => {
+        const missingDetails = (sizeOptions.length > 0 && !selectedProductSize) || (orderedColors.length > 0 && !store.activeColor);
+        const promptEl = document.getElementById('product-details-prompt');
+        if (promptEl) {
+          promptEl.classList.toggle('hidden', !missingDetails);
+        }
+        if (missingDetails) {
+          showToast("Please select the product details first.", "error");
+          return false;
+        }
+        if (selectedQty < 1) {
+          showToast("Please select a quantity first.", "error");
+          return false;
+        }
+        return true;
+      };
+
+      document.querySelectorAll('.modal-size-btn').forEach(button => {
+        button.onclick = () => {
+          selectedProductSize = button.dataset.size || null;
+          selectedQty = 0;
+          document.querySelectorAll('.modal-size-btn').forEach(btn => {
+            const isActive = btn.dataset.size === selectedProductSize;
+            btn.classList.toggle('border-luxuryGold', isActive);
+            btn.classList.toggle('bg-luxuryGold', isActive);
+            btn.classList.toggle('text-black', isActive);
+            btn.classList.toggle('text-gray-300', !isActive);
+            btn.classList.toggle('border-white/15', !isActive);
+            btn.classList.toggle('bg-black/30', !isActive);
+          });
+          updateSizeAndQtyState();
+        };
+      });
+
+      const qtyDecreaseBtn = document.getElementById('modal-qty-decrease');
+      const qtyIncreaseBtn = document.getElementById('modal-qty-increase');
+      if (qtyDecreaseBtn) {
+        qtyDecreaseBtn.onclick = () => {
+          const maxStock = getCurrentAvailableStock();
+          selectedQty = Math.max(0, Math.min(selectedQty - 1, Math.max(maxStock, 0)));
+          const qtyValueEl = document.getElementById('modal-qty-value');
+          if (qtyValueEl) qtyValueEl.textContent = String(selectedQty);
+        };
+      }
+      if (qtyIncreaseBtn) {
+        qtyIncreaseBtn.onclick = () => {
+          const maxStock = getCurrentAvailableStock();
+          if (maxStock <= 0 || selectedQty >= maxStock) {
+            showToast("You have reached the maximum available stock.", "error");
+            return;
+          }
+          selectedQty = Math.min(maxStock || 1, selectedQty + 1);
+          const qtyValueEl = document.getElementById('modal-qty-value');
+          if (qtyValueEl) qtyValueEl.textContent = String(selectedQty);
+        };
+      }
+
       document.getElementById("modal-share-btn").onclick = (e) => {
         e.stopPropagation();
         const shareUrl = window.location.origin + getProductRoutePath(product);
@@ -6798,37 +7373,47 @@
       };
 
       document.getElementById("modal-add-to-cart-btn").onclick = () => {
+        if (!validateProductDetails()) return;
+        const activeSize = selectedProductSize || null;
+        const maxAvailable = getCurrentAvailableStock();
+        const safeQty = Math.min(Math.max(selectedQty, 0), Math.max(maxAvailable, 0));
         const itemPayload = {
-          id: product.id + (store.activeVariationIndex !== null ? '-v' + store.activeVariationIndex : ''),
+          id: product.id + (store.activeVariationIndex !== null ? '-v' + store.activeVariationIndex : '') + (activeSize ? '-' + String(activeSize).trim().toLowerCase().replace(/\s+/g, '-') : ''),
           name: store.activeName,
           price: store.activePrice,
           imageURL: store.activeImg,
           color: store.activeColor ? { name: store.activeColor.name, value: store.activeColor.value || store.activeColor.hex } : null,
           category: product.category,
           gender: product.gender,
-          stock: product.stock,
-          freeDelivery: product.freeDelivery === true
+          stock: maxAvailable,
+          size: activeSize,
+          freeDelivery: product.freeDelivery === true,
+          quantity: safeQty
         };
         store.addToCart(product, itemPayload);
         closeModal();
       };
 
       document.getElementById("modal-order-now-btn").onclick = () => {
+        if (!validateProductDetails()) return;
+        const activeSize = selectedProductSize || null;
+        const maxAvailable = getCurrentAvailableStock();
+        const safeQty = Math.min(Math.max(selectedQty, 0), Math.max(maxAvailable, 0));
         const itemPayload = {
-          id: product.id + (store.activeVariationIndex !== null ? '-v' + store.activeVariationIndex : ''),
+          id: product.id + (store.activeVariationIndex !== null ? '-v' + store.activeVariationIndex : '') + (activeSize ? '-' + String(activeSize).trim().toLowerCase().replace(/\s+/g, '-') : ''),
           name: store.activeName,
           price: store.activePrice,
           imageURL: store.activeImg,
           color: store.activeColor ? { name: store.activeColor.name, value: store.activeColor.value || store.activeColor.hex } : null,
           category: product.category,
           gender: product.gender,
-          stock: product.stock,
+          stock: maxAvailable,
+          size: activeSize,
           freeDelivery: product.freeDelivery === true,
-          quantity: 1
+          quantity: safeQty
         };
         store.cart = [itemPayload];
         localStorage.setItem("bp_cart", JSON.stringify(store.cart));
-        // Store the current checkout product for displaying in checkout page
         store.currentCheckoutProduct = product;
         store.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
         closeModal();
