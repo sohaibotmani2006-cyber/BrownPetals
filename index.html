@@ -978,6 +978,9 @@
         const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'checkout', 'payment', 'bank-transfer', 'order-confirmation'];
         if (validPages.includes(page)) {
           const pageChanged = (this.currentPage !== page);
+          if (pageChanged && this.currentPage === 'admin' && page !== 'admin') {
+            this.cleanupSubscriptions("admin");
+          }
           this.currentPage = page;
           if (page === 'admin' && this.isAdmin) this.initAdminSubscriptions();
           const modal = document.getElementById('product-detail-container');
@@ -1013,7 +1016,24 @@
 
       activeSubscriptions: {
         public: false,
-        admin: false
+        admin: false,
+        publicUnsubscribers: [],
+        adminUnsubscribers: [],
+        orderHistoryRequest: null,
+        orderHistoryKey: ""
+      },
+
+      trackSubscription(scope, unsubscribe) {
+        if (typeof unsubscribe === "function") {
+          this.activeSubscriptions[scope + "Unsubscribers"].push(unsubscribe);
+        }
+        return unsubscribe;
+      },
+
+      cleanupSubscriptions(scope) {
+        const subscriptions = this.activeSubscriptions[scope + "Unsubscribers"] || [];
+        subscriptions.splice(0).forEach(unsubscribe => unsubscribe());
+        this.activeSubscriptions[scope] = false;
       }
     };
 
@@ -1509,6 +1529,57 @@
       if (!auth.currentUser && !forceBypass) return;
       this.activeSubscriptions.public = true;
 
+      const publicCacheTTL = 5 * 60 * 1000;
+      const writePublicCache = (cacheKey, data) => {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
+        } catch (err) {
+          console.warn("Could not update local Firestore cache:", err);
+        }
+      };
+      const readCachedCollection = async (cacheKey, source) => {
+        if (!store.isAdmin) {
+          try {
+            const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+            if (cached && Date.now() - cached.timestamp < publicCacheTTL && Array.isArray(cached.data)) {
+              return cached.data;
+            }
+          } catch (err) {
+            localStorage.removeItem(cacheKey);
+          }
+        }
+
+        const snap = await getDocs(source);
+        const data = [];
+        snap.forEach(snapshotDoc => data.push({ id: snapshotDoc.id, ...snapshotDoc.data() }));
+        if (!store.isAdmin) {
+          writePublicCache(cacheKey, data);
+        }
+        return data;
+      };
+      const readCachedDocument = async (cacheKey, source) => {
+        if (!store.isAdmin) {
+          try {
+            const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+            if (cached && Date.now() - cached.timestamp < publicCacheTTL) return cached.data;
+          } catch (err) {
+            localStorage.removeItem(cacheKey);
+          }
+        }
+
+        const snap = await getDoc(source);
+        const data = snap.exists() ? snap.data() : null;
+        if (!store.isAdmin) {
+          writePublicCache(cacheKey, data);
+        }
+        return data;
+      };
+      const getCollectionList = source => {
+        const list = [];
+        source.forEach(item => list.push(Array.isArray(source) ? item : { id: item.id, ...item.data() }));
+        return list;
+      };
+
       // Instant local persistence recovery fallback
       const cachedSettings = localStorage.getItem("sovanex_settings");
       if (cachedSettings) {
@@ -1523,17 +1594,21 @@
       const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
       const handleSettings = (snap) => {
         if (snap.exists()) {
-          store.settings = { ...store.settings, ...snap.data() };
+          const data = snap.data();
+          store.settings = { ...store.settings, ...data };
           localStorage.setItem("sovanex_settings", JSON.stringify(store.settings));
+          writePublicCache("sovanex_settings_firestore_cache", data);
           store.updateDOM();
         } else if (store.isAdmin) {
           setDoc(settingsDocRef, store.settings).catch(e => console.error("Initial write bypassed:", e));
         }
       };
       if (store.isAdmin) {
-        onSnapshot(settingsDocRef, handleSettings, (err) => console.warn("Settings fetch bypassed:", err));
+        this.trackSubscription("public", onSnapshot(settingsDocRef, handleSettings, (err) => console.warn("Settings fetch bypassed:", err)));
       } else {
-        getDoc(settingsDocRef).then(handleSettings).catch(err => console.warn("Settings fetch bypassed:", err));
+        readCachedDocument("sovanex_settings_firestore_cache", settingsDocRef)
+          .then(data => handleSettings({ exists: () => Boolean(data), data: () => data || {} }))
+          .catch(err => console.warn("Settings fetch bypassed:", err));
       }
 
       const prodQuery = collection(db, 'artifacts', appId, 'public', 'data', 'products');
@@ -1548,18 +1623,15 @@
           );
           
           console.log('Calling getDocs for products...');
-          const snap = await Promise.race([getDocs(prodQuery), timeoutPromise]);
-          console.log('getDocs returned, processing', snap.size, 'documents');
-          const list = [];
-          snap.forEach(doc => {
-            list.push({ id: doc.id, ...doc.data() });
-            console.log('Added product:', doc.id);
-          });
+          const list = await Promise.race([readCachedCollection("sovanex_products_firestore_cache", prodQuery), timeoutPromise]);
+          console.log('Products loaded, processing', list.length, 'documents');
+          list.forEach(product => console.log('Added product:', product.id));
           const productsChanged = list.length > 0 && store.getProductSignature(store.products) !== store.getProductSignature(list);
           if (list.length > 0) localStorage.setItem("sovanex_products_cache", JSON.stringify(list));
           if (productsChanged) {
             store.products = list;
           }
+          writePublicCache("sovanex_products_firestore_cache", list);
           console.log('Store products updated with', list.length, 'products');
 
           if (list.length === 0) {
@@ -1707,8 +1779,7 @@
       const catRef = collection(db, 'artifacts', appId, 'public', 'data', 'categories');
       const catQuery = query(catRef, orderBy("order", "asc"));
       const handleCategories = (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const list = getCollectionList(snap);
         
         if (list.length === 0) {
           const defaults = ["Watches", "Accessories"];
@@ -1722,18 +1793,18 @@
           store.categories = list;
           localStorage.setItem("sovanex_categories_cache", JSON.stringify(list));
         }
+        writePublicCache("sovanex_categories_firestore_cache", store.categories);
         
         store.loadingCategories = false;
         store.updateDOM();
       };
-      if (store.isAdmin) onSnapshot(catQuery, handleCategories, (err) => console.warn(err));
-      else getDocs(catQuery).then(handleCategories).catch(err => console.warn(err));
+      if (store.isAdmin) this.trackSubscription("public", onSnapshot(catQuery, handleCategories, (err) => console.warn(err)));
+      else readCachedCollection("sovanex_categories_firestore_cache", catQuery).then(handleCategories).catch(err => console.warn(err));
 
       const lookbookRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
       const lookbookQuery = query(lookbookRef, orderBy("order", "asc"));
       const handleLookbook = (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const list = getCollectionList(snap);
         
         if (list.length === 0) {
           const initialLookbook = [
@@ -1750,10 +1821,11 @@
         } else {
           store.lookbook = list;
         }
+        writePublicCache("sovanex_lookbook_firestore_cache", store.lookbook);
         store.updateDOM();
       };
-      if (store.isAdmin) onSnapshot(lookbookQuery, handleLookbook, (err) => console.warn(err));
-      else getDocs(lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
+      if (store.isAdmin) this.trackSubscription("public", onSnapshot(lookbookQuery, handleLookbook, (err) => console.warn(err)));
+      else readCachedCollection("sovanex_lookbook_firestore_cache", lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
 
       const citiesRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
       const moroccanCityDefaults = [
@@ -1770,8 +1842,7 @@
         ['Tetouan', 45], ['Tinghir', 60], ['Tiznit', 55], [' Zagora', 65]
       ].map(([name], index) => ({ id: `default-city-${index}`, name: name.trim(), price: STANDARD_DELIVERY_FEE, isActive: true, freeDelivery: false }));
       const handleCities = (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const list = getCollectionList(snap);
 
         if (list.length === 0) {
           moroccanCityDefaults.forEach(async (city) => {
@@ -1790,28 +1861,32 @@
             });
           }
         }
+        writePublicCache("sovanex_cities_firestore_cache", store.deliveryCities);
         store.updateDOM();
       };
-      if (store.isAdmin) onSnapshot(citiesRef, handleCities, (err) => console.warn(err));
-      else getDocs(citiesRef).then(handleCities).catch(err => console.warn(err));
+      if (store.isAdmin) this.trackSubscription("public", onSnapshot(citiesRef, handleCities, (err) => console.warn(err)));
+      else readCachedCollection("sovanex_cities_firestore_cache", citiesRef).then(handleCities).catch(err => console.warn(err));
 
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
       const handleTelegram = (snap) => {
         if (snap.exists()) {
-          store.telegramSettings = { ...store.telegramSettings, ...snap.data() };
+          const data = snap.data();
+          store.telegramSettings = { ...store.telegramSettings, ...data };
           localStorage.setItem("sovanex_telegram_settings", JSON.stringify(store.telegramSettings));
+          writePublicCache("sovanex_telegram_firestore_cache", data);
         } else if (store.isAdmin) {
           setDoc(botConfigDoc, store.telegramSettings).catch(e => console.error("Initial telegram configuration write bypassed:", e));
         }
       };
-      if (store.isAdmin) onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err));
-      else getDoc(botConfigDoc).then(handleTelegram).catch(err => console.warn(err));
+      if (store.isAdmin) this.trackSubscription("public", onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err)));
+      else readCachedDocument("sovanex_telegram_firestore_cache", botConfigDoc)
+        .then(data => handleTelegram({ exists: () => Boolean(data), data: () => data || {} }))
+        .catch(err => console.warn(err));
 
       const revRef = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
       const revQuery = query(revRef, orderBy("createdAt", "desc"), limit(store.isAdmin ? 100 : 20));
       const handleReviews = (snap) => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const list = getCollectionList(snap);
         store.reviews = list;
 
         if (list.length === 0) {
@@ -1824,10 +1899,13 @@
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'reviews'), r);
           });
         }
+        writePublicCache("sovanex_reviews_firestore_cache", store.reviews);
         store.updateDOM();
       };
-      if (store.isAdmin) onSnapshot(revQuery, handleReviews, (err) => console.warn(err));
-      else getDocs(revQuery).then(handleReviews).catch(err => console.warn(err));
+      if (store.isAdmin) this.trackSubscription("public", onSnapshot(revQuery, handleReviews, (err) => console.warn(err)));
+      else readCachedCollection("sovanex_reviews_firestore_cache", revQuery).then(handleReviews).catch(err => console.warn(err));
+
+      return () => this.cleanupSubscriptions("public");
     };
 
     store.initAdminSubscriptions = function() {
@@ -1838,7 +1916,7 @@
       const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
       const orderQuery = query(ordersRef, orderBy("createdAt", "desc"), limit(150));
       
-      onSnapshot(orderQuery, (snap) => {
+      this.trackSubscription("admin", onSnapshot(orderQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         store.orders = list;
@@ -1867,7 +1945,9 @@
         if (store.currentPage === "admin" && store.adminView === "dashboard") {
           store.renderAnalyticsChart();
         }
-      }, (err) => console.error("Admin orders error:", err));
+      }, (err) => console.error("Admin orders error:", err)));
+
+      return () => this.cleanupSubscriptions("admin");
     };
 
     store.getProductSizes = function(product) {
@@ -1922,39 +2002,49 @@
       this.updateDOM();
     };
 
-    store.fetchMyOrders = async function() {
+    store.loadOrderHistory = async function() {
       const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
-      if (localHistory.length === 0) {
-        this.myOrders = [];
-        this.loadingMyOrders = false;
-        this.renderCartDrawer();
-        return;
+      const orderIds = localHistory.slice(-10);
+      const historyKey = orderIds.join("|");
+      if (orderIds.length === 0) return [];
+
+      const activeRequest = this.activeSubscriptions.orderHistoryRequest;
+      if (this.activeSubscriptions.orderHistoryKey === historyKey) {
+        if (activeRequest) return activeRequest;
+        return this.myOrders;
       }
 
-      this.loadingMyOrders = true;
-      this.renderCartDrawer();
-
-      try {
+      this.activeSubscriptions.orderHistoryKey = historyKey;
+      this.activeSubscriptions.orderHistoryRequest = (async () => {
         const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10))); // Securely get secure logs
+        const q = query(ordersCol, where("orderId", "in", orderIds));
         const snap = await getDocs(q);
         const list = [];
-        snap.forEach(doc => {
-          list.push({ id: doc.id, ...doc.data() });
-        });
-
-        // Sort descending
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         list.sort((a, b) => {
           const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
           const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
           return dateB - dateA;
         });
-
         this.myOrders = list;
+        return list;
+      })();
+
+      try {
+        return await this.activeSubscriptions.orderHistoryRequest;
       } catch (err) {
         console.error("Could not fetch secure telemetry:", err);
+        this.activeSubscriptions.orderHistoryKey = "";
+        return [];
+      } finally {
+        this.activeSubscriptions.orderHistoryRequest = null;
       }
+    };
 
+    store.fetchMyOrders = async function() {
+      this.loadingMyOrders = true;
+      this.renderCartDrawer();
+      await this.loadOrderHistory();
       this.loadingMyOrders = false;
       this.renderCartDrawer();
     };
@@ -6686,37 +6776,9 @@
     };
 
     store.fetchMyOrdersOnPage = async function() {
-      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
-      if (localHistory.length === 0) {
-        this.myOrders = [];
-        this.loadingMyOrders = false;
-        this.renderCartPage();
-        return;
-      }
-
       this.loadingMyOrders = true;
       this.renderCartPage();
-
-      try {
-        const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-        const q = query(ordersCol, where("orderId", "in", localHistory.slice(-10)));
-        const snap = await getDocs(q);
-        const list = [];
-        snap.forEach(doc => {
-          list.push({ id: doc.id, ...doc.data() });
-        });
-
-        list.sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-          return dateB - dateA;
-        });
-
-        this.myOrders = list;
-      } catch (err) {
-        console.error("Order history fetch failed:", err);
-      }
-
+      await this.loadOrderHistory();
       this.loadingMyOrders = false;
       this.renderCartPage();
     };
@@ -7576,6 +7638,8 @@
             }
           }
         } else {
+          store.cleanupSubscriptions("admin");
+          store.cleanupSubscriptions("public");
            signInAnonymously(auth).catch(console.error);
         }
       });
