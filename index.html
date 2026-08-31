@@ -1666,15 +1666,29 @@
       
       // Use getDocs instead of onSnapshot to avoid long-polling issues with Cloudflare
       const loadProducts = async () => {
+        const productReadStartedAt = Date.now();
+        const productReadContext = {
+          url: window.location.href,
+          online: navigator.onLine,
+          userId: auth.currentUser?.uid || null,
+          authProvider: auth.currentUser?.providerData?.map(provider => provider.providerId) || [],
+          projectId: firebaseConfig.projectId,
+          collection: `artifacts/${appId}/public/data/products`
+        };
         console.log('Starting loadProducts...');
+        console.log('[FIRESTORE PRODUCT DIAGNOSTIC] Request context', {
+          ...productReadContext,
+          timestamp: new Date().toISOString()
+        });
         try {
-          // Create a timeout promise
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('getDocs timeout after 10s')), 10000)
-          );
-          
           console.log('Calling getDocs for products...');
-          const list = await Promise.race([readCachedCollection("sovanex_products_firestore_cache", prodQuery, 'products', 'Load public product catalog'), timeoutPromise]);
+          const list = await readCachedCollection("sovanex_products_firestore_cache", prodQuery, 'products', 'Load public product catalog');
+          console.log('[FIRESTORE PRODUCT DIAGNOSTIC] Request succeeded', {
+            ...productReadContext,
+            elapsedMs: Date.now() - productReadStartedAt,
+            documentCount: list.length,
+            timestamp: new Date().toISOString()
+          });
           console.log('Products loaded, processing', list.length, 'documents');
           list.forEach(product => console.log('Added product:', product.id));
           const productsChanged = list.length > 0 && store.getProductSignature(store.products) !== store.getProductSignature(list);
@@ -1773,6 +1787,25 @@
             store.handleRouting();
           }
         } catch (err) {
+          const elapsedMs = Date.now() - productReadStartedAt;
+          const isTimeout = err?.message === 'getDocs timeout after 10s';
+          const diagnostic = {
+            ...productReadContext,
+            elapsedMs,
+            errorName: err?.name || null,
+            errorCode: err?.code || null,
+            errorMessage: err?.message || String(err),
+            errorStack: err?.stack || null,
+            isTimeout,
+            likelyCause: isTimeout
+              ? 'Local 10-second timeout won the Promise.race; the underlying getDocs request may still be pending.'
+              : err?.code === 'permission-denied'
+                ? 'Firestore security rules rejected the authenticated/unauthenticated user.'
+                : !navigator.onLine
+                  ? 'The browser reports offline at the time of failure.'
+                  : 'Firestore returned a non-timeout error; inspect errorCode and network requests.'
+          };
+          console.error('[FIRESTORE PRODUCT DIAGNOSTIC] Request failed', diagnostic);
           console.error("Products error:", err);
           console.error("Error code:", err.code);
           console.error("Error message:", err.message);
