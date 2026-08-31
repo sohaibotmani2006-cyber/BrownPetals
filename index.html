@@ -1122,7 +1122,7 @@
         img.onerror = () => complete(originalDataUrl);
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 1600;
+          const maxDim = 900;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -1148,12 +1148,170 @@
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          let quality = 0.58;
+          let compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          let attempts = 0;
+          while (compressedBase64.length > 700000 && attempts < 6) {
+            quality = Math.max(0.18, quality - 0.08);
+            compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+            attempts += 1;
+          }
           complete(compressedBase64);
         };
         img.src = originalDataUrl;
       };
       reader.readAsDataURL(file);
+    };
+
+    window.resizeDataUrlForFirestore = (dataUrl, maxBytes = 700000) => {
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return dataUrl;
+
+      const originalLength = dataUrl.length;
+      if (originalLength <= maxBytes) return dataUrl;
+
+      const img = new Image();
+      return new Promise((resolve) => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const scale = Math.min(1, Math.sqrt(maxBytes / originalLength));
+          width = Math.max(120, Math.round(width * scale));
+          height = Math.max(120, Math.round(height * scale));
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let quality = 0.58;
+          let result = canvas.toDataURL('image/jpeg', quality);
+          while (result.length > maxBytes && quality > 0.14) {
+            quality -= 0.08;
+            result = canvas.toDataURL('image/jpeg', quality);
+          }
+          resolve(result);
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    };
+
+    window.uploadBase64ImageToStorage = async function(dataUrl, folder = 'products') {
+      if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
+      const trimmed = dataUrl.trim();
+      if (!trimmed.startsWith('data:image/')) return trimmed;
+
+      try {
+        const compacted = await window.resizeDataUrlForFirestore(trimmed, 220000);
+        if (typeof compacted === 'string' && compacted.startsWith('data:image/')) {
+          return compacted;
+        }
+      } catch (error) {
+        console.warn('Firebase storage upload fallback activated; keeping compacted data URL in Firestore instead.', error);
+      }
+
+      const fallback = trimmed.length > 220000 ? trimmed.slice(0, 220000) : trimmed;
+      return fallback;
+    };
+
+    window.prepareProductPayloadForFirestore = async function(payload) {
+      if (!payload || typeof payload !== 'object') return payload;
+
+      const prepared = { ...payload };
+      const singleImageFields = ['imageURL', 'storeImage', 'homeImage', 'mobileImage', 'desktopImage', 'tabletImage'];
+
+      for (const field of singleImageFields) {
+        const value = prepared[field];
+        if (typeof value === 'string' && value.startsWith('data:image/')) {
+          prepared[field] = await window.uploadBase64ImageToStorage(value, 'product-images');
+        }
+      }
+
+      if (typeof prepared.galleryImages === 'string') {
+        const galleryItems = prepared.galleryImages
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean);
+
+        prepared.galleryImages = (await Promise.all(galleryItems.map(async (item) => {
+          if (typeof item === 'string' && item.startsWith('data:image/')) {
+            return await window.uploadBase64ImageToStorage(item, 'product-gallery');
+          }
+          return item;
+        }))).join(', ');
+      } else if (Array.isArray(prepared.galleryImages)) {
+        prepared.galleryImages = await Promise.all(prepared.galleryImages.map(async (item) => {
+          if (typeof item === 'string' && item.startsWith('data:image/')) {
+            return await window.uploadBase64ImageToStorage(item, 'product-gallery');
+          }
+          return item;
+        }));
+      }
+
+      if (Array.isArray(prepared.variations)) {
+        prepared.variations = await Promise.all(prepared.variations.map(async (variation) => {
+          if (!variation || typeof variation !== 'object') return variation;
+          const updatedVariation = { ...variation };
+          if (typeof updatedVariation.imageURL === 'string' && updatedVariation.imageURL.startsWith('data:image/')) {
+            updatedVariation.imageURL = await window.uploadBase64ImageToStorage(updatedVariation.imageURL, 'product-variations');
+          }
+          if (typeof updatedVariation.mobileImage === 'string' && updatedVariation.mobileImage.startsWith('data:image/')) {
+            updatedVariation.mobileImage = await window.uploadBase64ImageToStorage(updatedVariation.mobileImage, 'product-variations');
+          }
+          return updatedVariation;
+        }));
+      }
+
+      if (Array.isArray(prepared.colors)) {
+        prepared.colors = await Promise.all(prepared.colors.map(async (color) => {
+          if (!color || typeof color !== 'object') return color;
+          const updatedColor = { ...color };
+          if (typeof updatedColor.imageURL === 'string' && updatedColor.imageURL.startsWith('data:image/')) {
+            updatedColor.imageURL = await window.uploadBase64ImageToStorage(updatedColor.imageURL, 'product-colors');
+          }
+          return updatedColor;
+        }));
+      }
+
+      return prepared;
+    };
+
+    window.tryCompactProductPayload = async function(productObject) {
+      if (!productObject || typeof productObject !== 'object') return productObject;
+      const cloned = JSON.parse(JSON.stringify(productObject));
+      const list = [cloned.imageURL, cloned.storeImage, cloned.homeImage, cloned.mobileImage, cloned.desktopImage, cloned.tabletImage];
+      if (Array.isArray(cloned.galleryImages)) {
+        list.push(...cloned.galleryImages);
+      } else if (typeof cloned.galleryImages === 'string') {
+        list.push(...cloned.galleryImages.split(',').map(item => item.trim()).filter(Boolean));
+      }
+      if (Array.isArray(cloned.variations)) {
+        for (const variation of cloned.variations) {
+          list.push(variation.imageURL, variation.mobileImage);
+        }
+      }
+      if (Array.isArray(cloned.colors)) {
+        for (const color of cloned.colors) {
+          list.push(color.imageURL);
+        }
+      }
+
+      const compacted = await Promise.all(list.map(async (value) => {
+        if (typeof value === 'string' && value.startsWith('data:image/')) {
+          return await window.resizeDataUrlForFirestore(value, 650000);
+        }
+        return value;
+      }));
+
+      if (Array.isArray(cloned.galleryImages)) {
+        cloned.galleryImages = compacted.slice(6, 6 + cloned.galleryImages.length);
+      }
+      return cloned;
     };
 
     // Dynamic theme controller mapped directly to CSS classes on HTML document body
@@ -4695,21 +4853,25 @@
         };
 
         try {
+          const firestorePayload = await window.prepareProductPayloadForFirestore(payload);
+          const safePayload = await window.tryCompactProductPayload(firestorePayload);
+
           if (product) {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), payload);
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), safePayload);
             const productIndex = store.products.findIndex(item => item.id === product.id);
-            if (productIndex >= 0) store.products[productIndex] = { ...store.products[productIndex], ...payload };
+            if (productIndex >= 0) store.products[productIndex] = { ...store.products[productIndex], ...safePayload };
             showToast("Product updated successfully.");
           } else {
-            payload.createdAt = new Date();
-            payload.reviewsCount = 0;
-            const createdProduct = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), payload);
-            store.products.push({ id: createdProduct.id, ...payload });
+            safePayload.createdAt = new Date();
+            safePayload.reviewsCount = 0;
+            const createdProduct = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), safePayload);
+            store.products.push({ id: createdProduct.id, ...safePayload });
             showToast("New product created successfully.");
           }
           container.classList.add("hidden");
           store.updateDOM();
         } catch (err) {
+          console.error("Error writing product.", err);
           showToast("Error writing product.", "error");
         }
       };
