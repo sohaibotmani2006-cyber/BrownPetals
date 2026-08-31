@@ -417,7 +417,7 @@
 
   <script type="module">
     import { initializeApp } from "firebase/app";
-    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment, where } from "firebase/firestore";
+    import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp, increment, where, runTransaction } from "firebase/firestore";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
     import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
@@ -575,6 +575,11 @@
       })(),
       lookbook: [],
       deliveryCities: [],
+      promoCodes: [],
+      appliedPromoCode: null,
+      promoCodeInput: "",
+      promoCodeMessage: "",
+      promoCodeMessageType: "",
       cart: JSON.parse(localStorage.getItem("bp_cart")) || [],
       loadingProducts: true,
       loadingCategories: true,
@@ -2155,6 +2160,15 @@
       if (store.isAdmin) createAuditedSnapshot("public", 'deliveryCities', citiesRef, handleCities, (err) => console.warn(err));
       else readCachedCollection("sovanex_cities_firestore_cache", citiesRef, 'deliveryCities', 'Load public delivery cities').then(handleCities).catch(err => console.warn(err));
 
+      const promoCodesRef = collection(db, 'artifacts', appId, 'public', 'data', 'promoCodes');
+      const handlePromoCodes = (snap) => {
+        store.promoCodes = getCollectionList(snap);
+        if (store.appliedPromoCode && !store.validatePromoCode(store.appliedPromoCode.code).valid) store.removePromoCode();
+        store.updateDOM();
+      };
+      if (store.isAdmin) createAuditedSnapshot("public", 'promoCodes', promoCodesRef, handlePromoCodes, (err) => console.warn("Promo codes fetch bypassed:", err));
+      else createAuditedSnapshot("public", 'promoCodes', promoCodesRef, handlePromoCodes, (err) => console.warn("Promo codes fetch bypassed:", err));
+
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
       const handleTelegram = (snap) => {
         if (snap.exists()) {
@@ -2523,7 +2537,7 @@
     };
 
     store.getCartDeliveryFee = function(city) {
-      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+      const subtotal = this.getCartSubtotal();
       const threshold = this.getFreeDeliveryThreshold();
 
       if (!city) {
@@ -2533,6 +2547,93 @@
       const cityPrice = Number(city.price ?? STANDARD_DELIVERY_FEE);
       if (city.freeDelivery || subtotal >= threshold) return 0;
       return Number.isFinite(cityPrice) && cityPrice > 0 ? cityPrice : STANDARD_DELIVERY_FEE;
+    };
+
+    store.getCartSubtotal = function() {
+      return this.cart.reduce((sum, item) => sum + ((Number(item.discountPrice || item.price) || 0) * (Number(item.quantity) || 0)), 0);
+    };
+
+    store.findPromoCode = function(code) {
+      const normalizedCode = String(code || '').trim().toUpperCase();
+      return this.promoCodes.find(promo => String(promo.code || '').trim().toUpperCase() === normalizedCode) || null;
+    };
+
+    store.validatePromoCode = function(code) {
+      const promo = this.findPromoCode(code);
+      if (!promo) return { valid: false, message: "Promo code does not exist." };
+      if (promo.isActive === false) return { valid: false, message: "This promo code is disabled." };
+      const maxUses = Number(promo.maxUses ?? 1);
+      const usesCount = Number(promo.usesCount ?? 0);
+      if (Number.isFinite(maxUses) && maxUses > 0 && usesCount >= maxUses) return { valid: false, message: "This promo code has reached its usage limit." };
+      if (promo.expiresAt) {
+        const expiry = promo.expiresAt?.toDate ? promo.expiresAt.toDate() : new Date(promo.expiresAt);
+        if (!Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now()) {
+          return { valid: false, message: "This promo code has expired." };
+        }
+      }
+      const discountPercent = Number(promo.discountPercent);
+      if (!Number.isFinite(discountPercent) || discountPercent <= 0 || discountPercent > 100) {
+        return { valid: false, message: "This promo code has an invalid discount." };
+      }
+      const subtotal = this.getCartSubtotal();
+      const discountAmount = Math.round(subtotal * discountPercent) / 100;
+      return { valid: true, promo, discountPercent, discountAmount };
+    };
+
+    store.getCartTotals = function() {
+      const subtotal = this.getCartSubtotal();
+      const applied = this.appliedPromoCode ? this.validatePromoCode(this.appliedPromoCode.code) : { valid: false };
+      const discountPercent = applied.valid ? applied.discountPercent : 0;
+      const discountAmount = applied.valid ? Math.min(applied.discountAmount, subtotal) : 0;
+      const city = this.deliveryCities.find(item => item.id === this.checkoutFormValues.cityId);
+      const deliveryFee = this.getCartDeliveryFee(city);
+      return { subtotal, subtotalAfterDiscount: Math.max(0, subtotal - discountAmount), discountPercent, discountAmount, deliveryFee, total: Math.max(0, subtotal - discountAmount + deliveryFee) };
+    };
+
+    store.applyPromoCode = function(code) {
+      const result = this.validatePromoCode(code);
+      this.promoCodeInput = String(code || '').trim().toUpperCase();
+      if (!result.valid) {
+        this.appliedPromoCode = null;
+        this.promoCodeMessage = result.message;
+        this.promoCodeMessageType = "error";
+        return false;
+      }
+      this.appliedPromoCode = { code: result.promo.code, discountPercent: result.discountPercent };
+      this.promoCodeMessage = `${result.promo.code} applied: ${result.discountPercent}% discount.`;
+      this.promoCodeMessageType = "success";
+      return true;
+    };
+
+    store.removePromoCode = function() {
+      this.appliedPromoCode = null;
+      this.promoCodeMessage = "";
+      this.promoCodeMessageType = "";
+      this.promoCodeInput = "";
+    };
+
+    store.renderPromoCodeMarkup = function() {
+      const totals = this.getCartTotals();
+      return `<div class="border-t border-luxuryGold/20 pt-4 space-y-3">
+        <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Promo Code</p>
+        <div class="flex gap-2">
+          <input id="promo-code-input" type="text" value="${this.promoCodeInput}" placeholder="SOVANEX10" class="min-w-0 flex-1 px-3 py-2 text-xs rounded-xl border border-luxuryGold/30 bg-black text-white uppercase">
+          <button id="promo-code-apply" type="button" class="px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold">Apply</button>
+        </div>
+        ${this.promoCodeMessage ? `<p class="text-[10px] ${this.promoCodeMessageType === 'error' ? 'text-red-300' : 'text-emerald-300'}">${this.promoCodeMessage}</p>` : ''}
+        ${this.appliedPromoCode ? `<button id="promo-code-remove" type="button" class="text-[10px] text-gray-400 underline underline-offset-2">Remove ${this.appliedPromoCode.code}</button>` : ''}
+        ${totals.discountAmount > 0 ? `<div class="flex justify-between text-xs text-gray-400"><span>Original subtotal</span><span>${totals.subtotal.toFixed(2)} MAD</span></div>` : ''}
+        ${totals.discountAmount > 0 ? `<div class="flex justify-between text-xs text-emerald-300"><span>Discount (${totals.discountPercent}%)</span><span>- ${totals.discountAmount.toFixed(2)} MAD</span></div>` : ''}
+      </div>`;
+    };
+
+    store.bindPromoCodeControls = function(render) {
+      const input = document.getElementById('promo-code-input');
+      const apply = document.getElementById('promo-code-apply');
+      const remove = document.getElementById('promo-code-remove');
+      if (input) input.oninput = event => { this.promoCodeInput = event.target.value.toUpperCase(); };
+      if (apply) apply.onclick = () => { this.applyPromoCode(input?.value); render(); };
+      if (remove) remove.onclick = () => { this.removePromoCode(); render(); };
     };
 
     store.resetCheckoutState = function() {
@@ -2575,11 +2676,19 @@
         return null;
       }
 
-      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+      const promoValidation = this.appliedPromoCode ? this.validatePromoCode(this.appliedPromoCode.code) : { valid: false };
+      if (this.appliedPromoCode && !promoValidation.valid) {
+        this.removePromoCode();
+        showToast(promoValidation.message || "This promo code is no longer valid.", "error");
+        return null;
+      }
+      const subtotal = this.getCartSubtotal();
+      const discountPercent = promoValidation.valid ? promoValidation.discountPercent : 0;
+      const discountAmount = promoValidation.valid ? Math.min(promoValidation.discountAmount, subtotal) : 0;
       const cityObj = this.deliveryCities.find(c => c.id === cityId);
       const deliveryFee = this.getCartDeliveryFee(cityObj);
       const cityName = cityObj ? cityObj.name : "Morocco";
-      const total = subtotal + deliveryFee;
+      const total = Math.max(0, subtotal - discountAmount + deliveryFee);
       const orderId = "SOV-" + Math.floor(100000 + Math.random() * 900000);
 
       const orderItems = this.cart.map(item => ({
@@ -2597,6 +2706,9 @@
         items: orderItems,
         total,
         subtotal,
+        promoCode: promoValidation.valid ? String(promoValidation.promo.code).trim().toUpperCase() : null,
+        discountPercent,
+        discountAmount,
         deliveryFee,
         deliveryCity: cityName,
         customerName,
@@ -2616,7 +2728,22 @@
       }
 
       const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
-      await addDoc(ordersCol, orderData);
+      if (promoValidation.valid) {
+        const promoRef = doc(db, 'artifacts', appId, 'public', 'data', 'promoCodes', promoValidation.promo.id);
+        const orderRef = doc(ordersCol);
+        await runTransaction(db, async transaction => {
+          const promoSnapshot = await transaction.get(promoRef);
+          const freshPromo = promoSnapshot.exists() ? promoSnapshot.data() : null;
+          const maxUses = Number(freshPromo?.maxUses ?? 1);
+          const usesCount = Number(freshPromo?.usesCount ?? 0);
+          const expiry = freshPromo?.expiresAt ? new Date(freshPromo.expiresAt) : null;
+          if (!freshPromo || freshPromo.isActive === false || usesCount >= maxUses || Number(freshPromo.discountPercent) !== discountPercent || (expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now())) throw new Error('Promo code is no longer available.');
+          transaction.set(orderRef, orderData);
+          transaction.update(promoRef, { usesCount: increment(1), updatedAt: new Date() });
+        });
+      } else {
+        await addDoc(ordersCol, orderData);
+      }
 
       const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
       localHistory.push(orderId);
@@ -3994,7 +4121,7 @@
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "telegram-settings", "general-settings"].map(tab => `
+            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -4053,6 +4180,8 @@
         this.renderAdminCategories(container);
       } else if (this.adminView === "lookbook") {
         this.renderAdminLookbook(container);
+      } else if (this.adminView === "promo-codes") {
+        this.renderAdminPromoCodes(container);
       } else if (this.adminView === "telegram-settings") {
         this.renderAdminTelegramSettings(container);
       } else if (this.adminView === "general-settings") {
@@ -4392,6 +4521,80 @@
           });
         };
       });
+    };
+
+    store.renderAdminPromoCodes = function(container) {
+      const editing = this.editingPromoCode || null;
+      const codes = [...this.promoCodes].sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')));
+      container.innerHTML = `
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold">Promo Codes</h3>
+            <p class="text-xs text-gray-400">Create and manage customer discounts connected to Firestore.</p>
+          </div>
+          <form id="promo-code-admin-form" class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end bg-black/40 p-4 rounded-2xl border border-luxuryGold/15">
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Code</label>
+              <input name="code" required maxlength="40" value="${editing?.code || ''}" placeholder="SOVANEX10" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white uppercase">
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Discount %</label>
+              <input name="discountPercent" type="number" min="1" max="100" step="1" required value="${editing?.discountPercent || ''}" placeholder="10" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Maximum uses</label>
+              <input name="maxUses" type="number" min="1" step="1" required value="${editing?.maxUses ?? 1}" placeholder="1" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Expires (optional)</label>
+              <input name="expiresAt" type="datetime-local" value="${editing?.expiresAt ? String(editing.expiresAt).slice(0, 16) : ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+            </div>
+            <div class="flex gap-2 items-center">
+              <label class="flex items-center gap-2 text-xs text-white"><input name="isActive" type="checkbox" ${editing?.isActive !== false ? 'checked' : ''}> Active</label>
+              <button type="submit" class="ml-auto px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold">${editing ? 'Update' : 'Create'}</button>
+            </div>
+          </form>
+          ${editing ? '<button id="promo-code-cancel-edit" type="button" class="text-[10px] text-gray-400 underline">Cancel edit</button>' : ''}
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-white">
+              <thead class="bg-black uppercase font-bold border-b border-luxuryGold/25 text-luxuryGold"><tr><th class="p-4">Code</th><th class="p-4">Discount</th><th class="p-4">Uses</th><th class="p-4">Status</th><th class="p-4">Expiry</th><th class="p-4 text-right">Actions</th></tr></thead>
+              <tbody class="divide-y divide-white/5">
+                ${codes.map(promo => {
+                  const expired = promo.expiresAt && new Date(promo.expiresAt).getTime() < Date.now();
+                  return `<tr class="hover:bg-white/5"><td class="p-4 font-bold text-white">${promo.code}</td><td class="p-4 font-bold text-luxuryGold">${promo.discountPercent}%</td><td class="p-4 text-gray-300">${promo.usesCount || 0} / ${promo.maxUses ?? 1}</td><td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${promo.isActive !== false && !expired && (promo.usesCount || 0) < (promo.maxUses ?? 1) ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}">${expired ? 'Expired' : (promo.usesCount || 0) >= (promo.maxUses ?? 1) ? 'Used Up' : promo.isActive !== false ? 'Active' : 'Disabled'}</span></td><td class="p-4 text-gray-400">${promo.expiresAt ? new Date(promo.expiresAt).toLocaleString() : 'Never'}</td><td class="p-4 text-right space-x-2"><button type="button" class="promo-edit-btn px-3 py-1 bg-luxuryGold text-black rounded text-[10px] uppercase font-bold" data-id="${promo.id}">Edit</button><button type="button" class="promo-toggle-btn px-3 py-1 bg-white/10 text-white rounded text-[10px] uppercase font-bold" data-id="${promo.id}">${promo.isActive !== false ? 'Disable' : 'Enable'}</button><button type="button" class="promo-delete-btn px-3 py-1 bg-red-700 text-white rounded text-[10px] uppercase font-bold" data-id="${promo.id}">Delete</button></td></tr>`;
+                }).join('') || '<tr><td colspan="5" class="p-6 text-center text-gray-500">No promo codes created yet.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+
+      const promoRef = collection(db, 'artifacts', appId, 'public', 'data', 'promoCodes');
+      const refresh = () => { this.editingPromoCode = null; this.renderAdminPromoCodes(container); };
+      document.getElementById('promo-code-admin-form').onsubmit = async event => {
+        event.preventDefault();
+        const form = event.target;
+        const code = form.code.value.trim().toUpperCase();
+        const discountPercent = Number(form.discountPercent.value);
+        if (!/^[A-Z0-9_-]+$/.test(code) || !Number.isInteger(discountPercent) || discountPercent < 1 || discountPercent > 100) {
+          showToast('Enter a valid code and discount from 1% to 100%.', 'error');
+          return;
+        }
+        const duplicate = this.promoCodes.find(item => String(item.code).toUpperCase() === code && item.id !== editing?.id);
+        if (duplicate) { showToast('That promo code already exists.', 'error'); return; }
+        const maxUses = Number(form.maxUses.value);
+        if (!Number.isInteger(maxUses) || maxUses < 1) { showToast('Maximum uses must be at least 1.', 'error'); return; }
+        const payload = { code, discountPercent, maxUses, usesCount: editing?.usesCount || 0, isActive: form.isActive.checked, expiresAt: form.expiresAt.value ? new Date(form.expiresAt.value).toISOString() : null, updatedAt: new Date() };
+        try {
+          if (editing) await updateDoc(doc(promoRef, editing.id), payload);
+          else { payload.createdAt = new Date(); await addDoc(promoRef, payload); }
+          showToast(editing ? 'Promo code updated.' : 'Promo code created.');
+          refresh();
+        } catch (error) { showToast('Could not save promo code.', 'error'); }
+      };
+      document.getElementById('promo-code-cancel-edit')?.addEventListener('click', refresh);
+      document.querySelectorAll('.promo-edit-btn').forEach(button => button.onclick = () => { this.editingPromoCode = this.promoCodes.find(item => item.id === button.dataset.id) || null; this.renderAdminPromoCodes(container); });
+      document.querySelectorAll('.promo-toggle-btn').forEach(button => button.onclick = async () => { const promo = this.promoCodes.find(item => item.id === button.dataset.id); if (promo) { await updateDoc(doc(promoRef, promo.id), { isActive: promo.isActive === false, updatedAt: new Date() }); showToast('Promo code status updated.'); } });
+      document.querySelectorAll('.promo-delete-btn').forEach(button => button.onclick = async () => { await deleteDoc(doc(promoRef, button.dataset.id)); showToast('Promo code deleted.'); });
     };
 
     store.openProductForm = function(product = null) {
@@ -6188,9 +6391,10 @@
       if (!overlay) return;
 
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
-      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
-      const deliveryFee = this.getCartDeliveryFee(this.deliveryCities.find(c => c.id === this.checkoutFormValues.cityId));
-      const total = subtotal + deliveryFee;
+      const cartTotals = this.getCartTotals();
+      const subtotal = cartTotals.subtotal;
+      const deliveryFee = cartTotals.deliveryFee;
+      const total = cartTotals.total;
 
       if (!this.cartOpen) {
         overlay.classList.add('hidden');
@@ -6253,9 +6457,10 @@
 
             ${cartCount > 0 ? `
               <div class="border-t border-luxuryGold/20 bg-[#0E0E0E] p-4 space-y-3">
+                ${this.renderPromoCodeMarkup()}
                 <div class="flex justify-between text-xs text-gray-300">
                   <span>Subtotal</span>
-                  <span class="text-luxuryGold font-bold">${subtotal} MAD</span>
+                  <span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span>
                 </div>
                 <div class="flex justify-between text-xs text-gray-300">
                   <span>Delivery</span>
@@ -6327,6 +6532,7 @@
           this.renderCartDrawer();
         };
       });
+      this.bindPromoCodeControls(() => this.renderCartDrawer());
     };
 
     store.renderCheckoutPage = function() {
@@ -6340,10 +6546,10 @@
       const selectedCityId = this.checkoutFormValues.cityId;
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
 
-      const subtotal = this.cart.reduce((sum, item) => {
-        const unitPrice = Number(item.discountPrice || item.price || 0);
-        return sum + (unitPrice * Number(item.quantity || 1));
-      }, 0);
+      const cartTotals = this.getCartTotals();
+      const subtotal = cartTotals.subtotal;
+      const deliveryFee = cartTotals.deliveryFee;
+      const total = cartTotals.total;
 
       const orderItemsMarkup = this.cart.map(item => {
         const cleanName = item.name?.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim() || 'Selected Product';
@@ -6405,10 +6611,11 @@
 
                 <!-- Quick Summary Box -->
                 <div class="bg-black/50 rounded-2xl border border-luxuryGold/20 p-4 space-y-2">
+                  ${this.renderPromoCodeMarkup()}
                   <p class="text-xs text-gray-400 font-semibold">Order Summary</p>
                   <div class="flex justify-between text-xs">
                     <span class="text-gray-300">Subtotal:</span>
-                    <span class="text-luxuryGold font-bold">${subtotal} MAD</span>
+                    <span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span>
                   </div>
                   ${selectedCityId ? `
                     <div class="flex justify-between text-xs border-t border-white/10 pt-2 mt-2">
@@ -6417,7 +6624,7 @@
                     </div>
                     <div class="flex justify-between text-sm font-bold border-t border-white/20 pt-3 mt-3">
                       <span class="text-gray-200">Total:</span>
-                      <span class="text-luxuryGold">${(subtotal + this.getCartDeliveryFee(cityObj)) || 0} MAD</span>
+                      <span class="text-luxuryGold">${total || 0} MAD</span>
                     </div>
                   ` : ''}
                 </div>
@@ -6555,6 +6762,7 @@
           this.setPage("payment");
         };
       }
+      this.bindPromoCodeControls(() => this.renderCheckoutPage());
     };
 
     store.renderPaymentPage = function() {
@@ -6565,14 +6773,12 @@
       const container = document.getElementById("app-content");
       if (!container) return;
 
-      const subtotal = this.cart.reduce((sum, item) => {
-        const unitPrice = Number(item.discountPrice || item.price || 0);
-        return sum + (unitPrice * Number(item.quantity || 1));
-      }, 0);
+      const cartTotals = this.getCartTotals();
+      const subtotal = cartTotals.subtotal;
       const selectedCityId = this.checkoutFormValues.cityId;
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
-      const deliveryFee = this.getCartDeliveryFee(cityObj);
-      const total = subtotal + deliveryFee;
+      const deliveryFee = cartTotals.deliveryFee;
+      const total = cartTotals.total;
       const paymentMethods = this.getAvailablePaymentMethods();
       const orderItemsMarkup = this.cart.map(item => {
         const cleanName = item.name?.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim() || 'Selected Product';
@@ -6622,6 +6828,7 @@
 
           <!-- ORDER SUMMARY -->
           <div class="bg-[#141414] rounded-2xl border border-luxuryGold/20 p-6 space-y-4 max-w-2xl mx-auto w-full">
+            ${this.renderPromoCodeMarkup()}
             <p class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Order Summary</p>
             <div class="space-y-3">
               <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -6629,7 +6836,7 @@
               </div>
               <div class="flex justify-between items-center text-sm pt-3 border-t border-white/10">
                 <span class="text-gray-300">Subtotal</span>
-                <span class="text-luxuryGold font-bold">${subtotal} MAD</span>
+                <span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span>
               </div>
               <div class="flex justify-between items-center text-sm border-t border-white/10 pt-3">
                 <span class="text-gray-300">Delivery to ${cityObj?.name || 'Selected City'}</span>
@@ -6713,6 +6920,7 @@
           this.submitCheckoutOrder(name, phone, cityId, address);
         }
       };
+      this.bindPromoCodeControls(() => this.renderPaymentPage());
     };
 
     store.submitCheckoutOrder = async function(name, phone, cityId, address) {
@@ -6787,15 +6995,13 @@
       const container = document.getElementById("app-content");
       if (!container) return;
 
-      const subtotal = this.cart.reduce((sum, item) => {
-        const unitPrice = Number(item.discountPrice || item.price || 0);
-        return sum + (unitPrice * Number(item.quantity || 1));
-      }, 0);
+      const cartTotals = this.getCartTotals();
+      const subtotal = cartTotals.subtotal;
 
       const selectedCityId = this.checkoutFormValues.cityId;
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
-      const deliveryFee = this.getCartDeliveryFee(cityObj);
-      const total = subtotal + deliveryFee;
+      const deliveryFee = cartTotals.deliveryFee;
+      const total = cartTotals.total;
       const activeBanks = this.getActiveBankAccounts();
       const selectedBankId = this.checkoutFormValues.selectedBankId || activeBanks[0]?.id || '';
       if (selectedBankId && !activeBanks.some(bank => bank.id === selectedBankId)) {
@@ -6884,9 +7090,10 @@
 
             <div class="space-y-6">
               <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
+                ${this.renderPromoCodeMarkup()}
                 <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Order Details</p>
                 <div class="space-y-3 text-sm text-gray-200">
-                  <div class="flex items-center justify-between"><span>Subtotal</span><span class="text-luxuryGold font-bold">${subtotal} MAD</span></div>
+                  <div class="flex items-center justify-between"><span>Subtotal</span><span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span></div>
                   <div class="flex items-center justify-between"><span>Delivery</span><span class="text-luxuryGold font-bold">${deliveryFee === 0 ? 'FREE' : `${deliveryFee} DH`}</span></div>
                   <div class="flex items-center justify-between border-t border-white/10 pt-3 mt-2 text-base font-bold text-white"><span>Total</span><span class="text-luxuryGold">${total} MAD</span></div>
                 </div>
@@ -6971,6 +7178,7 @@
           this.submitCheckoutOrder(name, phone, cityId, address);
         };
       }
+      this.bindPromoCodeControls(() => this.renderBankTransferPage());
     };
 
     store.renderCartPage = function() {
@@ -6983,12 +7191,13 @@
 
       const cartCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
       const isBankTransferPage = this.currentPage === 'bank-transfer';
-      const subtotal = this.cart.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.quantity), 0);
+      const cartTotals = this.getCartTotals();
+      const subtotal = cartTotals.subtotal;
 
       const selectedCityId = this.checkoutFormValues.cityId;
       const cityObj = this.deliveryCities.find(c => c.id === selectedCityId);
-      const deliveryFee = this.getCartDeliveryFee(cityObj);
-      const total = subtotal + deliveryFee;
+      const deliveryFee = cartTotals.deliveryFee;
+      const total = cartTotals.total;
       const paymentMethods = this.getAvailablePaymentMethods();
       const selectedPaymentMethod = paymentMethods.some(method => method.id === this.checkoutFormValues.paymentMethod)
         ? this.checkoutFormValues.paymentMethod
@@ -7064,9 +7273,10 @@
               </div>
 
               <div class="border-t border-luxuryGold/20 pt-4 space-y-3">
+                ${this.renderPromoCodeMarkup()}
                 <div class="flex justify-between items-center text-sm text-gray-300">
                   <span>Subtotal</span>
-                  <span class="text-luxuryGold font-bold">${subtotal} MAD</span>
+                  <span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span>
                 </div>
                 <div class="flex justify-between items-center text-sm text-gray-300">
                   <span>Delivery</span>
@@ -7123,6 +7333,7 @@
           this.renderCartPage();
         };
       });
+      this.bindPromoCodeControls(() => this.renderCartPage());
     };
 
     store.fetchMyOrdersOnPage = async function() {
