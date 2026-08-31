@@ -1217,7 +1217,7 @@
       `;
     };
 
-    // Load cached products immediately, falling back to the built-in catalog on first visit.
+    // Built-in catalog is used only until the Firestore product read completes.
     store.products = [
       {
         name: "Rose Empress Gold Chrono",
@@ -1289,12 +1289,10 @@
       }
     ];
     try {
-      const cachedProducts = JSON.parse(localStorage.getItem("sovanex_products_cache") || "null");
-      if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
-        store.products = cachedProducts;
-      }
+      localStorage.removeItem("sovanex_products_cache");
+      localStorage.removeItem("sovanex_products_firestore_cache");
     } catch (error) {
-      console.warn("Cached products could not be restored:", error);
+      console.warn("Legacy product cache could not be removed:", error);
     }
     store.loadingProducts = false;
 
@@ -1579,15 +1577,52 @@
       this.activeSubscriptions.public = true;
 
       const publicCacheTTL = 5 * 60 * 1000;
+      const maxCacheBytes = 100 * 1024;
+      const productCacheKey = "sovanex_products_firestore_cache";
+      const compactProductCache = products => products.map(product => ({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        gender: product.gender,
+        price: product.price,
+        discountPrice: product.discountPrice,
+        stock: product.stock,
+        rating: product.rating,
+        reviewsCount: product.reviewsCount,
+        isPromotion: product.isPromotion,
+        isBestSeller: product.isBestSeller,
+        limitedStock: product.limitedStock,
+        isPinned: product.isPinned,
+        freeDelivery: product.freeDelivery
+      }));
       const writePublicCache = (cacheKey, data) => {
         try {
-          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
+          const cacheData = cacheKey === productCacheKey && Array.isArray(data)
+            ? compactProductCache(data)
+            : data;
+          const serialized = JSON.stringify({ timestamp: Date.now(), data: cacheData });
+          const serializedBytes = new Blob([serialized]).size;
+          if (serializedBytes > maxCacheBytes) {
+            console.warn("Skipping local Firestore cache because it exceeds the size limit.", {
+              cacheKey,
+              serializedBytes,
+              maxCacheBytes
+            });
+            localStorage.removeItem(cacheKey);
+            return;
+          }
+          localStorage.setItem(cacheKey, serialized);
         } catch (err) {
-          console.warn("Could not update local Firestore cache:", err);
+          console.warn("Could not update local Firestore cache; continuing without cache:", err);
+          try {
+            localStorage.removeItem(cacheKey);
+          } catch (removeErr) {
+            console.warn("Could not remove local Firestore cache:", removeErr);
+          }
         }
       };
       const readCachedCollection = async (cacheKey, source, collectionName, reason) => {
-        if (!store.isAdmin) {
+        if (!store.isAdmin && cacheKey !== productCacheKey) {
           try {
             const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
             if (cached && Date.now() - cached.timestamp < publicCacheTTL && Array.isArray(cached.data)) {
@@ -1602,9 +1637,7 @@
         const snap = await getDocs(source);
         const data = [];
         snap.forEach(snapshotDoc => data.push({ id: snapshotDoc.id, ...snapshotDoc.data() }));
-        if (!store.isAdmin) {
-          writePublicCache(cacheKey, data);
-        }
+        if (!store.isAdmin) writePublicCache(cacheKey, data);
         return data;
       };
       const readCachedDocument = async (cacheKey, source, collectionName, reason) => {
@@ -1692,7 +1725,6 @@
           console.log('Products loaded, processing', list.length, 'documents');
           list.forEach(product => console.log('Added product:', product.id));
           const productsChanged = list.length > 0 && store.getProductSignature(store.products) !== store.getProductSignature(list);
-          if (list.length > 0) localStorage.setItem("sovanex_products_cache", JSON.stringify(list));
           if (productsChanged) {
             store.products = list;
           }
@@ -4675,7 +4707,6 @@
             store.products.push({ id: createdProduct.id, ...payload });
             showToast("New product created successfully.");
           }
-          localStorage.setItem("sovanex_products_cache", JSON.stringify(store.products));
           container.classList.add("hidden");
           store.updateDOM();
         } catch (err) {
