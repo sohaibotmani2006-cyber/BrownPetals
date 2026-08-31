@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = 8000;
 const INDEX_PATH = path.join(__dirname, 'index.html');
-const ALLOWED_ROUTE_PREFIXES = ['', '/shop', '/contact', '/policies', '/cart', '/order-confirmation', '/admin'];
+const ALLOWED_ROUTE_PREFIXES = ['', '/shop', '/contact', '/policies', '/cart', '/checkout', '/payment', '/bank-transfer', '/order-confirmation', '/admin'];
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
