@@ -176,14 +176,14 @@
       background-color: transparent !important;
     }
     .announcement-bar {
-      min-height: 28px;
+      min-height: 36px;
       display: flex;
       align-items: center;
       overflow: hidden;
       background: #111;
       border-bottom: 1px solid rgba(212, 175, 55, 0.18);
       color: var(--accent-color);
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.16em;
       text-transform: uppercase;
@@ -2224,9 +2224,17 @@
       return () => this.cleanupSubscriptions("admin");
     };
 
-    store.getProductSizes = function(product) {
-      if (!product || !Array.isArray(product.sizes) || product.sizes.length === 0) return [];
-      return product.sizes
+    store.getProductInventory = function(product, variationIndex = null) {
+      const variation = Number.isInteger(variationIndex) ? product?.variations?.[variationIndex] : null;
+      return variation && (Array.isArray(variation.sizes) || variation.stock !== undefined)
+        ? variation
+        : (product || {});
+    };
+
+    store.getProductSizes = function(product, variationIndex = null) {
+      const inventory = this.getProductInventory(product, variationIndex);
+      if (!Array.isArray(inventory.sizes) || inventory.sizes.length === 0) return [];
+      return inventory.sizes
         .map(size => {
           const label = String(size?.label ?? size?.name ?? size?.size ?? '').trim();
           const stock = Number(size?.stock ?? 0);
@@ -2235,11 +2243,12 @@
         .filter(Boolean);
     };
 
-    store.getProductSizeStock = function(product, sizeLabel) {
-      if (!product) return Number(product?.stock || 0);
-      if (!sizeLabel) return Number(product.stock || 0);
-      const sizeMatch = this.getProductSizes(product).find(size => size.label.toLowerCase() === String(sizeLabel).trim().toLowerCase());
-      return sizeMatch ? Number(sizeMatch.stock || 0) : Number(product.stock || 0);
+    store.getProductSizeStock = function(product, sizeLabel, variationIndex = null) {
+      if (!product) return 0;
+      const inventory = this.getProductInventory(product, variationIndex);
+      if (!sizeLabel) return Number(inventory.stock || 0);
+      const sizeMatch = this.getProductSizes(product, variationIndex).find(size => size.label.toLowerCase() === String(sizeLabel).trim().toLowerCase());
+      return sizeMatch ? Number(sizeMatch.stock || 0) : Number(inventory.stock || 0);
     };
 
     store.addToCart = function(product, customItem = null) {
@@ -4376,7 +4385,15 @@
       if (!container) return;
       
       const currentNormalizedGender = product ? getNormalizedGender(product.gender) : "Women";
-      let tempVariations = product && product.variations ? [...product.variations] : [];
+      let tempVariations = product && Array.isArray(product.variations)
+        ? product.variations.map(variation => ({
+          ...variation,
+          stock: Number(variation.stock ?? 0),
+          sizes: Array.isArray(variation.sizes)
+            ? variation.sizes.map(size => ({ label: String(size?.label ?? size?.name ?? size?.size ?? '').trim(), stock: Number(size?.stock ?? 0) })).filter(size => size.label)
+            : []
+        }))
+        : [];
       let tempColors = product && Array.isArray(product.colors) && product.colors.length > 0
         ? product.colors.map(color => ({ ...color }))
         : [{ name: 'Pink', value: '#FFC0CB', variantName: 'main', variantIndex: null }, { name: 'Blue', value: '#1E90FF', variantIndex: 0 }, { name: 'Black', value: '#000000', variantIndex: 1 }, { name: 'White', value: '#FFFFFF', variantIndex: 2 }];
@@ -4510,7 +4527,7 @@
 
           <div class="border-t border-luxuryGold/20 pt-4 space-y-3">
             <div class="flex justify-between items-center">
-              <span class="text-xs uppercase font-bold text-luxuryGold tracking-wider">Sizes</span>
+              <span class="text-xs uppercase font-bold text-luxuryGold tracking-wider">Main image inventory</span>
               <button type="button" id="add-size-row-btn" class="px-3 py-1 bg-luxuryGold/10 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black rounded text-[10px] uppercase font-bold transition">Add Size</button>
             </div>
             <div id="sizes-form-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
@@ -4531,7 +4548,7 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Stock Quantity</label>
+              <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Main image stock quantity</label>
               <input type="number" name="stock" required value="${product ? product.stock : 10}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
             <div>
@@ -4609,6 +4626,22 @@
               <label class="block text-[9px] text-gray-400 uppercase">Description Override</label>
               <input type="text" class="var-desc-input w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${v.description || ''}" data-index="${i}">
             </div>
+            <div class="border-t border-white/10 pt-3 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] text-luxuryGold uppercase font-bold">This image inventory</span>
+                <button type="button" class="add-var-size-btn px-2 py-1 border border-luxuryGold/60 text-luxuryGold rounded text-[9px] uppercase font-bold" data-index="${i}">Add Size</button>
+              </div>
+              <div class="var-sizes-list space-y-2" data-index="${i}">
+                ${v.sizes.map((size, sizeIndex) => `
+                  <div class="grid grid-cols-[1fr_90px_auto] gap-2 items-end">
+                    <label class="text-[8px] text-gray-400 uppercase">Size<input type="text" class="var-size-label-input mt-1 w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${size.label || ''}" data-variation-index="${i}" data-size-index="${sizeIndex}"></label>
+                    <label class="text-[8px] text-gray-400 uppercase">Stock<input type="number" min="0" class="var-size-stock-input mt-1 w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${size.stock || 0}" data-variation-index="${i}" data-size-index="${sizeIndex}"></label>
+                    <button type="button" class="remove-var-size-btn px-2 py-1 text-red-400 text-xs" data-variation-index="${i}" data-size-index="${sizeIndex}" aria-label="Delete variant size">✕</button>
+                  </div>
+                `).join('')}
+              </div>
+              <label class="block text-[8px] text-gray-400 uppercase">Fallback stock for this image<input type="number" min="0" class="var-stock-input mt-1 w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${v.stock || 0}" data-index="${i}"></label>
+            </div>
           </div>
         `).join('');
 
@@ -4626,6 +4659,28 @@
         });
         listContainer.querySelectorAll(".var-desc-input").forEach(input => {
           input.oninput = (e) => { tempVariations[parseInt(input.dataset.index)].description = e.target.value; };
+        });
+        listContainer.querySelectorAll('.var-stock-input').forEach(input => {
+          input.oninput = e => { tempVariations[Number(input.dataset.index)].stock = Number(e.target.value || 0); };
+        });
+        listContainer.querySelectorAll('.var-size-label-input').forEach(input => {
+          input.oninput = e => { tempVariations[Number(input.dataset.variationIndex)].sizes[Number(input.dataset.sizeIndex)].label = e.target.value; };
+        });
+        listContainer.querySelectorAll('.var-size-stock-input').forEach(input => {
+          input.oninput = e => { tempVariations[Number(input.dataset.variationIndex)].sizes[Number(input.dataset.sizeIndex)].stock = Number(e.target.value || 0); };
+        });
+        listContainer.querySelectorAll('.add-var-size-btn').forEach(button => {
+          button.onclick = () => {
+            tempVariations[Number(button.dataset.index)].sizes.push({ label: '', stock: 0 });
+            renderVariationsList();
+          };
+        });
+        listContainer.querySelectorAll('.remove-var-size-btn').forEach(button => {
+          button.onclick = () => {
+            const variation = tempVariations[Number(button.dataset.variationIndex)];
+            variation.sizes.splice(Number(button.dataset.sizeIndex), 1);
+            renderVariationsList();
+          };
         });
 
         listContainer.querySelectorAll(".var-file-upload").forEach(upload => {
@@ -4738,7 +4793,7 @@
       };
 
       document.getElementById("add-variation-row-btn").onclick = () => {
-        tempVariations.push({ name: '', price: '', imageURL: '', mobileImage: '', description: '' });
+        tempVariations.push({ name: '', price: '', imageURL: '', mobileImage: '', description: '', stock: 0, sizes: [] });
         renderVariationsList();
       };
 
@@ -4833,6 +4888,8 @@
           galleryImages: form.galleryImages.value,
           variations: tempVariations.filter(v => v.imageURL || v.mobileImage || v.name).map(v => ({
             ...v,
+            stock: Number(v.stock || 0),
+            sizes: (v.sizes || []).map(size => ({ label: String(size.label || '').trim(), stock: Number(size.stock || 0) })).filter(size => size.label),
             mobileImage: v.mobileImage || ''
           })),
           colors: tempColors.filter(color => color.name && color.value).map(color => ({
@@ -7331,10 +7388,12 @@
       });
 
       const normalizedGender = getNormalizedGender(product.gender);
-      const sizeOptions = this.getProductSizes(product);
+      let sizeOptions = this.getProductSizes(product, null);
       let selectedProductSize = null;
       let selectedQty = 1;
-      const getCurrentAvailableStock = () => selectedProductSize ? this.getProductSizeStock(product, selectedProductSize) : Number(product.stock || 0);
+      const getCurrentAvailableStock = () => selectedProductSize
+        ? this.getProductSizeStock(product, selectedProductSize, this.activeVariationIndex)
+        : Number(this.getProductInventory(product, this.activeVariationIndex).stock || 0);
 
       modal.innerHTML = `
         ${isProductPage ? '' : '<div class="fixed inset-0 bg-black/85 backdrop-blur-xs transition-opacity duration-300 opacity-0" id="product-modal-backdrop"></div>'}
@@ -7422,7 +7481,7 @@
                 </div>
               </div>
 
-              <p class="text-[11px] font-medium text-gray-400">
+              <p id="modal-stock-status" class="text-[11px] font-medium text-gray-400">
                 Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${getCurrentAvailableStock()} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
               </p>
             </div>
@@ -7466,6 +7525,41 @@
       const descriptionTextEl = document.getElementById("modal-product-description");
       const priceWrapperEl = document.getElementById("modal-product-price-wrapper");
 
+      const refreshInventoryControls = () => {
+        sizeOptions = this.getProductSizes(product, this.activeVariationIndex);
+        const sizeContainer = document.getElementById('modal-size-options');
+        const sizeSection = sizeContainer?.closest('.space-y-2');
+        if (!sizeContainer || !sizeSection) {
+          updateSizeAndQtyState();
+          return;
+        }
+        sizeContainer.innerHTML = sizeOptions.map(size => `
+          <button type="button" class="modal-size-btn rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border-white/15 bg-black/30 text-gray-300 hover:border-luxuryGold/60" data-size="${size.label}">
+            ${size.label}
+          </button>
+        `).join('');
+        selectedProductSize = null;
+        selectedQty = 0;
+        sizeSection.classList.toggle('hidden', sizeOptions.length === 0);
+        sizeContainer.querySelectorAll('.modal-size-btn').forEach(button => {
+          button.onclick = () => {
+            selectedProductSize = button.dataset.size || null;
+            selectedQty = 0;
+            sizeContainer.querySelectorAll('.modal-size-btn').forEach(btn => {
+              const isActive = btn.dataset.size === selectedProductSize;
+              btn.classList.toggle('border-luxuryGold', isActive);
+              btn.classList.toggle('bg-luxuryGold', isActive);
+              btn.classList.toggle('text-black', isActive);
+              btn.classList.toggle('text-gray-300', !isActive);
+              btn.classList.toggle('border-white/15', !isActive);
+              btn.classList.toggle('bg-black/30', !isActive);
+            });
+            updateSizeAndQtyState();
+          };
+        });
+        updateSizeAndQtyState();
+      };
+
       document.querySelectorAll(".gallery-thumb").forEach(btn => {
         btn.onclick = () => {
           const newImgSrc = btn.getAttribute("data-img");
@@ -7498,6 +7592,7 @@
               store.activePrice = activeVariant.price || (product.discountPrice || product.price);
               store.activeDescription = activeVariant.description || product.description;
               store.activeVariationIndex = varIndex;
+              refreshInventoryControls();
             } else {
               // Base Product Reset
               store.activeName = product.name;
@@ -7508,6 +7603,7 @@
               const hasMainColor = colors.some(color => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL);
               const matchingColor = colors.find((color, colorIndex) => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL || (!hasMainColor && colorIndex === 0));
               store.activeColor = matchingColor || null;
+              refreshInventoryControls();
               const colorLabel = document.getElementById('selected-color-label');
               if (colorLabel) colorLabel.textContent = matchingColor?.name || 'No color selected';
               document.querySelectorAll('.product-color-swatch').forEach(swatch => {
@@ -7551,6 +7647,7 @@
           if (colorLabel) colorLabel.textContent = color.name || 'Selected color';
           if (variant) {
             store.activeVariationIndex = variantIndex;
+            refreshInventoryControls();
             store.activeName = variant.name || product.name;
             store.activePrice = variant.price || product.discountPrice || product.price;
             store.activeDescription = variant.description || product.description;
@@ -7565,6 +7662,7 @@
             });
           } else {
             store.activeVariationIndex = null;
+            refreshInventoryControls();
             store.activeName = product.name;
             store.activePrice = product.discountPrice || product.price;
             store.activeDescription = product.description;
@@ -7630,8 +7728,12 @@
         const sizeStockEl = document.getElementById('modal-size-stock');
         const qtyValueEl = document.getElementById('modal-qty-value');
         const maxAvailable = getCurrentAvailableStock();
+        const stockStatusEl = document.getElementById('modal-stock-status');
         if (sizeStockEl) {
           sizeStockEl.textContent = `Available: ${maxAvailable} pieces`;
+        }
+        if (stockStatusEl && product.limitedStock) {
+          stockStatusEl.innerHTML = `Stock Status: <span class="text-red-400 font-bold">Limited Reserve (${maxAvailable} left)</span>`;
         }
         if (qtyValueEl) {
           selectedQty = Math.min(Math.max(selectedQty, 0), Math.max(maxAvailable, 0));
