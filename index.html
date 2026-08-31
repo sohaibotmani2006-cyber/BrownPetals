@@ -435,7 +435,21 @@
       measurementId: "G-08EQ2F0LLX"
     };
 
+    const auditFirestoreRead = (operation, collectionName, reason, component) => {
+      console.log('[FIRESTORE AUDIT] READ', {
+        operation,
+        collection: collectionName,
+        reason,
+        component,
+        timestamp: new Date().toISOString()
+      });
+    };
+
     // Instantiate Services
+    console.log('[FIRESTORE AUDIT] Firebase initialization', {
+      timestamp: new Date().toISOString(),
+      component: 'module initialization'
+    });
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -935,6 +949,9 @@
 
       setPage(page) {
         this.cartOpen = false;
+        if (this.currentPage === 'admin' && page !== 'admin') {
+          this.cleanupSubscriptions("admin");
+        }
         const path = (page === 'home') ? '/' : '/' + page;
         try {
           if (window.location.pathname !== path) {
@@ -951,6 +968,10 @@
 
       handleRouting() {
         const pathname = window.location.pathname || '/';
+
+        if (this.currentPage === 'admin' && pathname.replace(/\/+$/, '') !== '/admin') {
+          this.cleanupSubscriptions("admin");
+        }
 
         // Product modal route
         if (pathname.startsWith('/product/')) {
@@ -1020,7 +1041,8 @@
         publicUnsubscribers: [],
         adminUnsubscribers: [],
         orderHistoryRequest: null,
-        orderHistoryKey: ""
+        orderHistoryKey: "",
+        adminResources: {}
       },
 
       trackSubscription(scope, unsubscribe) {
@@ -1499,6 +1521,33 @@
       document.getElementById("diagnostic-close-btn").onclick = () => modal.classList.add("hidden");
     };
 
+    const createAuditedSnapshot = (scope, listenerName, source, handler, errorHandler) => {
+      const resourceKey = scope === 'admin' ? listenerName : null;
+      if (resourceKey && store.activeSubscriptions.adminResources[resourceKey]) {
+        store.activeSubscriptions.adminResources[resourceKey]();
+      }
+      auditFirestoreRead('onSnapshot', listenerName, 'Realtime listener creation', `init${scope[0].toUpperCase()}${scope.slice(1)}Subscriptions`);
+      const unsubscribe = onSnapshot(source, handler, errorHandler);
+      let unsubscribed = false;
+      let trackedUnsubscribe;
+      trackedUnsubscribe = store.trackSubscription(scope, () => {
+        if (unsubscribed) return;
+        unsubscribed = true;
+        console.log('[FIRESTORE AUDIT] LISTENER UNSUBSCRIBED', {
+          listener: listenerName,
+          scope,
+          timestamp: new Date().toISOString(),
+          component: `cleanupSubscriptions(${scope})`
+        });
+        unsubscribe();
+        if (resourceKey && store.activeSubscriptions.adminResources[resourceKey] === trackedUnsubscribe) {
+          delete store.activeSubscriptions.adminResources[resourceKey];
+        }
+      });
+      if (resourceKey) store.activeSubscriptions.adminResources[resourceKey] = trackedUnsubscribe;
+      return trackedUnsubscribe;
+    };
+
     const triggerConfirm = (title, message, onConfirmCallback, isAlertOnly = false) => {
       const modal = document.getElementById("confirm-modal-container");
       if (!modal) return;
@@ -1537,7 +1586,7 @@
           console.warn("Could not update local Firestore cache:", err);
         }
       };
-      const readCachedCollection = async (cacheKey, source) => {
+      const readCachedCollection = async (cacheKey, source, collectionName, reason) => {
         if (!store.isAdmin) {
           try {
             const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
@@ -1549,6 +1598,7 @@
           }
         }
 
+        auditFirestoreRead('getDocs', collectionName, reason, 'initPublicSubscriptions.readCachedCollection');
         const snap = await getDocs(source);
         const data = [];
         snap.forEach(snapshotDoc => data.push({ id: snapshotDoc.id, ...snapshotDoc.data() }));
@@ -1557,7 +1607,7 @@
         }
         return data;
       };
-      const readCachedDocument = async (cacheKey, source) => {
+      const readCachedDocument = async (cacheKey, source, collectionName, reason) => {
         if (!store.isAdmin) {
           try {
             const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
@@ -1567,6 +1617,7 @@
           }
         }
 
+        auditFirestoreRead('getDoc', collectionName, reason, 'initPublicSubscriptions.readCachedDocument');
         const snap = await getDoc(source);
         const data = snap.exists() ? snap.data() : null;
         if (!store.isAdmin) {
@@ -1604,9 +1655,9 @@
         }
       };
       if (store.isAdmin) {
-        this.trackSubscription("public", onSnapshot(settingsDocRef, handleSettings, (err) => console.warn("Settings fetch bypassed:", err)));
+        createAuditedSnapshot("public", 'settings/global', settingsDocRef, handleSettings, (err) => console.warn("Settings fetch bypassed:", err));
       } else {
-        readCachedDocument("sovanex_settings_firestore_cache", settingsDocRef)
+        readCachedDocument("sovanex_settings_firestore_cache", settingsDocRef, 'settings/global', 'Load public store settings')
           .then(data => handleSettings({ exists: () => Boolean(data), data: () => data || {} }))
           .catch(err => console.warn("Settings fetch bypassed:", err));
       }
@@ -1623,7 +1674,7 @@
           );
           
           console.log('Calling getDocs for products...');
-          const list = await Promise.race([readCachedCollection("sovanex_products_firestore_cache", prodQuery), timeoutPromise]);
+          const list = await Promise.race([readCachedCollection("sovanex_products_firestore_cache", prodQuery, 'products', 'Load public product catalog'), timeoutPromise]);
           console.log('Products loaded, processing', list.length, 'documents');
           list.forEach(product => console.log('Added product:', product.id));
           const productsChanged = list.length > 0 && store.getProductSignature(store.products) !== store.getProductSignature(list);
@@ -1798,8 +1849,8 @@
         store.loadingCategories = false;
         store.updateDOM();
       };
-      if (store.isAdmin) this.trackSubscription("public", onSnapshot(catQuery, handleCategories, (err) => console.warn(err)));
-      else readCachedCollection("sovanex_categories_firestore_cache", catQuery).then(handleCategories).catch(err => console.warn(err));
+      if (store.isAdmin) createAuditedSnapshot("public", 'categories orderBy(order asc)', catQuery, handleCategories, (err) => console.warn(err));
+      else readCachedCollection("sovanex_categories_firestore_cache", catQuery, 'categories orderBy(order asc)', 'Load public categories').then(handleCategories).catch(err => console.warn(err));
 
       const lookbookRef = collection(db, 'artifacts', appId, 'public', 'data', 'lookbook');
       const lookbookQuery = query(lookbookRef, orderBy("order", "asc"));
@@ -1824,8 +1875,8 @@
         writePublicCache("sovanex_lookbook_firestore_cache", store.lookbook);
         store.updateDOM();
       };
-      if (store.isAdmin) this.trackSubscription("public", onSnapshot(lookbookQuery, handleLookbook, (err) => console.warn(err)));
-      else readCachedCollection("sovanex_lookbook_firestore_cache", lookbookQuery).then(handleLookbook).catch(err => console.warn(err));
+      if (store.isAdmin) createAuditedSnapshot("public", 'lookbook orderBy(order asc)', lookbookQuery, handleLookbook, (err) => console.warn(err));
+      else readCachedCollection("sovanex_lookbook_firestore_cache", lookbookQuery, 'lookbook orderBy(order asc)', 'Load public lookbook').then(handleLookbook).catch(err => console.warn(err));
 
       const citiesRef = collection(db, 'artifacts', appId, 'public', 'data', 'deliveryCities');
       const moroccanCityDefaults = [
@@ -1864,8 +1915,8 @@
         writePublicCache("sovanex_cities_firestore_cache", store.deliveryCities);
         store.updateDOM();
       };
-      if (store.isAdmin) this.trackSubscription("public", onSnapshot(citiesRef, handleCities, (err) => console.warn(err)));
-      else readCachedCollection("sovanex_cities_firestore_cache", citiesRef).then(handleCities).catch(err => console.warn(err));
+      if (store.isAdmin) createAuditedSnapshot("public", 'deliveryCities', citiesRef, handleCities, (err) => console.warn(err));
+      else readCachedCollection("sovanex_cities_firestore_cache", citiesRef, 'deliveryCities', 'Load public delivery cities').then(handleCities).catch(err => console.warn(err));
 
       const botConfigDoc = doc(db, 'artifacts', appId, 'public', 'data', 'telegramSettings', 'live');
       const handleTelegram = (snap) => {
@@ -1878,8 +1929,8 @@
           setDoc(botConfigDoc, store.telegramSettings).catch(e => console.error("Initial telegram configuration write bypassed:", e));
         }
       };
-      if (store.isAdmin) this.trackSubscription("public", onSnapshot(botConfigDoc, handleTelegram, (err) => console.warn(err)));
-      else readCachedDocument("sovanex_telegram_firestore_cache", botConfigDoc)
+      if (store.isAdmin) createAuditedSnapshot("public", 'telegramSettings/live', botConfigDoc, handleTelegram, (err) => console.warn(err));
+      else readCachedDocument("sovanex_telegram_firestore_cache", botConfigDoc, 'telegramSettings/live', 'Load public Telegram settings')
         .then(data => handleTelegram({ exists: () => Boolean(data), data: () => data || {} }))
         .catch(err => console.warn(err));
 
@@ -1902,8 +1953,8 @@
         writePublicCache("sovanex_reviews_firestore_cache", store.reviews);
         store.updateDOM();
       };
-      if (store.isAdmin) this.trackSubscription("public", onSnapshot(revQuery, handleReviews, (err) => console.warn(err)));
-      else readCachedCollection("sovanex_reviews_firestore_cache", revQuery).then(handleReviews).catch(err => console.warn(err));
+      if (store.isAdmin) createAuditedSnapshot("public", 'reviews orderBy(createdAt desc) limit(admin ? 100 : 20)', revQuery, handleReviews, (err) => console.warn(err));
+      else readCachedCollection("sovanex_reviews_firestore_cache", revQuery, 'reviews orderBy(createdAt desc) limit(20)', 'Load public reviews').then(handleReviews).catch(err => console.warn(err));
 
       return () => this.cleanupSubscriptions("public");
     };
@@ -1916,7 +1967,7 @@
       const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
       const orderQuery = query(ordersRef, orderBy("createdAt", "desc"), limit(150));
       
-      this.trackSubscription("admin", onSnapshot(orderQuery, (snap) => {
+      createAuditedSnapshot("admin", 'orders orderBy(createdAt desc) limit(150)', orderQuery, (snap) => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         store.orders = list;
@@ -1945,7 +1996,7 @@
         if (store.currentPage === "admin" && store.adminView === "dashboard") {
           store.renderAnalyticsChart();
         }
-      }, (err) => console.error("Admin orders error:", err)));
+      }, (err) => console.error("Admin orders error:", err));
 
       return () => this.cleanupSubscriptions("admin");
     };
@@ -2018,6 +2069,7 @@
       this.activeSubscriptions.orderHistoryRequest = (async () => {
         const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
         const q = query(ordersCol, where("orderId", "in", orderIds));
+        auditFirestoreRead('getDocs', 'orders where(orderId in local history)', 'Load customer order history', 'store.loadOrderHistory');
         const snap = await getDocs(q);
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
