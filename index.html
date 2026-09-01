@@ -4650,9 +4650,9 @@
             : []
         }))
         : [];
-      let tempColors = product && Array.isArray(product.colors) && product.colors.length > 0
+      let tempColors = Array.isArray(product?.colors)
         ? product.colors.map(color => ({ ...color }))
-        : [{ name: 'Pink', value: '#FFC0CB', variantName: 'main', variantIndex: null }, { name: 'Blue', value: '#1E90FF', variantIndex: 0 }, { name: 'Black', value: '#000000', variantIndex: 1 }, { name: 'White', value: '#FFFFFF', variantIndex: 2 }];
+        : [];
 
       container.innerHTML = `
         <div class="absolute inset-0 bg-black/80 backdrop-blur-xs"></div>
