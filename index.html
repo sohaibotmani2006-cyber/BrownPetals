@@ -115,6 +115,11 @@
     .hide-scrollbar::-webkit-scrollbar {
       display: none;
     }
+    .preserve-whitespace,
+    #modal-product-description {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
     label:has(input[type="file"]),
     input[type="file"] + label,
     .file-upload-trigger,
@@ -549,6 +554,10 @@
         .replace(/^-+|-+$/g, '')
         .replace(/-+/g, '-');
     }
+
+    window.preserveDescriptionText = function(value) {
+      return String(value ?? '').replace(/\r\n/g, '\n');
+    };
 
     function getProductRoutePath(product) {
       const slug = slugifyProductName(product?.name || product?.id || 'product');
@@ -4871,7 +4880,7 @@
             </div>
             <div>
               <label class="block text-[9px] text-gray-400 uppercase">Description Override</label>
-              <input type="text" class="var-desc-input w-full px-2 py-1 text-xs rounded border border-white/10 bg-black text-white" value="${v.description || ''}" data-index="${i}">
+              <textarea class="var-desc-input w-full px-2 py-2 text-xs rounded border border-white/10 bg-black text-white h-20 resize-y" data-index="${i}">${v.description || ''}</textarea>
             </div>
             <div class="border-t border-white/10 pt-3 space-y-2">
               <div class="flex justify-between items-center">
@@ -5145,7 +5154,7 @@
             variantName: color.variantName === 'main' ? 'main' : (tempVariations.length > 0 ? (tempVariations[Number.isInteger(color.variantIndex) ? color.variantIndex : 0]?.name || color.variantName || '') : '')
           })),
           sizes: validSizes,
-          description: form.description.value,
+          description: window.preserveDescriptionText(form.description.value),
           stock: Number(form.stock.value),
           rating: Number(form.rating.value),
           isPinned: form.isPinned.checked,
@@ -7584,7 +7593,7 @@
       this.activeImg = initialProductImage;
       this.activeName = product.name;
       this.activePrice = product.discountPrice || product.price;
-      this.activeDescription = product.description;
+      this.activeDescription = window.preserveDescriptionText(product.description);
       this.activeVariationIndex = null;
       const orderedColors = this.getProductColorsInPictureOrder(product);
       const mainColor = orderedColors.find(color => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL) || orderedColors[0] || null;
@@ -7717,7 +7726,7 @@
                 ` : ''}
               </div>
 
-              <p id="modal-product-description" class="text-xs md:text-sm text-gray-300 leading-relaxed font-light">${product.description}</p>
+              <p id="modal-product-description" class="preserve-whitespace text-xs md:text-sm text-gray-300 leading-relaxed font-light">${window.preserveDescriptionText(product.description)}</p>
 
               ${sizeOptions.length > 0 ? `
                 <div class="space-y-2">
@@ -7851,14 +7860,14 @@
               
               store.activeName = activeVariant.name || product.name;
               store.activePrice = activeVariant.price || (product.discountPrice || product.price);
-              store.activeDescription = activeVariant.description || product.description;
+              store.activeDescription = window.preserveDescriptionText(activeVariant.description || product.description);
               store.activeVariationIndex = varIndex;
               refreshInventoryControls();
             } else {
               // Base Product Reset
               store.activeName = product.name;
               store.activePrice = product.discountPrice || product.price;
-              store.activeDescription = product.description;
+              store.activeDescription = window.preserveDescriptionText(product.description);
               store.activeVariationIndex = null;
               const colors = orderedColors;
               const hasMainColor = colors.some(color => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL);
@@ -7877,7 +7886,7 @@
 
             // Sync visual information in real time
             if (titleTextEl) titleTextEl.innerText = store.activeName.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
-            if (descriptionTextEl) descriptionTextEl.innerText = store.activeDescription;
+            if (descriptionTextEl) descriptionTextEl.textContent = String(store.activeDescription ?? '');
             if (priceWrapperEl) {
               priceWrapperEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${store.activePrice} MAD</span>`;
             }
@@ -7911,9 +7920,9 @@
             refreshInventoryControls();
             store.activeName = variant.name || product.name;
             store.activePrice = variant.price || product.discountPrice || product.price;
-            store.activeDescription = variant.description || product.description;
+            store.activeDescription = window.preserveDescriptionText(variant.description || product.description);
             if (titleTextEl) titleTextEl.innerText = store.activeName.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
-            if (descriptionTextEl) descriptionTextEl.innerText = store.activeDescription;
+            if (descriptionTextEl) descriptionTextEl.textContent = String(store.activeDescription ?? '');
             if (priceWrapperEl) priceWrapperEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${store.activePrice} MAD</span>`;
             document.querySelectorAll('.gallery-thumb').forEach(thumb => {
               const selected = thumb.getAttribute('data-is-variation') === 'true' && Number(thumb.getAttribute('data-index')) === store.activeVariationIndex;
@@ -7926,9 +7935,9 @@
             refreshInventoryControls();
             store.activeName = product.name;
             store.activePrice = product.discountPrice || product.price;
-            store.activeDescription = product.description;
+            store.activeDescription = window.preserveDescriptionText(product.description);
             if (titleTextEl) titleTextEl.innerText = store.activeName.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
-            if (descriptionTextEl) descriptionTextEl.innerText = store.activeDescription;
+            if (descriptionTextEl) descriptionTextEl.textContent = String(store.activeDescription ?? '');
             if (priceWrapperEl) priceWrapperEl.innerHTML = product.discountPrice ? `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span><span class="text-xs line-through text-gray-500">${product.price} MAD</span>` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`;
           }
           const selectedImage = isMainColor ? product.imageURL : (color.imageURL || variant?.imageURL);
