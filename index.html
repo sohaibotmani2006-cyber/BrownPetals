@@ -370,7 +370,7 @@
   <div id="app-preloader" aria-live="polite">
     <div class="text-center space-y-4">
       <div class="preloader-mark" aria-hidden="true">S</div>
-      <p class="text-[10px] uppercase tracking-[0.24em] text-gray-400">Loading your experience...</p>
+      <p class="text-[10px] uppercase tracking-[0.24em] text-gray-400">Chargement de votre expérience...</p>
     </div>
   </div>
 
@@ -548,6 +548,25 @@
       return slug ? '/product/' + slug : '/product/' + (product?.id || 'product');
     }
 
+    const frenchTranslations = {
+      home: "Accueil", shop: "Boutique", contact: "Contact", orders: "Mes commandes", policies: "Livraison et retours", search: "Rechercher dans la boutique...", cart: "Panier",
+      tagline: "La boutique souveraine de montres, accessoires et articles en cuir d'exception", heroTitle: "SOVANEX <br>Créations d'exception", heroDesc: "Une destination authentique dédiée aux montres haut de gamme, aux accessoires raffinés et aux articles en cuir façonnés avec exigence.", discoverStore: "Découvrir la boutique", connectUs: "Nous contacter",
+      selectCollection: "Choisissez votre collection", storeCollections: "Collections de la boutique", forHer: "Pour elle", forHim: "Pour lui", shopForHer: "ACHETER POUR ELLE", shopForHim: "ACHETER POUR LUI", exclusivePacks: "PACKS EXCLUSIFS", atelierPacks: "Packs exclusifs", atelierPacksDesc: "Découvrez nos associations élégantes et nos ensembles premium soigneusement composés.", mensPacks: "PACKS HOMME", womensPacks: "PACKS FEMME",
+      watchmaking: "Horlogerie et artisanat du cuir", watchmakingDesc: "Nous sélectionnons des mouvements automatiques premium, des cuirs de qualité et des aciers conçus pour durer.", shipping: "Livraison express sécurisée", shippingDesc: "Vos commandes sont préparées avec soin et expédiées en toute sécurité partout au Maroc.", certificate: "Assistance premium à vie", certificateDesc: "Notre équipe reste à vos côtés pour vous accompagner à chaque étape.", offers: "Offres exceptionnelles", exclusivePromos: "Promotions exclusives", signatures: "Nos signatures", mostCoveted: "Meilleures ventes",
+      browseAll: "Explorer toutes les collections", reviewsTitle: "Ce que disent nos clients", leaveReview: "Laisser un avis", lookbookTitle: "Le lookbook de la boutique", lookbookSub: "Suivez nos nouveautés", footerDesc: "Une destination raffinée pour les montres, accessoires et articles en cuir sélectionnés avec soin.", operatingHours: "Ouvert tous les jours : 9 h - 22 h",
+      backToHome: "← Retour à l'accueil", yourSelection: "Votre sélection", sovereignCart: "Panier SOVANEX", myCartTab: "Mon panier", myOrdersTab: "Mes commandes", cartEmpty: "Votre panier est vide", discoverAtelier: "Découvrir la boutique", noOrders: "Aucune commande enregistrée", ordersTrackLocal: "Les commandes passées sur cet appareil apparaîtront ici.", orderConfirmed: "Sélection confirmée", orderConfirmedAr: "Votre commande a été confirmée", fullName: "Nom complet", phoneNumber: "Numéro de téléphone", citySelect: "Choisir la ville de livraison", deliveryAddress: "Adresse de livraison", confirmOrder: "Confirmer la commande", cashOnDelivery: "Paiement à la livraison", shippingInfo: "Informations de livraison", trackWhatsapp: "Suivre sur WhatsApp", orderCode: "Code de commande", orderCopyTip: "Copiez ce code et envoyez-le à notre service client sur WhatsApp pour confirmer votre livraison.", orderCopyTipAr: "Merci pour votre confiance.", continueShopping: "Continuer mes achats", continueShoppingAr: "", customCardTip: "Une carte cadeau premium personnalisée est offerte avec chaque création.", shareLink: "Partager le lien", addToCart: "Ajouter au panier", orderNow: "Commander maintenant", allCategories: "Toutes les catégories", atelierCollections: "Collections", searchBoutique: "Rechercher une création...", sendPrivateNote: "Envoyer un message", yourName: "Votre nom", emailAddress: "Adresse e-mail", message: "Message", sendMessage: "Envoyer le message", ourCoordinates: "Nos coordonnées", atelierAddress: "Adresse de la boutique", hotline: "Téléphone", emailCoordinate: "Adresse e-mail", instagramProfile: "Profil Instagram", joinAtelier: "Rejoindre la boutique", joinAtelierDesc: "Inscrivez-vous pour recevoir nos invitations privées.", join: "S'inscrire", newsletterPlaceholder: "Adresse e-mail", copyright: "© 2026 SOVANEX. Tous droits réservés.", womenColl: "Femme", menColl: "Homme", mensPacksColl: "Packs homme", womensPacksColl: "Packs femme", allColl: "Tous", ratingLabel: "Note", starsLabel: "Étoiles", yourNote: "Votre avis", submitReview: "Envoyer l'avis", verifiedBuyer: "Acheteur vérifié", productPurchased: "Produit acheté", generalExperience: "Expérience générale", addBtn: "Ajouter", buyBtn: "Acheter", saleBadge: "Promotion", bestBadge: "Meilleure vente", packsBadge: "Packs", onlyItemsLeft: "articles restants en stock.", noProductsFound: "Aucun produit ne correspond à votre recherche.", quickView: "Aperçu rapide", tapToZoom: "🔍 Appuyez pour agrandir"
+    };
+
+    const getFrenchHeroDescription = value => {
+      const text = String(value || '').trim();
+      if (text === 'Discover timeless jewelry designed to elevate your everyday style. Explore our collection of elegant bracelets, rings, necklaces, and watches, crafted to make every look stand out.') {
+        return 'Découvrez des bijoux intemporels conçus pour sublimer votre style au quotidien. Explorez notre collection de bracelets, bagues, colliers et montres élégants, imaginés pour mettre chaque allure en valeur.';
+      }
+      return text === 'An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.'
+        ? frenchTranslations.heroDesc
+        : (text || frenchTranslations.heroDesc);
+    };
+
     const store = {
       user: null,
       isAdmin: false,
@@ -609,7 +628,7 @@
       ],
 
       // Translation dictionary
-      language: localStorage.getItem("sovanex_lang") || "en",
+      language: localStorage.getItem("sovanex_lang") === "ar" ? "ar" : "fr",
       translations: {
         en: {
           home: "Home",
@@ -659,7 +678,7 @@
           sovereignCart: "Sovereign Cart ⚜️",
           myCartTab: "My Cart",
           myOrdersTab: "My Orders ⚜️",
-          cartEmpty: "Your cart is empty",
+          cartEmpty: "Votre panier est vide",
           discoverAtelier: "Discover Shop",
           noOrders: "No local orders found",
           ordersTrackLocal: "Orders placed on this device will automatically track here in real-time.",
@@ -837,8 +856,8 @@
         }
       },
       t(key) {
-        const lang = this.language === 'ar' ? 'ar' : 'en';
-        return this.translations[lang][key] || this.translations['en'][key] || key;
+        const lang = this.language === 'ar' ? 'ar' : 'fr';
+        return lang === 'fr' ? (frenchTranslations[key] || this.translations['en'][key] || key) : (this.translations[lang][key] || key);
       },
 
       getFreeDeliveryThreshold() {
@@ -850,7 +869,11 @@
       getActiveAnnouncements() {
         const configured = Array.isArray(this.settings.announcements) ? this.settings.announcements : [];
         const threshold = this.getFreeDeliveryThreshold();
-        const normalizeFreeDeliveryText = (message) => message.replace(/Free Delivery on Orders Over\s*\d+\s*DH/i, `Free Delivery on Orders Over ${threshold} DH`);
+        const normalizeFreeDeliveryText = (message) => message.replace(/Free Delivery on Orders Over\s*\d+\s*DH/i, `Livraison gratuite dès ${threshold} DH`)
+          .replace(/24\/7 Customer Support/gi, 'Service client 24 h/24, 7 j/7')
+          .replace(/Fast & Reliable Delivery/gi, 'Livraison rapide et fiable')
+          .replace(/Secure Shopping Experience/gi, "Une expérience d'achat sécurisée")
+          .replace(/Premium Customer Service/gi, 'Service client premium');
         const active = configured
           .filter(item => item && item.isActive !== false && item.text)
           .sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -1546,7 +1569,7 @@
             <div class="flex items-center gap-3">
               <!-- Premium Translation Button -->
               <button id="nav-lang-btn" class="flex items-center gap-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl shadow-md transition-premium text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                🌐 ${this.language === 'en' ? 'العربية' : 'EN'}
+                🌐 ${this.language === 'ar' ? 'Français' : 'العربية'}
               </button>
 
               <!-- Cart Button -->
@@ -1583,7 +1606,7 @@
     const langBtn = document.getElementById("nav-lang-btn");
     if (langBtn) {
       langBtn.onclick = () => {
-        const nextLang = this.language === 'en' ? 'ar' : 'en';
+        const nextLang = this.language === 'ar' ? 'fr' : 'ar';
         this.language = nextLang;
         localStorage.setItem("sovanex_lang", nextLang);
         this.updateTheme();
@@ -2299,7 +2322,7 @@
       const currentQuantity = match ? Number(match.quantity || 0) : 0;
       const nextQuantity = hasExplicitQuantity ? requestedQuantity : currentQuantity + requestedQuantity;
       if (Number.isFinite(itemStock) && itemStock >= 0 && nextQuantity > itemStock) {
-        showToast("You have reached the maximum available stock.", "error");
+        showToast("Vous avez atteint le stock disponible maximum.", "error");
         return;
       }
       if (match) {
@@ -2560,20 +2583,20 @@
 
     store.validatePromoCode = function(code) {
       const promo = this.findPromoCode(code);
-      if (!promo) return { valid: false, message: "Promo code does not exist." };
-      if (promo.isActive === false) return { valid: false, message: "This promo code is disabled." };
+      if (!promo) return { valid: false, message: "Ce code promotionnel n'existe pas." };
+      if (promo.isActive === false) return { valid: false, message: "Ce code promotionnel est désactivé." };
       const maxUses = Number(promo.maxUses ?? 1);
       const usesCount = Number(promo.usesCount ?? 0);
-      if (Number.isFinite(maxUses) && maxUses > 0 && usesCount >= maxUses) return { valid: false, message: "This promo code has reached its usage limit." };
+      if (Number.isFinite(maxUses) && maxUses > 0 && usesCount >= maxUses) return { valid: false, message: "La limite d'utilisation de ce code est atteinte." };
       if (promo.expiresAt) {
         const expiry = promo.expiresAt?.toDate ? promo.expiresAt.toDate() : new Date(promo.expiresAt);
         if (!Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now()) {
-          return { valid: false, message: "This promo code has expired." };
+          return { valid: false, message: "Ce code promotionnel a expiré." };
         }
       }
       const discountPercent = Number(promo.discountPercent);
       if (!Number.isFinite(discountPercent) || discountPercent <= 0 || discountPercent > 100) {
-        return { valid: false, message: "This promo code has an invalid discount." };
+        return { valid: false, message: "La remise de ce code promotionnel est invalide." };
       }
       const subtotal = this.getCartSubtotal();
       const discountAmount = Math.round(subtotal * discountPercent) / 100;
@@ -2615,15 +2638,15 @@
     store.renderPromoCodeMarkup = function() {
       const totals = this.getCartTotals();
       return `<div class="border-t border-luxuryGold/20 pt-4 space-y-3">
-        <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Promo Code</p>
+        <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Code promotionnel</p>
         <div class="flex gap-2">
           <input id="promo-code-input" type="text" value="${this.promoCodeInput}" placeholder="SOVANEX10" class="min-w-0 flex-1 px-3 py-2 text-xs rounded-xl border border-luxuryGold/30 bg-black text-white uppercase">
-          <button id="promo-code-apply" type="button" class="px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold">Apply</button>
+          <button id="promo-code-apply" type="button" class="px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold">Appliquer</button>
         </div>
         ${this.promoCodeMessage ? `<p class="text-[10px] ${this.promoCodeMessageType === 'error' ? 'text-red-300' : 'text-emerald-300'}">${this.promoCodeMessage}</p>` : ''}
-        ${this.appliedPromoCode ? `<button id="promo-code-remove" type="button" class="text-[10px] text-gray-400 underline underline-offset-2">Remove ${this.appliedPromoCode.code}</button>` : ''}
-        ${totals.discountAmount > 0 ? `<div class="flex justify-between text-xs text-gray-400"><span>Original subtotal</span><span>${totals.subtotal.toFixed(2)} MAD</span></div>` : ''}
-        ${totals.discountAmount > 0 ? `<div class="flex justify-between text-xs text-emerald-300"><span>Discount (${totals.discountPercent}%)</span><span>- ${totals.discountAmount.toFixed(2)} MAD</span></div>` : ''}
+        ${this.appliedPromoCode ? `<button id="promo-code-remove" type="button" class="text-[10px] text-gray-400 underline underline-offset-2">Retirer ${this.appliedPromoCode.code}</button>` : ''}
+        ${totals.discountAmount > 0 ? `<div class="flex justify-between text-xs text-gray-400"><span>Sous-total initial</span><span>${totals.subtotal.toFixed(2)} MAD</span></div>` : ''}
+        ${totals.discountAmount > 0 ? `<div class="flex justify-between text-xs text-emerald-300"><span>Remise (${totals.discountPercent} %)</span><span>- ${totals.discountAmount.toFixed(2)} MAD</span></div>` : ''}
       </div>`;
     };
 
@@ -2672,14 +2695,14 @@
 
       const requireProof = normalizedPaymentMethod !== 'Cash on Delivery' && this.settings?.paymentProofRequired !== false;
       if (requireProof && (!paymentProofData || !String(paymentProofData).trim())) {
-        showToast("Please upload a payment proof screenshot before submitting the order.", "error");
+        showToast("Veuillez importer un justificatif de paiement avant d'envoyer la commande.", "error");
         return null;
       }
 
       const promoValidation = this.appliedPromoCode ? this.validatePromoCode(this.appliedPromoCode.code) : { valid: false };
       if (this.appliedPromoCode && !promoValidation.valid) {
         this.removePromoCode();
-        showToast(promoValidation.message || "This promo code is no longer valid.", "error");
+        showToast(promoValidation.message || "Ce code promotionnel n'est plus valide.", "error");
         return null;
       }
       const subtotal = this.getCartSubtotal();
@@ -2737,7 +2760,7 @@
           const maxUses = Number(freshPromo?.maxUses ?? 1);
           const usesCount = Number(freshPromo?.usesCount ?? 0);
           const expiry = freshPromo?.expiresAt ? new Date(freshPromo.expiresAt) : null;
-          if (!freshPromo || freshPromo.isActive === false || usesCount >= maxUses || Number(freshPromo.discountPercent) !== discountPercent || (expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now())) throw new Error('Promo code is no longer available.');
+          if (!freshPromo || freshPromo.isActive === false || usesCount >= maxUses || Number(freshPromo.discountPercent) !== discountPercent || (expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now())) throw new Error('Ce code promotionnel n\'est plus disponible.');
           transaction.set(orderRef, orderData);
           transaction.update(promoRef, { usesCount: increment(1), updatedAt: new Date() });
         });
@@ -3025,7 +3048,7 @@
           ${orders.length === 0 ? `
             <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-8 text-center space-y-4">
               <div class="text-luxuryGold/30 mx-auto">${getIconSvg('shopping-bag', 'w-14 h-14')}</div>
-              <h2 class="font-serif text-2xl text-white">No orders yet</h2>
+              <h2 class="font-serif text-2xl text-white">Aucune commande</h2>
               <p class="text-sm text-gray-400">Your order history will appear here once you place your first luxury purchase.</p>
               <button id="orders-shop-btn" class="px-6 py-3 bg-luxuryGold text-black text-[10px] uppercase tracking-[0.2em] font-bold rounded-xl">Continue Shopping</button>
             </div>
@@ -3070,7 +3093,7 @@
                                 <span class="text-[10px] text-luxuryGold font-bold whitespace-nowrap">${(itemPrice * (item.quantity || 1))} MAD</span>
                               </div>
                               <div class="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-gray-400">
-                                <span>Qty: ${item.quantity || 1}</span>
+                                <span>Qté : ${item.quantity || 1}</span>
                                 <span>•</span>
                                 <span>${itemPrice} MAD each</span>
                               </div>
@@ -3088,7 +3111,7 @@
                       </div>
 
                       <a href="https://wa.me/${whatsappNumber}?text=${trackMessage}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl bg-luxuryGold px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-black transition hover:bg-luxuryGold/90">
-                        Track Order
+                        Suivre la commande
                       </a>
                     </div>
                   </article>
@@ -3163,7 +3186,7 @@
                   <div class="flex gap-4">
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('clock', 'w-5 h-5')}</div>
                     <div>
-                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Operating Hours</h4>
+                      <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">Horaires d'ouverture</h4>
                       <p class="text-xs text-gray-400 font-light mt-1">${this.t('operatingHours')}</p>
                     </div>
                   </div>
@@ -3243,7 +3266,7 @@
                   <div class="w-10 h-10 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">
                     ${getIconSvg('truck', 'w-5 h-5')}
                   </div>
-                  <h3 class="font-serif text-xl text-white font-bold">Shipping Conditions</h3>
+                  <h3 class="font-serif text-xl text-white font-bold">Conditions de livraison</h3>
                 </div>
                 <div class="text-xs text-gray-300 leading-relaxed font-light whitespace-pre-line">
                   ${this.settings.deliveryTerms || "Delivery terms not configured."}
@@ -3261,10 +3284,10 @@
                   <div class="w-10 h-10 rounded-full bg-luxuryGold/10 text-luxuryGold flex items-center justify-center">
                     ${getIconSvg('gift', 'w-5 h-5')}
                   </div>
-                  <h3 class="font-serif text-xl text-white font-bold">Return Policy</h3>
+                  <h3 class="font-serif text-xl text-white font-bold">Politique de retour</h3>
                 </div>
                 <div class="text-xs text-gray-300 leading-relaxed font-light whitespace-pre-line">
-                  ${this.settings.returnPolicy || "Return policy not configured."}
+                  ${this.settings.returnPolicy || "Politique de retour non configurée."}
                 </div>
               </div>
               <div class="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] uppercase text-luxuryGold tracking-wider">
@@ -3279,7 +3302,7 @@
               Need a size adjustment or bespoke engraving before shipment? Our dedicated concierge hotline is available instantly to accommodate your requests.
             </p>
             <a href="https://wa.me/${(this.settings.whatsappHotline || '212777467304').replace(/\s+/g, '')}" target="_blank" class="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-luxuryGold hover:text-white transition-premium font-bold border-b border-luxuryGold/40 pb-1">
-              Contact our customer support on WhatsApp →
+              Contacter notre service client sur WhatsApp →
             </a>
           </div>
         </div>
@@ -3411,13 +3434,13 @@
               <!-- Left Side: Copywriting Content (lg:col-span-4) -->
               <div class="lg:col-span-4 text-center lg:text-left space-y-6 order-2 lg:order-1 px-2" data-parallax-depth="-0.02">
                 <span class="inline-block px-3.5 py-1.5 bg-luxuryGold/10 border border-luxuryGold/35 text-luxuryGold text-[9px] uppercase font-bold tracking-[0.3em] rounded-full animate-fade-in shadow-inner">
-                  ROYAL ATELIER STANDARD
+                  L'EXIGENCE DE L'ATELIER ROYAL
                 </span>
                 <h1 class="text-4xl sm:text-5xl lg:text-6xl font-serif tracking-tight leading-none text-white font-extrabold drop-shadow-xl">
                   ${this.language === 'ar' ? (this.settings.heroTitleAr || 'سوفانكس <br>مقتنيات ملكية') : (this.settings.heroTitleEn || 'SOVANEX <br>Masterpiece Creations')}
                 </h1>
                 <p class="text-xs sm:text-sm text-gray-300 font-light leading-relaxed max-w-lg mx-auto lg:mx-0">
-                  ${this.language === 'ar' ? (this.settings.heroDescAr || this.t('heroDesc')) : (this.settings.heroDescEn || this.t('heroDesc'))}
+                  ${this.language === 'ar' ? (this.settings.heroDescAr || this.t('heroDesc')) : getFrenchHeroDescription(this.settings.heroDescEn)}
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4 pt-2">
                   <button id="hero-cta-shop" class="w-full sm:w-auto px-8 py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold text-[10px] uppercase tracking-[0.2em] rounded-xl transition-premium shadow-2xl transform hover:scale-105 active:scale-95">
@@ -3645,7 +3668,7 @@
           <section class="bg-black text-white py-20 border-t border-luxuryGold/20 relative overflow-hidden">
             <div class="max-w-5xl mx-auto px-4 text-center space-y-12 relative z-10">
               <div class="space-y-3">
-                <p class="text-xs uppercase tracking-[0.3em] text-luxuryGold font-extrabold">CLIENT REVIEWS</p>
+                <p class="text-xs uppercase tracking-[0.3em] text-luxuryGold font-extrabold">AVIS CLIENTS</p>
                 <h2 class="text-3xl md:text-5xl font-serif">${this.t('reviewsTitle')}</h2>
                 <div class="w-16 h-0.5 bg-luxuryGold mx-auto"></div>
               </div>
@@ -6410,7 +6433,7 @@
             <div class="flex items-center justify-between border-b border-luxuryGold/20 px-5 py-4">
               <div>
                 <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">${this.t('cart')}</p>
-                <h2 class="mt-1 font-serif text-xl text-white">Your Cart</h2>
+                <h2 class="mt-1 font-serif text-xl text-white">Votre panier</h2>
               </div>
               <button id="cart-drawer-close" class="p-2 rounded-full border border-white/10 bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 transition" aria-label="Close cart">✕</button>
             </div>
@@ -6420,7 +6443,7 @@
                 <div class="flex h-full flex-col items-center justify-center text-center px-6 py-12">
                   <div class="text-luxuryGold/30 mb-4">${getIconSvg('shopping-bag', 'w-14 h-14')}</div>
                   <p class="font-serif text-xl text-luxuryGold">${this.t('cartEmpty')}</p>
-                  <p class="mt-2 text-xs text-gray-400">Your bag is waiting for a signature piece.</p>
+                  <p class="mt-2 text-xs text-gray-400">Votre panier attend votre prochaine pièce d'exception.</p>
                   <button id="cart-drawer-shop-btn" class="mt-6 px-5 py-2.5 rounded-xl bg-luxuryGold text-black text-[10px] uppercase font-bold tracking-widest">${this.t('discoverAtelier')}</button>
                 </div>
               ` : `
@@ -6446,7 +6469,7 @@
                             <span class="min-w-8 text-center text-xs font-semibold text-white">${item.quantity}</span>
                             <button class="cart-drawer-qty-plus px-2.5 py-1 text-xs font-bold hover:bg-white/5" data-id="${item.id}">+</button>
                           </div>
-                          <span class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Qty ${item.quantity}</span>
+                          <span class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Qté ${item.quantity}</span>
                         </div>
                       </div>
                     </div>
@@ -6459,11 +6482,11 @@
               <div class="border-t border-luxuryGold/20 bg-[#0E0E0E] p-4 space-y-3">
                 ${this.renderPromoCodeMarkup()}
                 <div class="flex justify-between text-xs text-gray-300">
-                  <span>Subtotal</span>
+                  <span>Sous-total</span>
                   <span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span>
                 </div>
                 <div class="flex justify-between text-xs text-gray-300">
-                  <span>Delivery</span>
+                  <span>Livraison</span>
                   <span class="text-luxuryGold font-bold">${deliveryFee === 0 ? 'FREE' : `${deliveryFee} DH`}</span>
                 </div>
                 <div class="flex justify-between text-sm font-bold text-white border-t border-luxuryGold/20 pt-3">
@@ -6589,7 +6612,7 @@
           <!-- PAGE TITLE -->
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">${this.t('shippingInfo')}</span>
-            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Finalize Your Selection</h1>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Finalisez votre sélection</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
           </div>
 
@@ -6603,7 +6626,7 @@
                     <p class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Your Selection</p>
                     <div class="max-h-[28rem] overflow-y-auto space-y-3 pr-1">
                       ${orderItemsMarkup || `
-                        <div class="text-sm text-gray-400">No products selected.</div>
+                        <div class="text-sm text-gray-400">Aucun produit sélectionné.</div>
                       `}
                     </div>
                   </div>
@@ -6612,7 +6635,7 @@
                 <!-- Quick Summary Box -->
                 <div class="bg-black/50 rounded-2xl border border-luxuryGold/20 p-4 space-y-2">
                   ${this.renderPromoCodeMarkup()}
-                  <p class="text-xs text-gray-400 font-semibold">Order Summary</p>
+                  <p class="text-xs text-gray-400 font-semibold">Récapitulatif de la commande</p>
                   <div class="flex justify-between text-xs">
                     <span class="text-gray-300">Subtotal:</span>
                     <span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span>
@@ -6822,14 +6845,14 @@
           <!-- PAGE TITLE -->
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">STEP 2 OF 2</span>
-            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Select Payment Method</h1>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Choisir le mode de paiement</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
           </div>
 
           <!-- ORDER SUMMARY -->
           <div class="bg-[#141414] rounded-2xl border border-luxuryGold/20 p-6 space-y-4 max-w-2xl mx-auto w-full">
             ${this.renderPromoCodeMarkup()}
-            <p class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Order Summary</p>
+            <p class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Récapitulatif de la commande</p>
             <div class="space-y-3">
               <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                 ${orderItemsMarkup || `<div class="text-xs text-gray-400">No products in cart.</div>`}
@@ -6879,7 +6902,7 @@
           <!-- CONFIRM BUTTON -->
           <div class="max-w-2xl mx-auto w-full">
             <button id="payment-confirm-btn" class="w-full py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition flex items-center justify-center gap-2">
-              <span>Continue to ${selectedPaymentMethod === 'bank' ? 'Bank Details' : 'Confirmation'}</span>
+              <span>Continuer vers ${selectedPaymentMethod === 'bank' ? 'les coordonnées bancaires' : 'la confirmation'}</span>
               ${getIconSvg('send', 'w-4 h-4')}
             </button>
           </div>
@@ -7023,14 +7046,14 @@
 
           <div class="text-center space-y-3 pt-8">
             <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">STEP 3 OF 3</span>
-            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Bank Details</h1>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Coordonnées bancaires</h1>
             <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
             <div class="space-y-6">
               <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
-                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Selected Bank Account</p>
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Compte bancaire sélectionné</p>
                 ${activeBanks.length > 0 ? activeBanks.map((bank) => `
                   <button type="button" class="bank-option w-full rounded-2xl border p-4 text-left transition ${selectedBankId === bank.id ? 'border-luxuryGold bg-luxuryGold/10' : 'border-white/10 bg-black/20 hover:border-luxuryGold/50'}" data-bank-id="${bank.id}">
                     <div class="flex items-start justify-between gap-3">
@@ -7042,19 +7065,19 @@
                           <p class="mt-1 text-[11px] text-gray-400">Account: ${bank.accountNumber || '—'}</p>
                         </div>
                       </div>
-                      <span class="text-[10px] uppercase tracking-[0.2em] ${selectedBankId === bank.id ? 'text-luxuryGold' : 'text-gray-500'}">${selectedBankId === bank.id ? 'Selected' : 'Select'}</span>
+                      <span class="text-[10px] uppercase tracking-[0.2em] ${selectedBankId === bank.id ? 'text-luxuryGold' : 'text-gray-500'}">${selectedBankId === bank.id ? 'Sélectionné' : 'Sélectionner'}</span>
                     </div>
                   </button>
                 `).join('') : `
                   <div class="rounded-2xl border border-dashed border-red-500/40 bg-red-500/5 p-4 text-sm text-red-200">
-                    No bank accounts are available right now. Please return to payment and try again later.
+                    Aucun compte bancaire n'est disponible pour le moment. Revenez au paiement et réessayez plus tard.
                   </div>
                 `}
               </div>
 
               ${selectedBank ? `
                 <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
-                  <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Bank Transfer Details</p>
+                  <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Détails du virement bancaire</p>
                   <div class="flex items-center gap-3 rounded-2xl border border-luxuryGold/20 bg-black/20 p-3">
                     ${selectedBank.logoURL ? `<img src="${selectedBank.logoURL}" alt="${selectedBank.bankName} logo" class="h-14 w-14 rounded-xl object-contain border border-white/10 bg-white p-1" onerror="this.style.display='none'">` : ''}
                     <div>
@@ -7068,11 +7091,11 @@
                       <p class="mt-2 font-semibold text-white">${selectedBank.bankName}</p>
                     </div>
                     <div class="rounded-xl border border-white/10 bg-black/20 p-3">
-                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Account holder</p>
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Titulaire du compte</p>
                       <p class="mt-2 font-semibold text-white">${selectedBank.accountHolderName}</p>
                     </div>
                     <div class="rounded-xl border border-white/10 bg-black/20 p-3">
-                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Account number</p>
+                      <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Numéro de compte</p>
                       <p class="mt-2 font-semibold text-white">${selectedBank.accountNumber || '—'}</p>
                     </div>
                     <div class="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -7091,30 +7114,30 @@
             <div class="space-y-6">
               <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
                 ${this.renderPromoCodeMarkup()}
-                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Order Details</p>
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Détails de la commande</p>
                 <div class="space-y-3 text-sm text-gray-200">
-                  <div class="flex items-center justify-between"><span>Subtotal</span><span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span></div>
-                  <div class="flex items-center justify-between"><span>Delivery</span><span class="text-luxuryGold font-bold">${deliveryFee === 0 ? 'FREE' : `${deliveryFee} DH`}</span></div>
+                  <div class="flex items-center justify-between"><span>Sous-total</span><span class="text-luxuryGold font-bold">${cartTotals.subtotalAfterDiscount} MAD</span></div>
+                  <div class="flex items-center justify-between"><span>Livraison</span><span class="text-luxuryGold font-bold">${deliveryFee === 0 ? 'GRATUITE' : `${deliveryFee} DH`}</span></div>
                   <div class="flex items-center justify-between border-t border-white/10 pt-3 mt-2 text-base font-bold text-white"><span>Total</span><span class="text-luxuryGold">${total} MAD</span></div>
                 </div>
               </div>
 
               <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
-                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Transfer Instructions</p>
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Instructions de virement</p>
                 <p class="text-sm text-gray-300 leading-relaxed">
-                  Please transfer the exact amount shown above to the selected bank account. After completing the transfer, upload a screenshot of your bank transfer confirmation below so we can verify your payment and process your order.
+                  Veuillez transférer le montant exact indiqué ci-dessus vers le compte bancaire sélectionné. Après le virement, importez une capture de sa confirmation afin que nous puissions vérifier votre paiement et traiter votre commande.
                 </p>
                 <p dir="rtl" class="text-sm text-gray-300 leading-relaxed">
                   يرجى تحويل المبلغ الموضح أعلاه بالضبط إلى الحساب البنكي المحدد. بعد إتمام عملية التحويل، يرجى تحميل لقطة شاشة لتأكيد التحويل البنكي أدناه حتى نتمكن من التحقق من عملية الدفع ومعالجة طلبك.
                 </p>
                 <div class="rounded-2xl border border-luxuryGold/20 bg-black/20 p-4 text-sm text-gray-200">
-                  <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Amount to transfer</p>
+                  <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Montant à transférer</p>
                   <p class="mt-2 text-2xl font-serif text-luxuryGold">${total} MAD</p>
                 </div>
               </div>
 
               <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
-                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Payment Proof</p>
+                <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Justificatif de paiement</p>
                 ${proofPreview}
                 <input id="bank-proof-upload" type="file" accept="image/*" class="block w-full text-xs text-gray-300 file:mr-3 file:rounded-full file:border-0 file:bg-luxuryGold file:px-4 file:py-2 file:text-[10px] file:font-bold file:uppercase file:text-black">
               </div>
@@ -7123,7 +7146,7 @@
 
           <div class="max-w-2xl mx-auto w-full pt-2">
             <button id="bank-transfer-submit" class="w-full py-4 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition flex items-center justify-center gap-2">
-              <span>Confirm Order</span>
+              <span>Confirmer la commande</span>
               ${getIconSvg('send', 'w-4 h-4')}
             </button>
           </div>
@@ -7441,7 +7464,7 @@
         recommendationsMarkup = `
           <div class="mt-12 border-t border-luxuryGold/20 pt-10 space-y-8" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
             <div class="text-center space-y-2">
-              <p class="text-xs uppercase tracking-[0.25em] text-luxuryGold font-extrabold">⚜️ ${this.language === 'ar' ? 'قد يعجبك أيضاً / YOU MAY ALSO LIKE' : 'YOU MAY ALSO LIKE / قد يعجبك أيضاً'} ⚜️</p>
+              <p class="text-xs uppercase tracking-[0.25em] text-luxuryGold font-extrabold">⚜️ ${this.language === 'ar' ? 'قد يعجبك أيضاً' : 'Vous aimerez peut-être aussi'} ⚜️</p>
               <p class="text-[11px] text-gray-400 font-light max-w-md mx-auto">Selected signature pairings curated specifically to accompany your collection.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto px-4">
@@ -7645,12 +7668,12 @@
                 ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
               </div>
               <h2 id="modal-product-title" class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
-              ${action ? `<p id="product-details-prompt" class="rounded-lg border border-luxuryGold/40 bg-luxuryGold/10 px-3 py-2 text-[11px] font-semibold text-luxuryGold">Please select the product details first.</p>` : ''}
+              ${action ? `<p id="product-details-prompt" class="rounded-lg border border-luxuryGold/40 bg-luxuryGold/10 px-3 py-2 text-[11px] font-semibold text-luxuryGold">Veuillez d'abord choisir les caractéristiques du produit.</p>` : ''}
               
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1">
                   <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-                  <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} reviews)</span>
+                  <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} avis)</span>
                 </div>
                 <button id="modal-share-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
@@ -7673,11 +7696,11 @@
                 </div>
                 ${orderedColors.length > 0 ? `
                   <div class="pt-3 space-y-2">
-                    <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Select Color</p>
+                    <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Choisir la couleur</p>
                     <div class="flex flex-wrap gap-2" id="modal-colors-container">
                       ${orderedColors.map((color, index) => `<button type="button" class="product-color-swatch w-8 h-8 rounded-full border-2 ${color === mainColor ? 'border-luxuryGold scale-110' : 'border-white/20'} transition" style="background-color:${color.value || color.hex || '#000000'}" data-color-index="${index}" title="${color.name || 'Color'}" aria-label="${color.name || 'Color'}"></button>`).join('')}
                     </div>
-                    <p id="selected-color-label" class="text-[10px] text-gray-400">${mainColor?.name || 'No color selected'}</p>
+                    <p id="selected-color-label" class="text-[10px] text-gray-400">${mainColor?.name || 'Aucune couleur sélectionnée'}</p>
                   </div>
                 ` : ''}
               </div>
@@ -7694,12 +7717,12 @@
                       </button>
                     `).join('')}
                   </div>
-                  <p id="modal-size-stock" class="text-[10px] text-gray-400">Available: ${this.getProductSizeStock(product, selectedProductSize)} pieces</p>
+                  <p id="modal-size-stock" class="text-[10px] text-gray-400">Disponible : ${this.getProductSizeStock(product, selectedProductSize)} pièces</p>
                 </div>
               ` : ''}
 
               <div class="space-y-2">
-                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Quantity</p>
+                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Quantité</p>
                 <div class="flex items-center gap-3">
                   <button type="button" id="modal-qty-decrease" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">−</button>
                   <span id="modal-qty-value" class="min-w-6 text-center text-lg font-bold text-white">${selectedQty}</span>
@@ -7708,7 +7731,7 @@
               </div>
 
               <p id="modal-stock-status" class="text-[11px] font-medium text-gray-400">
-                Stock Status: ${product.limitedStock ? `<span class="text-red-400 font-bold">Limited Reserve (${getCurrentAvailableStock()} left)</span>` : `<span class="text-emerald-400 font-bold">In Stock</span>`}
+                État du stock : ${product.limitedStock ? `<span class="text-red-400 font-bold">Stock limité (${getCurrentAvailableStock()} restant)</span>` : `<span class="text-emerald-400 font-bold">En stock</span>`}
               </p>
             </div>
 
@@ -7806,7 +7829,7 @@
               const matchingColor = colors.find((color, colorIndex) => String(color.variantIndex) === String(varIndex) || color.variantName === activeVariant.name || color.imageURL === activeVariant.imageURL || (!Number.isInteger(color.variantIndex) && !color.variantName && colorIndex === (hasMainColor ? varIndex + 1 : varIndex)));
               store.activeColor = matchingColor || null;
               const colorLabel = document.getElementById('selected-color-label');
-              if (colorLabel) colorLabel.textContent = matchingColor?.name || 'No color selected';
+              if (colorLabel) colorLabel.textContent = matchingColor?.name || 'Aucune couleur sélectionnée';
               document.querySelectorAll('.product-color-swatch').forEach(swatch => {
                 const selectedColor = Boolean(matchingColor && Number(swatch.dataset.colorIndex) === orderedColors.indexOf(matchingColor));
                 swatch.classList.toggle('border-luxuryGold', selectedColor);
@@ -7831,7 +7854,7 @@
               store.activeColor = matchingColor || null;
               refreshInventoryControls();
               const colorLabel = document.getElementById('selected-color-label');
-              if (colorLabel) colorLabel.textContent = matchingColor?.name || 'No color selected';
+              if (colorLabel) colorLabel.textContent = matchingColor?.name || 'Aucune couleur sélectionnée';
               document.querySelectorAll('.product-color-swatch').forEach(swatch => {
                 const selectedColor = Boolean(matchingColor && Number(swatch.dataset.colorIndex) === orderedColors.indexOf(matchingColor));
                 swatch.classList.toggle('border-luxuryGold', selectedColor);
@@ -7956,10 +7979,10 @@
         const maxAvailable = getCurrentAvailableStock();
         const stockStatusEl = document.getElementById('modal-stock-status');
         if (sizeStockEl) {
-          sizeStockEl.textContent = `Available: ${maxAvailable} pieces`;
+          sizeStockEl.textContent = `Disponible : ${maxAvailable} pièces`;
         }
         if (stockStatusEl && product.limitedStock) {
-          stockStatusEl.innerHTML = `Stock Status: <span class="text-red-400 font-bold">Limited Reserve (${maxAvailable} left)</span>`;
+          stockStatusEl.innerHTML = `État du stock : <span class="text-red-400 font-bold">Stock limité (${maxAvailable} restant)</span>`;
         }
         if (qtyValueEl) {
           selectedQty = Math.min(Math.max(selectedQty, 0), Math.max(maxAvailable, 0));
@@ -7984,11 +8007,11 @@
           promptEl.classList.toggle('hidden', !missingDetails);
         }
         if (missingDetails) {
-          showToast("Please select the product details first.", "error");
+            showToast("Veuillez d'abord choisir les caractéristiques du produit.", "error");
           return false;
         }
         if (selectedQty < 1) {
-          showToast("Please select a quantity first.", "error");
+          showToast("Veuillez d'abord choisir une quantité.", "error");
           return false;
         }
         return true;
