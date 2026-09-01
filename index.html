@@ -899,6 +899,19 @@
         return (this.announcements || []).map(message => normalizeFreeDeliveryText(message));
       },
 
+      isColorLinkedToVariant(color, product = null) {
+        if (!color) return false;
+        if (color.variantName === 'main' || color.variantIndex === null || color.variantIndex === undefined || color.variantIndex === '') {
+          return false;
+        }
+        if (Number.isInteger(color.variantIndex)) {
+          return true;
+        }
+        const variantName = String(color.variantName || '').trim();
+        if (!variantName) return false;
+        return Array.isArray(product?.variations) && product.variations.some(variation => String(variation?.name || '').trim() === variantName);
+      },
+
       getProductColorsInPictureOrder(product) {
         const colors = Array.isArray(product?.colors) ? product.colors.map((color, index) => ({ ...color, _sourceIndex: index })) : [];
         const mainColors = colors.filter(color => color.variantName === 'main' || color.variantIndex === null || color.imageURL === product.imageURL);
@@ -7702,12 +7715,7 @@
                 </button>
               </div>
 
-              <div id="modal-product-price-wrapper" class="flex items-baseline gap-3 pt-1">
-                ${product.discountPrice ? `
-                  <span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span>
-                  <span class="text-xs line-through text-gray-500">${product.price} MAD</span>
-                ` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`}
-              </div>
+              <div id="modal-product-price-wrapper" class="flex items-center gap-3 pt-1"></div>
 
               <!-- Gallery Option selector dynamically refitted as wrap flexbox to prevent hidden side-scrolling entirely -->
               <div class="border-t border-b border-luxuryGold/20 py-3 space-y-2">
@@ -7794,6 +7802,31 @@
       const titleTextEl = document.getElementById("modal-product-title");
       const descriptionTextEl = document.getElementById("modal-product-description");
       const priceWrapperEl = document.getElementById("modal-product-price-wrapper");
+
+      const renderPriceDisplay = (currentPrice, originalPrice = null) => {
+        if (!priceWrapperEl) return;
+        const numericCurrent = Number(currentPrice ?? 0);
+        const numericOriginal = Number(originalPrice ?? currentPrice ?? 0);
+        const hasPromo = numericOriginal > 0 && numericCurrent > 0 && numericCurrent < numericOriginal;
+
+        if (hasPromo) {
+          priceWrapperEl.innerHTML = `
+            <div class="inline-flex items-center gap-2 rounded-2xl border border-[#f5d76e]/50 bg-gradient-to-r from-[#f5d76e]/15 via-[#d4af37]/15 to-[#1a1a1a] px-3 py-2 shadow-[0_0_22px_rgba(245,215,110,0.18)]">
+              <span class="text-xl md:text-3xl font-serif font-black text-[#f8e8a3]">${numericCurrent} MAD</span>
+              <span class="text-xs md:text-sm line-through text-white/55">${numericOriginal} MAD</span>
+              <span class="rounded-full bg-luxuryGold text-black px-2 py-1 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em]">Promo</span>
+            </div>
+          `;
+          return;
+        }
+
+        const effectivePrice = numericCurrent || numericOriginal || 0;
+        priceWrapperEl.innerHTML = `
+          <div class="inline-flex items-center rounded-2xl border border-white/10 bg-gradient-to-r from-white/5 to-luxuryGold/10 px-3 py-2 shadow-[0_0_18px_rgba(212,175,55,0.12)]">
+            <span class="text-xl md:text-3xl font-serif font-black ${effectivePrice === 0 ? 'text-white' : 'text-luxuryGold'}">${effectivePrice} MAD</span>
+          </div>
+        `;
+      };
 
       const refreshInventoryControls = () => {
         sizeOptions = this.getProductSizes(product, this.activeVariationIndex);
@@ -7887,9 +7920,7 @@
             // Sync visual information in real time
             if (titleTextEl) titleTextEl.innerText = store.activeName.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
             if (descriptionTextEl) descriptionTextEl.textContent = String(store.activeDescription ?? '');
-            if (priceWrapperEl) {
-              priceWrapperEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${store.activePrice} MAD</span>`;
-            }
+            renderPriceDisplay(store.activePrice, product.price || product.discountPrice || store.activePrice);
 
             document.querySelectorAll(".gallery-thumb").forEach(t => {
               t.classList.remove("border-luxuryGold", "scale-105");
@@ -7923,7 +7954,7 @@
             store.activeDescription = window.preserveDescriptionText(variant.description || product.description);
             if (titleTextEl) titleTextEl.innerText = store.activeName.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
             if (descriptionTextEl) descriptionTextEl.textContent = String(store.activeDescription ?? '');
-            if (priceWrapperEl) priceWrapperEl.innerHTML = `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${store.activePrice} MAD</span>`;
+            renderPriceDisplay(store.activePrice, product.price || product.discountPrice || store.activePrice);
             document.querySelectorAll('.gallery-thumb').forEach(thumb => {
               const selected = thumb.getAttribute('data-is-variation') === 'true' && Number(thumb.getAttribute('data-index')) === store.activeVariationIndex;
               thumb.classList.toggle('border-luxuryGold', selected);
@@ -7938,10 +7969,16 @@
             store.activeDescription = window.preserveDescriptionText(product.description);
             if (titleTextEl) titleTextEl.innerText = store.activeName.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim();
             if (descriptionTextEl) descriptionTextEl.textContent = String(store.activeDescription ?? '');
-            if (priceWrapperEl) priceWrapperEl.innerHTML = product.discountPrice ? `<span class="text-xl md:text-3xl font-serif font-bold text-luxuryGold">${product.discountPrice} MAD</span><span class="text-xs line-through text-gray-500">${product.price} MAD</span>` : `<span class="text-xl md:text-3xl font-serif font-bold text-white">${product.price} MAD</span>`;
+            renderPriceDisplay(store.activePrice || product.discountPrice || product.price, product.price || product.discountPrice || store.activePrice);
           }
-          const selectedImage = isMainColor ? product.imageURL : (color.imageURL || variant?.imageURL);
-          const mobileSelectedImage = isMainColor ? (getProductImageByPlacement(product, 'mobile', product.imageURL || fallbackImage)) : (color.imageURL || variant?.mobileImage || variant?.imageURL);
+
+          const isStandaloneColorImage = Boolean(color && !store.isColorLinkedToVariant(color, product) && color.imageURL);
+          const selectedImage = isStandaloneColorImage
+            ? color.imageURL
+            : (isMainColor ? product.imageURL : (color.imageURL || variant?.imageURL));
+          const mobileSelectedImage = isStandaloneColorImage
+            ? color.imageURL
+            : (isMainColor ? (getProductImageByPlacement(product, 'mobile', product.imageURL || fallbackImage)) : (color.imageURL || variant?.mobileImage || variant?.imageURL));
           const imageToUse = isMobileViewport ? (mobileSelectedImage || selectedImage) : selectedImage;
           if (imageToUse) {
             store.activeImg = imageToUse;
@@ -7949,6 +7986,8 @@
           }
         };
       });
+
+      renderPriceDisplay(product.discountPrice || product.price, product.price || product.discountPrice || product.price);
 
       document.getElementById("zoom-img-btn").onclick = () => {
         const lightbox = document.getElementById("lightbox-container");
