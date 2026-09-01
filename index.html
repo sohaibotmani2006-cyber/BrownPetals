@@ -115,6 +115,13 @@
     .hide-scrollbar::-webkit-scrollbar {
       display: none;
     }
+    label:has(input[type="file"]),
+    input[type="file"] + label,
+    .file-upload-trigger,
+    .image-upload-trigger,
+    .upload-trigger {
+      cursor: pointer;
+    }
     @keyframes preloader-spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -7001,6 +7008,7 @@
         this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
         this.checkoutPage = "payment-method";
         this.currentCheckoutProduct = null;
+        this.checkoutLoading = false;
         this.setPage("order-confirmation");
 
       } catch (err) {
@@ -7139,7 +7147,10 @@
               <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-6 space-y-4">
                 <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Justificatif de paiement</p>
                 ${proofPreview}
-                <input id="bank-proof-upload" type="file" accept="image/*" class="block w-full text-xs text-gray-300 file:mr-3 file:rounded-full file:border-0 file:bg-luxuryGold file:px-4 file:py-2 file:text-[10px] file:font-bold file:uppercase file:text-black">
+                <label class="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-luxuryGold/40 bg-black/20 px-4 py-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-luxuryGold transition hover:border-luxuryGold hover:bg-luxuryGold/5">
+                  <span>Choisir un fichier</span>
+                  <input id="bank-proof-upload" type="file" accept="image/*" class="hidden">
+                </label>
               </div>
             </div>
           </div>
@@ -7432,6 +7443,7 @@
         localStorage.setItem("bp_cart", JSON.stringify([]));
         this.checkoutFormValues = { customerName: "", phone: "", cityId: "", address: "", paymentMethod: "cod", selectedBankId: "", paymentProofData: "", paymentProofName: "" };
         this.checkoutPage = "payment-method";
+        this.checkoutLoading = false;
         this.setPage("order-confirmation");
 
       } catch (err) {
