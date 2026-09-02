@@ -592,6 +592,7 @@
       mobileMenuOpen: false,
       searchQuery: "",
       selectedCategory: "All", // "All", "Watches", "Accessories"
+      selectedPackFilter: "all",
       products: [],
       orders: [],
       reviews: [],
@@ -935,7 +936,6 @@
         heroProdName1: "Rose Empress Gold Chrono",
         heroProdName2: "Oceanic Imperial Nautilus",
         heroProdName3: "Sovereign Gold Carbon Ring",
-        specialPackProductIds: [],
         websiteDescription: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
         tagline: "The Sovereign Shop of Royal Watches, Accessories & Fine Leather Goods",
         instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
@@ -1120,6 +1120,23 @@
       if (g === "PACKS MEN" || g === "PACKS_MEN" || g === "MEN PACKS" || g === "BOYS PACKS" || g === "MEN'S PACKS") return "Men's Packs";
       if (g === "PACKS GIRLS" || g === "PACKS_GIRLS" || g === "GIRLS PACKS" || g === "WOMEN'S PACKS") return "Women's Packs";
       return "All";
+    };
+
+    const normalizePackCategory = (value) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      if (!normalized || normalized === 'none' || normalized === 'all') return '';
+      if (normalized === 'promotion' || normalized === 'promotions') return 'promotion';
+      if (normalized === 'special pack' || normalized === 'special-pack' || normalized === 'special_pack') return 'special-pack';
+      if (normalized === 'sovanex pack' || normalized === 'sovanex-pack' || normalized === 'sovanex_pack') return 'sovanex-pack';
+      return normalized;
+    };
+
+    const getPackLabel = (value) => {
+      const normalized = normalizePackCategory(value);
+      if (normalized === 'promotion') return 'Promotion';
+      if (normalized === 'special-pack') return 'Special Pack';
+      if (normalized === 'sovanex-pack') return 'Sovanex Pack';
+      return 'No Pack';
     };
 
     const isStorefrontProduct = (product) => {
@@ -1517,7 +1534,8 @@
         product.freeDelivery,
         product.isPromotion,
         product.isBestSeller,
-        product.isPinned
+        product.isPinned,
+        product.packCategory
       ].join("\u001f")).join("\u001e");
     };
 
@@ -1803,7 +1821,8 @@
         isBestSeller: product.isBestSeller,
         limitedStock: product.limitedStock,
         isPinned: product.isPinned,
-        freeDelivery: product.freeDelivery
+        freeDelivery: product.freeDelivery,
+        packCategory: normalizePackCategory(product.packCategory)
       }));
       const writePublicCache = (cacheKey, data) => {
         try {
@@ -3847,9 +3866,10 @@
       const filtered = this.products.filter(p => {
         const isVisibleCatalogItem = isStorefrontProduct(p);
         const matchesCategory = this.selectedCategory === "All" || p.category === this.selectedCategory;
+        const matchesPack = this.selectedPackFilter === 'all' || normalizePackCategory(p.packCategory) === this.selectedPackFilter;
         const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                               p.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-        return isVisibleCatalogItem && matchesCategory && matchesSearch;
+        return isVisibleCatalogItem && matchesCategory && matchesPack && matchesSearch;
       }).sort((a, b) => {
         const aPinned = a.isPinned ? 1 : 0;
         const bPinned = b.isPinned ? 1 : 0;
@@ -3882,25 +3902,6 @@
         return;
       }
 
-      const specialPackProducts = (Array.isArray(this.settings.specialPackProductIds) ? this.settings.specialPackProductIds : [])
-        .map(id => this.products.find(product => product.id === id))
-        .filter(product => product && getNormalizedGender(product.gender) !== "Men" && getNormalizedGender(product.gender) !== "Men's Packs");
-      const specialPackMarkup = `
-        <section class="bg-gradient-to-br from-[#211b0c] via-[#141414] to-black rounded-3xl border border-luxuryGold/40 p-5 sm:p-7 space-y-5 shadow-xl">
-          <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-            <div>
-              <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">SOVANEX EDIT</p>
-              <h2 class="text-2xl sm:text-3xl font-serif text-white">${this.settings.specialPackTitle || 'Special Sovanex Pack'}</h2>
-              <p class="text-xs text-gray-400 mt-1">${this.settings.specialPackDescription || 'A curated selection chosen by the Sovanex atelier.'}</p>
-            </div>
-            <span class="text-[10px] uppercase tracking-[0.2em] text-luxuryGold">${specialPackProducts.length} selected items</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            ${specialPackProducts.map(product => this.createProductCardMarkup(product, 'store')).join('') || '<p class="col-span-full text-xs text-gray-400 italic">This special pack is being curated.</p>'}
-          </div>
-        </section>
-      `;
-
       let categoryButtons = `
         <button class="category-filter-btn text-left px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-premium ${
           this.selectedCategory === "All" ? 'bg-luxuryGold text-black shadow-sm' : 'text-white hover:bg-white/5'
@@ -3930,8 +3931,12 @@
           </div>
 
           <div class="max-w-xl mx-auto space-y-4">
-            ${specialPackMarkup}
-            
+            <div class="flex flex-wrap justify-center gap-2 rounded-2xl border border-luxuryGold/20 bg-white/5 p-2">
+              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'all' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="all">All</button>
+              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'promotion' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="promotion">Promotion</button>
+              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'special-pack' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="special-pack">Special Pack</button>
+              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'sovanex-pack' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="sovanex-pack">Sovanex Pack</button>
+            </div>
             <div class="relative w-full">
               <input id="shop-search-input" type="text" placeholder="${this.t('searchBoutique')}" value="${this.searchQuery}" class="w-full pl-10 pr-4 py-3 text-xs rounded-xl border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium">
               <div class="absolute left-3.5 top-3.5 text-luxuryGold">${getIconSvg('search', 'w-4 h-4')}</div>
@@ -3970,6 +3975,15 @@
       document.querySelectorAll(".category-filter-btn").forEach(btn => {
         btn.onclick = () => {
           store.selectedCategory = btn.getAttribute("data-name");
+          const grid = document.getElementById("shop-products-grid-container");
+          if (grid) grid.removeAttribute("id");
+          store.renderShopPage();
+        };
+      });
+
+      document.querySelectorAll(".shop-pack-filter-btn").forEach(btn => {
+        btn.onclick = () => {
+          store.selectedPackFilter = btn.getAttribute("data-pack") || 'all';
           const grid = document.getElementById("shop-products-grid-container");
           if (grid) grid.removeAttribute("id");
           store.renderShopPage();
@@ -4061,7 +4075,7 @@
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "special-pack", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => `
+            ${["dashboard", "hero-products", "products", "packs", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -4106,12 +4120,12 @@
 
       if (this.adminView === "dashboard") {
         this.renderAdminDashboard(container);
-      } else if (this.adminView === "special-pack") {
-        this.renderAdminSpecialPack(container);
       } else if (this.adminView === "hero-products") {
         this.renderAdminHeroProducts(container);
       } else if (this.adminView === "products") {
         this.renderAdminProducts(container);
+      } else if (this.adminView === "packs") {
+        this.renderAdminPacks(container);
       } else if (this.adminView === "orders") {
         this.renderAdminOrders(container);
       } else if (this.adminView === "reviews") {
@@ -4186,102 +4200,6 @@
       `;
 
       this.renderAnalyticsChart();
-    };
-
-    store.renderAdminSpecialPack = function(container) {
-      const selectedIds = Array.isArray(this.settings.specialPackProductIds) ? [...this.settings.specialPackProductIds] : [];
-      const visibleProducts = this.products.filter(isStorefrontProduct);
-      const selectedProducts = selectedIds
-        .map(id => visibleProducts.find(product => product.id === id))
-        .filter(Boolean);
-
-      container.innerHTML = `
-        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="border-b border-white/10 pb-4">
-            <h3 class="font-serif text-xl text-luxuryGold">Special Sovanex Pack</h3>
-            <p class="text-xs text-gray-400">Choose, remove, reorder, and update the products shown in the boutique promotion.</p>
-          </div>
-          <form id="special-pack-form" class="space-y-5">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Promotion Title</label>
-                <input name="specialPackTitle" required value="${this.settings.specialPackTitle || 'Special Sovanex Pack'}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-              </div>
-              <div>
-                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Promotion Description</label>
-                <input name="specialPackDescription" value="${this.settings.specialPackDescription || 'A curated selection chosen by the Sovanex atelier.'}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-              </div>
-            </div>
-            <div class="space-y-2">
-              <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Selected Items</p>
-              <div id="special-pack-selected" class="space-y-2">
-                ${selectedProducts.map((product, index) => `
-                  <div class="flex items-center gap-3 rounded-xl border border-luxuryGold/20 bg-black/50 p-2" data-selected-id="${product.id}">
-                    <img src="${getProductImageByPlacement(product, 'store', fallbackImage)}" class="h-12 w-12 rounded-lg object-cover" alt="${product.name}">
-                    <span class="flex-1 min-w-0 text-xs text-white truncate">${product.name}</span>
-                    <button type="button" class="special-pack-move px-2 py-1 text-[10px] text-luxuryGold" data-index="${index}" data-direction="up" aria-label="Move item up">↑</button>
-                    <button type="button" class="special-pack-move px-2 py-1 text-[10px] text-luxuryGold" data-index="${index}" data-direction="down" aria-label="Move item down">↓</button>
-                    <button type="button" class="special-pack-remove px-2 py-1 text-[10px] text-red-400" data-index="${index}" aria-label="Remove item">Remove</button>
-                  </div>
-                `).join('') || '<p class="text-xs text-gray-500 italic">No items selected yet.</p>'}
-              </div>
-            </div>
-            <div class="space-y-2 border-t border-white/10 pt-4">
-              <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Add Items</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                ${visibleProducts.filter(product => !selectedIds.includes(product.id)).map(product => `
-                  <button type="button" class="special-pack-add flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-2 text-left hover:border-luxuryGold/50" data-id="${product.id}">
-                    <span class="text-sm text-luxuryGold">+</span><span class="text-xs text-white truncate">${product.name}</span>
-                  </button>
-                `).join('') || '<p class="text-xs text-gray-500 italic">All available items are already selected.</p>'}
-              </div>
-            </div>
-            <div class="flex justify-end border-t border-white/10 pt-4">
-              <button type="submit" class="px-6 py-2.5 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Special Pack</button>
-            </div>
-          </form>
-        </div>
-      `;
-
-      const rerender = () => this.renderAdminSpecialPack(container);
-      document.querySelectorAll('.special-pack-add').forEach(button => {
-        button.onclick = () => {
-          selectedIds.push(button.dataset.id);
-          rerender();
-        };
-      });
-      document.querySelectorAll('.special-pack-remove').forEach(button => {
-        button.onclick = () => {
-          selectedIds.splice(Number(button.dataset.index), 1);
-          rerender();
-        };
-      });
-      document.querySelectorAll('.special-pack-move').forEach(button => {
-        button.onclick = () => {
-          const index = Number(button.dataset.index);
-          const targetIndex = button.dataset.direction === 'up' ? index - 1 : index + 1;
-          if (targetIndex < 0 || targetIndex >= selectedIds.length) return;
-          [selectedIds[index], selectedIds[targetIndex]] = [selectedIds[targetIndex], selectedIds[index]];
-          rerender();
-        };
-      });
-      document.getElementById('special-pack-form').onsubmit = async event => {
-        event.preventDefault();
-        const form = event.target;
-        const payload = {
-          specialPackTitle: form.specialPackTitle.value.trim(),
-          specialPackDescription: form.specialPackDescription.value.trim(),
-          specialPackProductIds: selectedIds
-        };
-        this.settings = { ...this.settings, ...payload };
-        localStorage.setItem('sovanex_settings', JSON.stringify(this.settings));
-        showToast('Special Sovanex Pack saved.');
-        try {
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), payload, { merge: true });
-        } catch (error) {
-          console.warn('Could not save Special Sovanex Pack to cloud storage.', error);
-        }
-      };
     };
 
     store.renderAdminHeroProducts = function(container) {
@@ -4559,6 +4477,101 @@
       });
     };
 
+    store.renderAdminPacks = function(container) {
+      const packGroups = [
+        { key: 'promotion', label: 'Promotion', description: 'Products highlighted as promotional offers' },
+        { key: 'special-pack', label: 'Special Pack', description: 'Signature curated bundles' },
+        { key: 'sovanex-pack', label: 'Sovanex Pack', description: 'Sovanex exclusive assortment' }
+      ];
+
+      const assignedProducts = packGroups.map(pack => {
+        const products = this.products.filter(product => normalizePackCategory(product.packCategory) === pack.key);
+        return { ...pack, products };
+      });
+
+      container.innerHTML = `
+        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
+          <div class="border-b border-white/10 pb-4">
+            <h3 class="font-serif text-xl text-luxuryGold uppercase tracking-wider">Manage Boutique Pack Assignments</h3>
+            <p class="text-xs text-gray-400">Create and maintain the pack categories used by the Boutique filter bar.</p>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            ${assignedProducts.map(pack => {
+              const availableProducts = this.products.filter(product => normalizePackCategory(product.packCategory) !== pack.key && isStorefrontProduct(product));
+              return `
+                <div class="bg-black/40 rounded-2xl border border-luxuryGold/15 p-4 space-y-4">
+                  <div>
+                    <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">${pack.label}</p>
+                    <p class="text-[10px] text-gray-400 mt-1">${pack.description}</p>
+                  </div>
+                  <div class="space-y-2">
+                    ${pack.products.length === 0 ? '<p class="text-[10px] text-gray-500 italic">No products assigned yet.</p>' : pack.products.map(product => `
+                      <div class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <img src="${product.imageURL || fallbackImage}" class="w-9 h-9 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
+                          <span class="text-[11px] text-white truncate">${product.name}</span>
+                        </div>
+                        <button type="button" class="remove-pack-product-btn px-2 py-1 rounded text-[9px] uppercase font-bold bg-red-700/80 text-white" data-product-id="${product.id}" data-pack="${pack.key}">Remove</button>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <form class="pack-assignment-form space-y-2" data-pack="${pack.key}">
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 font-bold">Add product</label>
+                    <select name="productId" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+                      <option value="">Select a product</option>
+                      ${availableProducts.map(product => `<option value="${product.id}">${product.name}</option>`).join('')}
+                    </select>
+                    <button type="submit" class="w-full px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold">Assign to ${pack.label}</button>
+                  </form>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll('.pack-assignment-form').forEach(form => {
+        form.onsubmit = async (event) => {
+          event.preventDefault();
+          const pack = form.dataset.pack;
+          const productId = form.productId.value;
+          if (!productId) {
+            showToast('Select a product to assign first.', 'error');
+            return;
+          }
+
+          const product = this.products.find(item => item.id === productId);
+          if (!product) {
+            showToast('Product not found.', 'error');
+            return;
+          }
+
+          const nextPayload = { ...product, packCategory: pack, updatedAt: new Date() };
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), nextPayload);
+          const index = this.products.findIndex(item => item.id === product.id);
+          if (index >= 0) this.products[index] = nextPayload;
+          this.renderAdminPacks(container);
+          showToast(`${product.name} added to ${getPackLabel(pack)}.`);
+        };
+      });
+
+      document.querySelectorAll('.remove-pack-product-btn').forEach(button => {
+        button.onclick = async () => {
+          const productId = button.dataset.productId;
+          const pack = button.dataset.pack;
+          const product = this.products.find(item => item.id === productId);
+          if (!product) return;
+
+          const nextPayload = { ...product, packCategory: '', updatedAt: new Date() };
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), nextPayload);
+          const index = this.products.findIndex(item => item.id === product.id);
+          if (index >= 0) this.products[index] = nextPayload;
+          this.renderAdminPacks(container);
+          showToast(`${product.name} removed from ${getPackLabel(pack)}.`);
+        };
+      });
+    };
+
     store.renderAdminPromoCodes = function(container) {
       const editing = this.editingPromoCode || null;
       const codes = [...this.promoCodes].sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')));
@@ -4796,6 +4809,16 @@
               <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Rating</label>
               <input type="number" step="0.1" name="rating" required value="${product ? product.rating : 5.0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Boutique Pack</label>
+            <select name="packCategory" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              <option value="">No Pack</option>
+              <option value="promotion" ${normalizePackCategory(product?.packCategory) === 'promotion' ? 'selected' : ''}>Promotion</option>
+              <option value="special-pack" ${normalizePackCategory(product?.packCategory) === 'special-pack' ? 'selected' : ''}>Special Pack</option>
+              <option value="sovanex-pack" ${normalizePackCategory(product?.packCategory) === 'sovanex-pack' ? 'selected' : ''}>Sovanex Pack</option>
+            </select>
           </div>
 
           <div class="flex flex-wrap gap-4 p-3 bg-black/50 rounded-xl border border-luxuryGold/10">
@@ -5146,6 +5169,7 @@
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
           freeDelivery: form.freeDelivery.checked,
+          packCategory: normalizePackCategory(form.packCategory.value),
           updatedAt: new Date()
         };
 
