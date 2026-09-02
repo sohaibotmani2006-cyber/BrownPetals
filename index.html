@@ -567,7 +567,7 @@
     const frenchTranslations = {
       home: "Accueil", shop: "Boutique", contact: "Contact", orders: "Mes commandes", policies: "Livraison et retours", search: "Rechercher dans la boutique...", cart: "Panier",
       tagline: "La boutique souveraine de montres, accessoires et articles en cuir d'exception", heroTitle: "SOVANEX <br>Créations d'exception", heroDesc: "Une destination authentique dédiée aux montres haut de gamme, aux accessoires raffinés et aux articles en cuir façonnés avec exigence.", discoverStore: "Découvrir la boutique", connectUs: "Nous contacter",
-      selectCollection: "Choisissez votre collection", storeCollections: "Collections de la boutique", forHer: "Pour elle", shopForHer: "ACHETER POUR ELLE", exclusivePacks: "PACKS EXCLUSIFS", atelierPacks: "Packs exclusifs", atelierPacksDesc: "Découvrez nos associations élégantes et nos ensembles premium soigneusement composés.",
+      selectCollection: "Choisissez votre collection", storeCollections: "Collections de la boutique", forHer: "Pour elle", shopForHer: "ACHETER POUR ELLE",
       watchmaking: "Horlogerie et artisanat du cuir", watchmakingDesc: "Nous sélectionnons des mouvements automatiques premium, des cuirs de qualité et des aciers conçus pour durer.", shipping: "Livraison express sécurisée", shippingDesc: "Vos commandes sont préparées avec soin et expédiées en toute sécurité partout au Maroc.", certificate: "Assistance premium à vie", certificateDesc: "Notre équipe reste à vos côtés pour vous accompagner à chaque étape.", offers: "Offres exceptionnelles", exclusivePromos: "Promotions exclusives", signatures: "Nos signatures", mostCoveted: "Meilleures ventes",
       browseAll: "Explorer toutes les collections", reviewsTitle: "Ce que disent nos clients", leaveReview: "Laisser un avis", lookbookTitle: "Le lookbook de la boutique", lookbookSub: "Suivez nos nouveautés", footerDesc: "Une destination raffinée pour les montres, accessoires et articles en cuir sélectionnés avec soin.", operatingHours: "Ouvert tous les jours : 9 h - 22 h",
       backToHome: "← Retour à l'accueil", yourSelection: "Votre sélection", sovereignCart: "Panier SOVANEX", myCartTab: "Mon panier", myOrdersTab: "Mes commandes", cartEmpty: "Votre panier est vide", discoverAtelier: "Découvrir la boutique", noOrders: "Aucune commande enregistrée", ordersTrackLocal: "Les commandes passées sur cet appareil apparaîtront ici.", orderConfirmed: "Sélection confirmée", orderConfirmedAr: "Votre commande a été confirmée", fullName: "Nom complet", phoneNumber: "Numéro de téléphone", citySelect: "Choisir la ville de livraison", deliveryAddress: "Adresse de livraison", confirmOrder: "Confirmer la commande", cashOnDelivery: "Paiement à la livraison", shippingInfo: "Informations de livraison", trackWhatsapp: "Suivre sur WhatsApp", orderCode: "Code de commande", orderCopyTip: "Copiez ce code et envoyez-le à notre service client sur WhatsApp pour confirmer votre livraison.", orderCopyTipAr: "Merci pour votre confiance.", continueShopping: "Continuer mes achats", continueShoppingAr: "", customCardTip: "Une carte cadeau premium personnalisée est offerte avec chaque création.", shareLink: "Partager le lien", addToCart: "Ajouter au panier", orderNow: "Commander maintenant", allCategories: "Toutes les catégories", atelierCollections: "Collections", searchBoutique: "Rechercher une création...", sendPrivateNote: "Envoyer un message", yourName: "Votre nom", emailAddress: "Adresse e-mail", message: "Message", sendMessage: "Envoyer le message", ourCoordinates: "Nos coordonnées", atelierAddress: "Adresse de la boutique", hotline: "Téléphone", emailCoordinate: "Adresse e-mail", instagramProfile: "Profil Instagram", joinAtelier: "Rejoindre la boutique", joinAtelierDesc: "Inscrivez-vous pour recevoir nos invitations privées.", join: "S'inscrire", newsletterPlaceholder: "Adresse e-mail", copyright: "© 2026 SOVANEX. Tous droits réservés.", womenColl: "Femme", allColl: "Tous", ratingLabel: "Note", starsLabel: "Étoiles", yourNote: "Votre avis", submitReview: "Envoyer l'avis", verifiedBuyer: "Acheteur vérifié", productPurchased: "Produit acheté", generalExperience: "Expérience générale", addBtn: "Ajouter", buyBtn: "Acheter", saleBadge: "Promotion", bestBadge: "Meilleure vente", packsBadge: "Packs", onlyItemsLeft: "articles restants en stock.", noProductsFound: "Aucun produit ne correspond à votre recherche.", quickView: "Aperçu rapide", tapToZoom: "🔍 Appuyez pour agrandir"
@@ -592,7 +592,6 @@
       mobileMenuOpen: false,
       searchQuery: "",
       selectedCategory: "All", // "All", "Watches", "Accessories"
-      selectedPackFilter: "all",
       products: [],
       orders: [],
       reviews: [],
@@ -664,9 +663,6 @@
           forHer: "For Her",
           forHerDesc: "Discover majestic watches, delicate luxury bracelets, and elegant purses crafted with gold and diamonds.",
           shopForHer: "SHOP FOR HER",
-          exclusivePacks: "EXCLUSIVE PACKS",
-          atelierPacks: "Exclusive Packs",
-          atelierPacksDesc: "Explore custom bundling options, premium pairings, and elegant high-end multi-product sets.",
           watchmaking: "Masterful Horology & Leathercraft",
           watchmakingDesc: "We curate premium automatic movements, fine grade-A leathers for wallets, and premium stainless steels designed for lifetime elegance.",
           shipping: "Secure Express Shipping",
@@ -744,7 +740,6 @@
           buyBtn: "Buy",
           saleBadge: "Sale",
           bestBadge: "Best",
-          packsBadge: "Packs",
           onlyItemsLeft: "pieces remaining in exclusive stock.",
           noProductsFound: "No products match this selection currently.",
           quickView: "Quick View",
@@ -768,9 +763,6 @@
           forHer: "لها",
           forHerDesc: "اكتشفي الساعات المهيبة، الأساور الفاخرة الرقيقة، والمحافظ الجلدية الأنيقة المصنوعة بلمسات ملكية دافئة.",
           shopForHer: "تسوقي لها الآن",
-          exclusivePacks: "باقات حصرية متميزة",
-          atelierPacks: "باقات المتجر الخاصة",
-          atelierPacksDesc: "اكتشف الباقات الفاخرة المنسقة والمجموعات المتكاملة المخصصة للإهداء والمقتنيات الشخصية.",
           watchmaking: "صناعة دقيقة ومصنوعات فاخرة",
           watchmakingDesc: "نحن نختار حركات أوتوماتيكية متميزة عالية الدقة، جلوداً طبيعية عالية الجودة للمحافظ، وفولاذًا راقيًا يضمن إحساسًا ملكيًا حقيقيًا.",
           shipping: "شحن سريع وآمن ومؤمن بالكامل",
@@ -848,7 +840,6 @@
           buyBtn: "شراء",
           saleBadge: "تخفيض",
           bestBadge: "الأفضل",
-          packsBadge: "باقة",
           onlyItemsLeft: "قطع متبقية فقط في المخزون الحصري.",
           noProductsFound: "لا توجد منتجات تطابق هذا الاختيار حالياً.",
           quickView: "رؤية سريعة",
@@ -1117,50 +1108,11 @@
       const g = gender.toUpperCase().trim();
       if (g === "LES FILLES" || g === "GIRLS STORE" || g === "GIRLS" || g === "WOMEN") return "Women";
       if (g === "LES HOMMES" || g === "BOYS STORE" || g === "MAN STORE" || g === "MAN" || g === "BOY" || g === "MEN STORE" || g === "MEN") return "Men";
-      if (g === "PACKS MEN" || g === "PACKS_MEN" || g === "MEN PACKS" || g === "BOYS PACKS" || g === "MEN'S PACKS") return "Men's Packs";
-      if (g === "PACKS GIRLS" || g === "PACKS_GIRLS" || g === "GIRLS PACKS" || g === "WOMEN'S PACKS") return "Women's Packs";
       return "All";
     };
 
-    const normalizePackCategory = (value) => {
-      const normalized = String(value || '').trim().toLowerCase();
-      if (!normalized || normalized === 'none' || normalized === 'all') return '';
-      if (normalized === 'promotion' || normalized === 'promotions') return 'promotion';
-      if (normalized === 'special pack' || normalized === 'special-pack' || normalized === 'special_pack') return 'special-pack';
-      if (normalized === 'sovanex pack' || normalized === 'sovanex-pack' || normalized === 'sovanex_pack') return 'sovanex-pack';
-      return normalized;
-    };
-
-    const getProductPackQuantities = (product) => {
-      const quantities = {};
-      if (product?.packQuantities && typeof product.packQuantities === 'object') {
-        Object.entries(product.packQuantities).forEach(([pack, quantity]) => {
-          const normalizedPack = normalizePackCategory(pack);
-          const normalizedQuantity = Math.floor(Number(quantity));
-          if (normalizedPack && Number.isFinite(normalizedQuantity) && normalizedQuantity > 0) {
-            quantities[normalizedPack] = normalizedQuantity;
-          }
-        });
-      }
-      const legacyPack = normalizePackCategory(product?.packCategory);
-      if (legacyPack && !quantities[legacyPack]) quantities[legacyPack] = 1;
-      return quantities;
-    };
-
-    const getProductPackQuantity = (product, pack) => getProductPackQuantities(product)[normalizePackCategory(pack)] || 0;
-    const isProductInPack = (product, pack) => getProductPackQuantity(product, pack) > 0;
-
-    const getPackLabel = (value) => {
-      const normalized = normalizePackCategory(value);
-      if (normalized === 'promotion') return 'Promotion';
-      if (normalized === 'special-pack') return 'Special Pack';
-      if (normalized === 'sovanex-pack') return 'Sovanex Pack';
-      return 'No Pack';
-    };
-
     const isStorefrontProduct = (product) => {
-      const normalizedGender = getNormalizedGender(product?.gender);
-      return normalizedGender !== "Men" && normalizedGender !== "Men's Packs";
+      return getNormalizedGender(product?.gender) !== "Men";
     };
 
     const getProductImageByPlacement = (product, placement = 'store', fallback = fallbackImage) => {
@@ -1554,8 +1506,6 @@
         product.isPromotion,
         product.isBestSeller,
         product.isPinned,
-        product.packCategory,
-        JSON.stringify(product.packQuantities || {})
       ].join("\u001f")).join("\u001e");
     };
 
@@ -1842,8 +1792,6 @@
         limitedStock: product.limitedStock,
         isPinned: product.isPinned,
         freeDelivery: product.freeDelivery,
-        packCategory: normalizePackCategory(product.packCategory),
-        packQuantities: getProductPackQuantities(product)
       }));
       const writePublicCache = (cacheKey, data) => {
         try {
@@ -3796,9 +3744,8 @@
     store.createProductCardMarkup = function(product, placement = 'store') {
       const normalizedGender = getNormalizedGender(product.gender);
       const isGirls = normalizedGender === "Women";
-      const isPacks = normalizedGender === "Men's Packs" || normalizedGender === "Women's Packs";
       const genderThemeBorder = 'border-luxuryGold/30 hover:border-luxuryGold';
-      const badgeColor = isGirls ? 'bg-luxuryGold/10 text-luxuryGold' : (isPacks ? 'bg-luxuryGold text-black' : 'bg-white/10 text-white');
+      const badgeColor = isGirls ? 'bg-luxuryGold/10 text-luxuryGold' : 'bg-white/10 text-white';
       const btnOutlineColor = 'border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black';
       const btnSolidColor = 'bg-luxuryGold hover:bg-luxuryGold/90 text-black';
       const cardImageSource = placement === 'home'
@@ -3806,7 +3753,6 @@
         : getProductImageByPlacement(product, 'store', product.imageURL || fallbackImage);
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
-      const packSummary = Object.entries(getProductPackQuantities(product)).map(([pack, quantity]) => `${getPackLabel(pack)} x${quantity}`).join(' · ');
 
       return `
         <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
@@ -3819,15 +3765,11 @@
               <div class="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1">
                 ${product.isBestSeller ? `<span class="w-7 h-7 bg-black/80 border border-luxuryGold/45 text-luxuryGold rounded-full shadow-lg flex items-center justify-center text-sm" title="Bestseller" aria-label="Bestseller">★</span>` : ''}
               </div>
-              <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4">
-                ${isPacks ? `<span class="${badgeColor} text-[7px] sm:text-[10px] uppercase font-bold px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow border border-luxuryGold/20">${this.t('packsBadge')}</span>` : ''}
-              </div>
             </div>
 
             <div class="p-3 sm:p-6 space-y-1.5 sm:space-y-4">
               <span class="product-card-category text-[8px] sm:text-[10px] uppercase tracking-widest text-luxuryGold font-semibold">${product.category}</span>
               <h3 class="font-serif text-sm sm:text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-10 sm:h-14 overflow-hidden" data-id="${product.id}">${cleanName}</h3>
-              ${packSummary ? `<p class="text-[9px] sm:text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Pack quantity: ${packSummary}</p>` : ''}
               
               <div class="product-card-rating flex items-center gap-1 text-[10px] sm:text-xs">
                 <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
@@ -3889,10 +3831,9 @@
       const filtered = this.products.filter(p => {
         const isVisibleCatalogItem = isStorefrontProduct(p);
         const matchesCategory = this.selectedCategory === "All" || p.category === this.selectedCategory;
-        const matchesPack = this.selectedPackFilter === 'all' || isProductInPack(p, this.selectedPackFilter);
         const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                               p.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-        return isVisibleCatalogItem && matchesCategory && matchesPack && matchesSearch;
+        return isVisibleCatalogItem && matchesCategory && matchesSearch;
       }).sort((a, b) => {
         const aPinned = a.isPinned ? 1 : 0;
         const bPinned = b.isPinned ? 1 : 0;
@@ -3954,12 +3895,6 @@
           </div>
 
           <div class="max-w-xl mx-auto space-y-4">
-            <div class="flex flex-wrap justify-center gap-2 rounded-2xl border border-luxuryGold/20 bg-white/5 p-2">
-              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'all' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="all">All</button>
-              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'promotion' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="promotion">Promotion</button>
-              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'special-pack' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="special-pack">Special Pack</button>
-              <button type="button" class="shop-pack-filter-btn px-3 py-2 rounded-xl text-[10px] uppercase font-bold tracking-[0.2em] transition ${this.selectedPackFilter === 'sovanex-pack' ? 'bg-luxuryGold text-black' : 'text-white/80 hover:bg-white/5'}" data-pack="sovanex-pack">Sovanex Pack</button>
-            </div>
             <div class="relative w-full">
               <input id="shop-search-input" type="text" placeholder="${this.t('searchBoutique')}" value="${this.searchQuery}" class="w-full pl-10 pr-4 py-3 text-xs rounded-xl border border-luxuryGold/30 bg-white/5 focus:outline-none focus:border-luxuryGold text-white transition-premium">
               <div class="absolute left-3.5 top-3.5 text-luxuryGold">${getIconSvg('search', 'w-4 h-4')}</div>
@@ -3998,15 +3933,6 @@
       document.querySelectorAll(".category-filter-btn").forEach(btn => {
         btn.onclick = () => {
           store.selectedCategory = btn.getAttribute("data-name");
-          const grid = document.getElementById("shop-products-grid-container");
-          if (grid) grid.removeAttribute("id");
-          store.renderShopPage();
-        };
-      });
-
-      document.querySelectorAll(".shop-pack-filter-btn").forEach(btn => {
-        btn.onclick = () => {
-          store.selectedPackFilter = btn.getAttribute("data-pack") || 'all';
           const grid = document.getElementById("shop-products-grid-container");
           if (grid) grid.removeAttribute("id");
           store.renderShopPage();
@@ -4098,7 +4024,7 @@
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "hero-products", "products", "packs", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => `
+            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
               }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
@@ -4147,8 +4073,6 @@
         this.renderAdminHeroProducts(container);
       } else if (this.adminView === "products") {
         this.renderAdminProducts(container);
-      } else if (this.adminView === "packs") {
-        this.renderAdminPacks(container);
       } else if (this.adminView === "orders") {
         this.renderAdminOrders(container);
       } else if (this.adminView === "reviews") {
@@ -4500,138 +4424,6 @@
       });
     };
 
-    store.renderAdminPacks = function(container) {
-      const packGroups = [
-        { key: 'promotion', label: 'Promotion', description: 'Products highlighted as promotional offers' },
-        { key: 'special-pack', label: 'Special Pack', description: 'Signature curated bundles' },
-        { key: 'sovanex-pack', label: 'Sovanex Pack', description: 'Sovanex exclusive assortment' }
-      ];
-
-      const assignedProducts = packGroups.map(pack => {
-        const products = this.products.filter(product => isProductInPack(product, pack.key));
-        return { ...pack, products };
-      });
-
-      container.innerHTML = `
-        <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <div class="border-b border-white/10 pb-4">
-            <h3 class="font-serif text-xl text-luxuryGold uppercase tracking-wider">Manage Boutique Pack Assignments</h3>
-            <p class="text-xs text-gray-400">Create and maintain the pack categories used by the Boutique filter bar.</p>
-          </div>
-          <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            ${assignedProducts.map(pack => {
-              const availableProducts = this.products.filter(product => !isProductInPack(product, pack.key) && isStorefrontProduct(product));
-              return `
-                <div class="bg-black/40 rounded-2xl border border-luxuryGold/15 p-4 space-y-4">
-                  <div>
-                    <p class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">${pack.label}</p>
-                    <p class="text-[10px] text-gray-400 mt-1">${pack.description}</p>
-                  </div>
-                  <div class="space-y-2">
-                    ${pack.products.length === 0 ? '<p class="text-[10px] text-gray-500 italic">No products assigned yet.</p>' : pack.products.map(product => `
-                      <div class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                        <div class="flex items-center gap-2 min-w-0">
-                          <img src="${product.imageURL || fallbackImage}" class="w-9 h-9 object-cover rounded-lg border border-luxuryGold/20" loading="lazy">
-                          <div class="min-w-0">
-                            <span class="block text-[11px] text-white truncate">${product.name}</span>
-                            <span class="text-[9px] text-luxuryGold font-bold uppercase tracking-wider">Quantity x${getProductPackQuantity(product, pack.key)}</span>
-                          </div>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                          <input type="number" min="1" step="1" value="${getProductPackQuantity(product, pack.key) || 1}" class="pack-quantity-input w-14 px-2 py-1 rounded border border-luxuryGold/30 bg-black text-white text-[10px]" data-product-id="${product.id}" data-pack="${pack.key}" aria-label="Quantity in ${pack.label}">
-                          <button type="button" class="save-pack-quantity-btn px-2 py-1 rounded text-[9px] uppercase font-bold bg-luxuryGold text-black" data-product-id="${product.id}" data-pack="${pack.key}">Save</button>
-                          <button type="button" class="remove-pack-product-btn px-2 py-1 rounded text-[9px] uppercase font-bold bg-red-700/80 text-white" data-product-id="${product.id}" data-pack="${pack.key}">Remove</button>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                  <form class="pack-assignment-form space-y-2" data-pack="${pack.key}">
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 font-bold">Add product</label>
-                    <select name="productId" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-                      <option value="">Select a product</option>
-                      ${availableProducts.map(product => `<option value="${product.id}">${product.name}</option>`).join('')}
-                    </select>
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 font-bold">Quantity in pack</label>
-                    <input type="number" name="packQuantity" min="1" step="1" value="1" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-                    <button type="submit" class="w-full px-4 py-2 bg-luxuryGold text-black rounded-xl text-[10px] uppercase font-bold">Assign to ${pack.label}</button>
-                  </form>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-
-      document.querySelectorAll('.pack-assignment-form').forEach(form => {
-        form.onsubmit = async (event) => {
-          event.preventDefault();
-          const pack = form.dataset.pack;
-          const productId = form.productId.value;
-          if (!productId) {
-            showToast('Select a product to assign first.', 'error');
-            return;
-          }
-
-          const product = this.products.find(item => item.id === productId);
-          if (!product) {
-            showToast('Product not found.', 'error');
-            return;
-          }
-
-          const packQuantity = Math.floor(Number(form.packQuantity.value));
-          if (!Number.isFinite(packQuantity) || packQuantity < 1) {
-            showToast('Pack quantity must be at least 1.', 'error');
-            return;
-          }
-          const packQuantities = { ...getProductPackQuantities(product), [pack]: packQuantity };
-          const nextPayload = { ...product, packCategory: product.packCategory || pack, packQuantity, packQuantities, updatedAt: new Date() };
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), nextPayload);
-          const index = this.products.findIndex(item => item.id === product.id);
-          if (index >= 0) this.products[index] = nextPayload;
-          this.renderAdminPacks(container);
-          showToast(`${product.name} added to ${getPackLabel(pack)}.`);
-        };
-      });
-
-      document.querySelectorAll('.save-pack-quantity-btn').forEach(button => {
-        button.onclick = async () => {
-          const product = this.products.find(item => item.id === button.dataset.productId);
-          const input = document.querySelector(`.pack-quantity-input[data-product-id="${button.dataset.productId}"][data-pack="${button.dataset.pack}"]`);
-          const packQuantity = Math.floor(Number(input?.value));
-          if (!product || !Number.isFinite(packQuantity) || packQuantity < 1) {
-            showToast('Pack quantity must be at least 1.', 'error');
-            return;
-          }
-          const packQuantities = { ...getProductPackQuantities(product), [button.dataset.pack]: packQuantity };
-          const nextPayload = { ...product, packQuantity, packQuantities, updatedAt: new Date() };
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), { packQuantity, packQuantities, updatedAt: nextPayload.updatedAt });
-          const index = this.products.findIndex(item => item.id === product.id);
-          if (index >= 0) this.products[index] = nextPayload;
-          this.renderAdminPacks(container);
-          showToast(`${product.name} quantity updated.`);
-        };
-      });
-
-      document.querySelectorAll('.remove-pack-product-btn').forEach(button => {
-        button.onclick = async () => {
-          const productId = button.dataset.productId;
-          const pack = button.dataset.pack;
-          const product = this.products.find(item => item.id === productId);
-          if (!product) return;
-
-          const packQuantities = getProductPackQuantities(product);
-          delete packQuantities[pack];
-          const remainingPack = Object.keys(packQuantities)[0] || '';
-          const nextPayload = { ...product, packCategory: remainingPack, packQuantity: packQuantities[remainingPack] || 1, packQuantities, updatedAt: new Date() };
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', product.id), { packCategory: remainingPack, packQuantity: nextPayload.packQuantity, packQuantities, updatedAt: nextPayload.updatedAt });
-          const index = this.products.findIndex(item => item.id === product.id);
-          if (index >= 0) this.products[index] = nextPayload;
-          this.renderAdminPacks(container);
-          showToast(`${product.name} removed from ${getPackLabel(pack)}.`);
-        };
-      });
-    };
-
     store.renderAdminPromoCodes = function(container) {
       const editing = this.editingPromoCode || null;
       const codes = [...this.promoCodes].sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')));
@@ -4869,16 +4661,6 @@
               <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Rating</label>
               <input type="number" step="0.1" name="rating" required value="${product ? product.rating : 5.0}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-semibold text-luxuryGold uppercase mb-1">Boutique Pack</label>
-            <select name="packCategory" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-              <option value="">No Pack</option>
-              <option value="promotion" ${normalizePackCategory(product?.packCategory) === 'promotion' ? 'selected' : ''}>Promotion</option>
-              <option value="special-pack" ${normalizePackCategory(product?.packCategory) === 'special-pack' ? 'selected' : ''}>Special Pack</option>
-              <option value="sovanex-pack" ${normalizePackCategory(product?.packCategory) === 'sovanex-pack' ? 'selected' : ''}>Sovanex Pack</option>
-            </select>
           </div>
 
           <div class="flex flex-wrap gap-4 p-3 bg-black/50 rounded-xl border border-luxuryGold/10">
@@ -5229,7 +5011,6 @@
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
           freeDelivery: form.freeDelivery.checked,
-          packCategory: normalizePackCategory(form.packCategory.value),
           updatedAt: new Date()
         };
 
@@ -7756,7 +7537,6 @@
             <div class="space-y-4">
               <div class="flex justify-between items-center">
                 <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold text-luxuryGold">${product.category}</span>
-                ${normalizedGender === 'Men\'s Packs' || normalizedGender === 'Women\'s Packs' ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-luxuryGold text-black">Packs</span>` : ''}
               </div>
               <h2 id="modal-product-title" class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
               ${action ? `<p id="product-details-prompt" class="rounded-lg border border-luxuryGold/40 bg-luxuryGold/10 px-3 py-2 text-[11px] font-semibold text-luxuryGold">Veuillez d'abord choisir les caractéristiques du produit.</p>` : ''}
