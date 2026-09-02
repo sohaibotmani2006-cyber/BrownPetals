@@ -2592,6 +2592,7 @@
       const subtotal = this.getCartSubtotal();
       const threshold = this.getFreeDeliveryThreshold();
 
+      if (this.cart.some(item => this.isCartItemFreeDelivery(item))) return 0;
       if (!city) {
         return subtotal >= threshold ? 0 : STANDARD_DELIVERY_FEE;
       }
