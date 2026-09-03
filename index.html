@@ -1150,102 +1150,31 @@
       console.warn("Cached settings could not be restored:", error);
     }
 
+    // Read the original file bytes. Storage receives the untouched source image.
     window.compressImageFile = (file, callback) => {
       const reader = new FileReader();
-      let completed = false;
-      const complete = (dataUrl) => {
-        if (completed) return;
-        completed = true;
-        callback(dataUrl);
-      };
-
-      reader.onerror = () => {
-        console.error("Image file could not be read.");
-      };
-      reader.onload = (e) => {
-        const originalDataUrl = e.target.result;
-        const img = new Image();
-        img.onerror = () => complete(originalDataUrl);
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const maxDim = 900;
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > maxDim) {
-              height = Math.round(height * (maxDim / width));
-              width = maxDim;
-            }
-          } else {
-            if (height > maxDim) {
-              width = Math.round(width * (maxDim / height));
-              height = maxDim;
-            }
-          }
-          if (!width || !height) {
-            complete(originalDataUrl);
-            return;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            complete(originalDataUrl);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-
-          let quality = 0.58;
-          let compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-          let attempts = 0;
-          while (compressedBase64.length > 700000 && attempts < 6) {
-            quality = Math.max(0.18, quality - 0.08);
-            compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-            attempts += 1;
-          }
-          complete(compressedBase64);
+      reader.onerror = () => console.error("Image file could not be read.");
+      reader.onload = (event) => {
+        const originalDataUrl = event.target.result;
+        const probe = new Image();
+        probe.onload = () => {
+          console.info('[IMAGE AUDIT] Original upload', {
+            fileName: file.name,
+            fileType: file.type,
+            fileSizeBytes: file.size,
+            width: probe.naturalWidth,
+            height: probe.naturalHeight
+          });
+          callback(originalDataUrl);
         };
-        img.src = originalDataUrl;
+        probe.onerror = () => callback(originalDataUrl);
+        probe.src = originalDataUrl;
       };
       reader.readAsDataURL(file);
     };
 
-    window.resizeDataUrlForFirestore = (dataUrl, maxBytes = 700000) => {
-      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return dataUrl;
-
-      const originalLength = dataUrl.length;
-      if (originalLength <= maxBytes) return dataUrl;
-
-      const img = new Image();
-      return new Promise((resolve) => {
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const scale = Math.min(1, Math.sqrt(maxBytes / originalLength));
-          width = Math.max(120, Math.round(width * scale));
-          height = Math.max(120, Math.round(height * scale));
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(dataUrl);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-
-          let quality = 0.58;
-          let result = canvas.toDataURL('image/jpeg', quality);
-          while (result.length > maxBytes && quality > 0.14) {
-            quality -= 0.08;
-            result = canvas.toDataURL('image/jpeg', quality);
-          }
-          resolve(result);
-        };
-        img.onerror = () => resolve(dataUrl);
-        img.src = dataUrl;
-      });
-    };
+    // Kept as a compatibility helper for older callers; never resize or re-encode.
+    window.resizeDataUrlForFirestore = (dataUrl) => Promise.resolve(dataUrl);
 
     window.uploadBase64ImageToStorage = async function(dataUrl, folder = 'products') {
       if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
@@ -1253,16 +1182,29 @@
       if (!trimmed.startsWith('data:image/')) return trimmed;
 
       try {
-        const compacted = await window.resizeDataUrlForFirestore(trimmed, 220000);
-        if (typeof compacted === 'string' && compacted.startsWith('data:image/')) {
-          return compacted;
-        }
+        const safeFolder = String(folder || 'products').replace(/[^a-zA-Z0-9/_-]/g, '-');
+        const uniqueId = typeof crypto?.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const imageRef = storageRef(storage, `${safeFolder}/${uniqueId}`);
+        console.info('[IMAGE AUDIT] Firebase Storage upload', {
+          storagePath: imageRef.fullPath,
+          sourceMimeType: trimmed.slice(5, trimmed.indexOf(';')),
+          sourceDataUrlLength: trimmed.length
+        });
+        const snapshot = await uploadString(imageRef, trimmed, 'data_url', {
+          cacheControl: 'public,max-age=31536000,immutable'
+        });
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        console.info('[IMAGE AUDIT] Firebase Storage original URL', {
+          storagePath: snapshot.ref.fullPath,
+          downloadURL
+        });
+        return downloadURL;
       } catch (error) {
-        console.warn('Firebase storage upload fallback activated; keeping compacted data URL in Firestore instead.', error);
+        console.error('Original image upload failed; retaining the untouched source for the write path.', error);
+        return trimmed;
       }
-
-      const fallback = trimmed.length > 220000 ? trimmed.slice(0, 220000) : trimmed;
-      return fallback;
     };
 
     window.prepareProductPayloadForFirestore = async function(payload) {
@@ -1327,37 +1269,9 @@
       return prepared;
     };
 
+    // Storage URLs already point to the original source; do not compact image fields.
     window.tryCompactProductPayload = async function(productObject) {
-      if (!productObject || typeof productObject !== 'object') return productObject;
-      const cloned = JSON.parse(JSON.stringify(productObject));
-      const list = [cloned.imageURL, cloned.storeImage, cloned.homeImage, cloned.mobileImage, cloned.desktopImage, cloned.tabletImage];
-      if (Array.isArray(cloned.galleryImages)) {
-        list.push(...cloned.galleryImages);
-      } else if (typeof cloned.galleryImages === 'string') {
-        list.push(...cloned.galleryImages.split(',').map(item => item.trim()).filter(Boolean));
-      }
-      if (Array.isArray(cloned.variations)) {
-        for (const variation of cloned.variations) {
-          list.push(variation.imageURL, variation.mobileImage);
-        }
-      }
-      if (Array.isArray(cloned.colors)) {
-        for (const color of cloned.colors) {
-          list.push(color.imageURL);
-        }
-      }
-
-      const compacted = await Promise.all(list.map(async (value) => {
-        if (typeof value === 'string' && value.startsWith('data:image/')) {
-          return await window.resizeDataUrlForFirestore(value, 650000);
-        }
-        return value;
-      }));
-
-      if (Array.isArray(cloned.galleryImages)) {
-        cloned.galleryImages = compacted.slice(6, 6 + cloned.galleryImages.length);
-      }
-      return cloned;
+      return productObject;
     };
 
     // Dynamic theme controller mapped directly to CSS classes on HTML document body
@@ -3751,6 +3665,11 @@
       const cardImageSource = placement === 'home'
         ? getProductImageByPlacement(product, 'home', product.imageURL || fallbackImage)
         : getProductImageByPlacement(product, 'store', product.imageURL || fallbackImage);
+      console.info('[IMAGE AUDIT] Store image URL', {
+        productId: product.id,
+        placement,
+        imageURL: cardImageSource
+      });
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
 
@@ -7431,9 +7350,7 @@
       if (!modal) return;
 
       const isMobileViewport = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
-      const initialProductImage = isMobileViewport
-        ? getProductImageByPlacement(product, 'mobile', product.imageURL || fallbackImage)
-        : getProductImageByPlacement(product, 'desktop', product.imageURL || fallbackImage);
+      const initialProductImage = product.imageURL || fallbackImage;
 
       // Prevent duplicate rendering and lag if modal is already open for this product
       if (store.currentlyOpenProductId === product.id && !modal.classList.contains("hidden")) {
@@ -7459,9 +7376,15 @@
       }
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
-      const mainProductImage = mainColor?.imageURL || product.imageURL || fallbackImage;
-      const defaultProductImage = isMobileViewport ? getProductImageByPlacement(product, 'mobile', mainProductImage) : getProductImageByPlacement(product, 'desktop', mainProductImage);
+      const mainProductImage = product.imageURL || fallbackImage;
+      const defaultProductImage = mainProductImage;
       this.activeImg = defaultProductImage;
+      console.info('[IMAGE AUDIT] Product Details image URL', {
+        productId: product.id,
+        productImageURL: product.imageURL || null,
+        selectedInitialImage: defaultProductImage,
+        ignoredInitialColorImage: mainColor?.imageURL || null
+      });
 
       let galleryMarkup = `
         <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-luxuryGold scale-105" data-img="${defaultProductImage}" data-is-variation="false">
@@ -7636,6 +7559,19 @@
       document.getElementById("product-modal-close")?.addEventListener('click', closeModal);
 
       const mainImg = document.getElementById("main-product-image");
+      if (mainImg) {
+        mainImg.addEventListener('load', () => {
+          console.info('[IMAGE AUDIT] Product Details rendered image', {
+            productId: product.id,
+            imageURL: mainImg.currentSrc || mainImg.src,
+            naturalWidth: mainImg.naturalWidth,
+            naturalHeight: mainImg.naturalHeight,
+            displayedWidth: mainImg.clientWidth,
+            displayedHeight: mainImg.clientHeight,
+            devicePixelRatio: window.devicePixelRatio || 1
+          });
+        }, { once: true });
+      }
       const titleTextEl = document.getElementById("modal-product-title");
       const descriptionTextEl = document.getElementById("modal-product-description");
       const priceWrapperEl = document.getElementById("modal-product-price-wrapper");
@@ -7815,7 +7751,7 @@
             : (isMainColor ? product.imageURL : (color.imageURL || variant?.imageURL));
           const mobileSelectedImage = isStandaloneColorImage
             ? color.imageURL
-            : (isMainColor ? (getProductImageByPlacement(product, 'mobile', product.imageURL || fallbackImage)) : (color.imageURL || variant?.mobileImage || variant?.imageURL));
+            : (isMainColor ? product.imageURL : (color.imageURL || variant?.mobileImage || variant?.imageURL));
           const imageToUse = isMobileViewport ? (mobileSelectedImage || selectedImage) : selectedImage;
           if (imageToUse) {
             store.activeImg = imageToUse;
