@@ -2702,7 +2702,7 @@
         const nonCancelled = store.orders.filter(o => o.status !== 'cancelled');
         const dailySales = {};
         const labels = [];
-        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayNames = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
         
         for (let i = 6; i >= 0; i--) {
           const d = new Date();
@@ -2739,7 +2739,7 @@
           data: {
             labels: labels,
             datasets: [{
-              label: 'Daily Revenue (MAD)',
+              label: 'Chiffre d’affaires quotidien (MAD)',
               data: dataset,
               borderColor: 'var(--accent-color)',
               borderWidth: 3,
@@ -4404,23 +4404,38 @@
           </div>
           <div class="bg-[#141414] text-white p-8 rounded-3xl border border-luxuryGold/40 flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl">
             <div class="space-y-2">
-              <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Executive Admin Workspace</span>
-              <h1 class="text-3xl font-serif">SOVANEX Control Suite</h1>
-              <p class="text-xs text-gray-400">Store configurations, order management, logo uploads, social links, and live metrics.</p>
+              <span class="text-[10px] uppercase tracking-widest text-luxuryGold font-bold">Espace d’administration</span>
+              <h1 class="text-3xl font-serif">Centre de contrôle SOVANEX</h1>
+              <p class="text-xs text-gray-400">Configuration de la boutique, gestion des commandes, produits, réseaux sociaux et indicateurs en direct.</p>
             </div>
             <div class="flex gap-3">
-              <button id="admin-logout-btn" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-widest rounded-lg border border-luxuryGold/40 transition">Logout</button>
-              <button id="admin-add-product-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase tracking-widest rounded-lg transition">+ Add Product</button>
+              <button id="admin-logout-btn" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-widest rounded-lg border border-luxuryGold/40 transition">Déconnexion</button>
+              <button id="admin-add-product-btn" class="px-4 py-2 bg-luxuryGold hover:bg-luxuryGold/90 text-black text-xs font-bold uppercase tracking-widest rounded-lg transition">+ Ajouter un produit</button>
             </div>
           </div>
 
           <!-- Tab Control Navigation -->
           <div class="flex flex-wrap gap-2 border-b border-luxuryGold/25 pb-4">
-            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => `
+            ${["dashboard", "hero-products", "products", "orders", "reviews", "delivery", "categories", "lookbook", "promo-codes", "telegram-settings", "general-settings"].map(tab => {
+              const tabLabels = {
+                dashboard: 'Tableau de bord',
+                'hero-products': 'Produits vedettes',
+                products: 'Produits',
+                orders: 'Commandes',
+                reviews: 'Avis clients',
+                delivery: 'Livraison',
+                categories: 'Catégories',
+                lookbook: 'Lookbook',
+                'promo-codes': 'Codes promo',
+                'telegram-settings': 'Telegram',
+                'general-settings': 'Paramètres généraux'
+              };
+              return `
               <button class="admin-tab-btn px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-widest transition ${
                 this.adminView === tab ? 'bg-luxuryGold text-black shadow-md' : 'text-white hover:bg-white/5'
-              }" data-tab="${tab}">${tab.replace('-', ' ')}</button>
-            `).join('')}
+              }" data-tab="${tab}">${tabLabels[tab]}</button>
+            `;
+            }).join('')}
           </div>
 
           <!-- Active Admin Tab Content View -->
@@ -4485,31 +4500,76 @@
     };
 
     store.renderAdminDashboard = function(container) {
-      const nonCancelled = this.orders.filter(o => o.status !== 'cancelled');
-      const totalRevenue = nonCancelled.reduce((sum, o) => sum + (o.total || 0), 0);
-      const pendingOrders = this.orders.filter(o => o.status === "pending").length;
+      const normalizeDashboardStatus = status => {
+        const normalized = String(status || 'pending').trim().toLowerCase();
+        if (['cancelled', 'canceled', 'annulée', 'annulee', 'refused', 'rejected', 'refusée', 'refusee'].includes(normalized)) return 'cancelled';
+        if (['pending', 'en attente', 'attente'].includes(normalized)) return 'pending';
+        if (['confirmed', 'confirmée', 'confirmee'].includes(normalized)) return 'confirmed';
+        if (['shipped', 'expédiée', 'expediee'].includes(normalized)) return 'shipped';
+        if (['delivered', 'livrée', 'livree', 'processed'].includes(normalized)) return 'delivered';
+        return normalized;
+      };
+      const isCancelledOrder = order => normalizeDashboardStatus(order.status) === 'cancelled';
+      const revenueOrders = this.orders.filter(order => !isCancelledOrder(order));
+      const totalRevenue = revenueOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+      const pendingOrders = this.orders.filter(order => normalizeDashboardStatus(order.status) === 'pending').length;
+      const cancelledOrders = this.orders.filter(isCancelledOrder).length;
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const ordersToday = this.orders.filter(order => {
+        const createdAt = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt || 0);
+        return !Number.isNaN(createdAt.getTime()) && createdAt >= startOfToday;
+      }).length;
+      const lowStockProducts = this.products.filter(product => {
+        const stock = Number(product.stock);
+        return product.isOutOfStock === true || product.limitedStock === true || (Number.isFinite(stock) && stock <= 3);
+      }).length;
+      const salesByProduct = new Map();
+      revenueOrders.forEach(order => {
+        (Array.isArray(order.items) ? order.items : []).forEach(item => {
+          const quantity = Number(item.quantity) || 0;
+          if (quantity <= 0) return;
+          const baseId = String(item.id || item.productId || '').replace(/-v\d+(?:-[^-]+)?$/, '');
+          const product = this.products.find(candidate => String(candidate.id) === baseId || String(candidate.name || '').trim().toLowerCase() === String(item.name || '').trim().toLowerCase());
+          const key = product?.id || baseId || String(item.name || 'unknown');
+          const current = salesByProduct.get(key) || { product, name: item.name || 'Produit sans nom', quantity: 0, revenue: 0 };
+          current.quantity += quantity;
+          current.revenue += quantity * (Number(item.price) || 0);
+          salesByProduct.set(key, current);
+        });
+      });
+      const bestProducts = [...salesByProduct.values()]
+        .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+        .slice(0, 5);
+
+      const summaryCards = [
+        ['clock', "Commandes aujourd'hui", ordersToday, 'Commandes créées depuis minuit'],
+        ['banknote', 'Chiffre d’affaires', `${totalRevenue.toFixed(2)} MAD`, 'Hors commandes annulées ou refusées'],
+        ['shopping-bag', 'Produits', this.products.length, 'Produits actuellement en boutique'],
+        ['shield-check', 'Stock faible', lowStockProducts, 'Stock limité ou inférieur à 4 unités'],
+        ['clock', 'Commandes en attente', pendingOrders, 'Statut : En attente'],
+        ['x', 'Annulées / Refusées', cancelledOrders, 'Commandes exclues du chiffre d’affaires']
+      ];
 
       container.innerHTML = `
         <div class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-[#141414] p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
-              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Total Revenue</p>
-              <p class="text-3xl font-serif font-bold text-white mt-1">${totalRevenue} MAD</p>
-            </div>
-            <div class="bg-[#141414] p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
-              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Pending Orders</p>
-              <p class="text-3xl font-serif font-bold text-white mt-1">${pendingOrders}</p>
-            </div>
-            <div class="bg-[#141414] p-6 rounded-2xl border border-luxuryGold/20 shadow-sm">
-              <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">Total Orders</p>
-              <p class="text-3xl font-serif font-bold text-white mt-1">${this.orders.length}</p>
-            </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            ${summaryCards.map(([icon, label, value, detail]) => `
+              <div class="bg-[#141414] p-5 rounded-2xl border border-luxuryGold/20 shadow-sm min-w-0">
+                <div class="flex items-start justify-between gap-3">
+                  <p class="text-[10px] uppercase tracking-wider text-luxuryGold font-bold">${label}</p>
+                  <span class="text-luxuryGold/80">${getIconSvg(icon, 'w-5 h-5')}</span>
+                </div>
+                <p class="text-2xl sm:text-3xl font-serif font-bold text-white mt-3 break-words">${value}</p>
+                <p class="text-[10px] text-gray-500 mt-2">${detail}</p>
+              </div>
+            `).join('')}
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-sm">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider">Revenue Analytics</h3>
+                <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider">Analyse du chiffre d’affaires</h3>
               </div>
               <div class="h-72 relative w-full">
                 <canvas id="analyticsChart"></canvas>
@@ -4518,19 +4578,18 @@
 
             <div class="bg-[#141414] p-6 rounded-3xl border border-luxuryGold/20 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider mb-4 border-b border-luxuryGold/10 pb-2">Top Items</h3>
+                <h3 class="font-serif text-lg text-luxuryGold uppercase tracking-wider mb-4 border-b border-luxuryGold/10 pb-2">Meilleurs produits</h3>
                 <div class="space-y-4">
-                  ${this.products.slice(0, 4).map((p, idx) => `
-                    <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3">
-                      <span class="text-xs font-bold text-luxuryGold">#${idx+1}</span>
-                      <img src="${p.imageURL || fallbackImage}" class="w-10 h-10 object-cover rounded-lg" loading="lazy">
-                      <div class="flex-1">
-                        <p class="text-xs font-semibold text-white line-clamp-1">${p.name}</p>
-                        <p class="text-[10px] text-gray-400">${p.category}</p>
+                  ${bestProducts.length ? bestProducts.map((entry, idx) => `
+                    <div class="flex items-center gap-3 border-b border-luxuryGold/5 pb-3 min-w-0">
+                      <span class="text-xs font-bold text-luxuryGold">#${idx + 1}</span>
+                      <img src="${entry.product?.imageURL || entry.product?.storeImage || fallbackImage}" alt="${escapeHtml(entry.product?.name || entry.name)}" class="w-10 h-10 object-cover rounded-lg shrink-0" loading="lazy">
+                      <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-white truncate">${escapeHtml(entry.product?.name || entry.name)}</p>
+                        <p class="text-[10px] text-gray-400">${entry.quantity} vendu${entry.quantity > 1 ? 's' : ''} · ${entry.revenue.toFixed(2)} MAD</p>
                       </div>
-                      <span class="text-xs font-serif font-bold text-luxuryGold">${p.price} MAD</span>
                     </div>
-                  `).join('')}
+                  `).join('') : '<p class="text-xs text-gray-500">Aucune vente enregistrée.</p>'}
                 </div>
               </div>
             </div>
