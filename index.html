@@ -1808,7 +1808,7 @@
             <!-- Actions -->
             <div class="flex items-center gap-3">
               <!-- Premium Translation Button -->
-              <button id="nav-lang-btn" class="flex items-center gap-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl shadow-md transition-premium text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+              <button id="nav-lang-btn" class="hidden md:flex items-center gap-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl shadow-md transition-premium text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                 🌐 ${this.language === 'ar' ? 'Français' : 'العربية'}
               </button>
               <button id="nav-link-wishlist" class="relative p-2 text-xl leading-none text-white hover:text-luxuryGold transition" title="Favoris" aria-label="Favoris">${this.wishlist.length ? '♥' : '♡'}</button>
@@ -1898,6 +1898,7 @@
               <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('contact')}</button>
               <button id="mobile-nav-orders" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'orders' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('orders')}</button>
               <button id="mobile-nav-wishlist" class="w-full text-left py-3.5 px-4 rounded-xl text-xl transition ${this.currentPage === 'wishlist' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}" title="Favoris" aria-label="Favoris">${this.wishlist.length ? '♥' : '♡'}</button>
+              <button id="mobile-nav-lang" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10">🌐 ${this.language === 'ar' ? 'Français' : 'العربية'}</button>
               <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('policies')}</button>
             </div>
           </div>
@@ -1917,6 +1918,14 @@
       document.getElementById("mobile-nav-contact").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("contact"); };
       document.getElementById("mobile-nav-orders").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("orders"); };
       document.getElementById("mobile-nav-wishlist").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("wishlist"); };
+      document.getElementById("mobile-nav-lang").onclick = () => {
+        const nextLang = this.language === 'ar' ? 'fr' : 'ar';
+        this.language = nextLang;
+        localStorage.setItem("sovanex_lang", nextLang);
+        this.mobileMenuOpen = false;
+        this.updateTheme();
+        this.updateDOM();
+      };
       document.getElementById("mobile-nav-policies").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("policies"); };
     };
 
