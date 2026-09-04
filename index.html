@@ -253,6 +253,34 @@
         font-size: 0.8rem;
       }
     }
+    #app-header #nav-brand {
+      min-width: 0;
+    }
+    #app-header #nav-brand .brand-wordmark {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0;
+      line-height: 1;
+      white-space: nowrap;
+      vertical-align: middle;
+      transform: none;
+      letter-spacing: 0;
+      font-size: clamp(1.6rem, 1.5vw, 2.5rem);
+    }
+    #app-header #nav-brand .brand-wordmark .sov {
+      font-family: 'Playfair Display', 'Times New Roman', serif;
+      font-weight: 700;
+      font-style: normal;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+    }
+    #app-header #nav-brand .brand-wordmark .anex {
+      font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      color: #D4AF37;
+      margin-left: 0.06em;
+    }
     @media (min-width: 1024px) {
       #app-header .announcement-message {
         font-size: 10px;
@@ -961,6 +989,20 @@
       // Uniquely consolidated settings module - resolving duplicate saving bug
       settings: {
         logoURL: "",
+        faviconURL: "",
+        websiteName: "SOVANEX",
+        brandName: "SOVANEX",
+        websiteTitle: "SOVANEX | Montres, accessoires et articles en cuir",
+        shortDescription: "Montres, accessoires et articles en cuir sélectionnés avec soin.",
+        websiteURL: "",
+        seoTitle: "SOVANEX | Montres, accessoires et articles en cuir",
+        seoDescription: "Découvrez SOVANEX, une sélection de montres, accessoires et articles en cuir d’exception au Maroc.",
+        seoKeywords: "montres, accessoires, cuir, Maroc, SOVANEX",
+        ogTitle: "SOVANEX | Montres, accessoires et articles en cuir",
+        ogDescription: "Une sélection raffinée de montres, accessoires et articles en cuir au Maroc.",
+        ogImage: "",
+        robotsIndexing: true,
+        canonicalURL: "",
         announcements: [
           { text: "24/7 Customer Support", isActive: true, order: 0 },
           { text: "Free Delivery on Orders Over 300 DH", isActive: true, order: 1 },
@@ -991,8 +1033,22 @@
         heroProdName3: "Sovereign Gold Carbon Ring",
         websiteDescription: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
         tagline: "The Sovereign Shop of Royal Watches, Accessories & Fine Leather Goods",
+        aboutWebsite: "",
+        businessAddress: "Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040",
+        businessCity: "Rabat",
+        businessCountry: "Maroc",
+        currency: "MAD",
+        defaultLanguage: "fr",
+        storeName: "SOVANEX",
+        footerDescription: "Une destination raffinée pour les montres, accessoires et articles en cuir sélectionnés avec soin.",
+        footerContact: "Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Maroc",
+        copyrightText: "© 2026 SOVANEX. Tous droits réservés.",
         instagramURL: "https://www.instagram.com/brownpetals.ma?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
         facebookURL: "https://facebook.com",
+        tiktokURL: "",
+        youtubeURL: "",
+        pinterestURL: "",
+        otherSocialURL: "",
         whatsappHotline: "+212 777467304",
         emailCoordinate: "brownpetals24@gmail.com",
         deliveryTerms: "Every SOVANEX luxury watch, accessory, or leather wallet is shipped in a golden wax-sealed premium presentation casket. Our deliveries are handled by signature private couriers.\n\nStandard delivery time is 24 to 48 hours across major cities in Morocco (Rabat, Casablanca, Marrakech, Kenitra, Tangier, Fes). Delivery is fully secured and 100% insured against loss or damage.",
@@ -1602,15 +1658,17 @@
       const publicPage = !['/admin', '/cart', '/checkout', '/payment', '/bank-transfer', '/order-confirmation', '/orders', '/wishlist'].includes(seoPath);
       const cleanProductName = product?.name ? String(product.name).replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim() : '';
       const productDescription = String(product?.description || '').replace(/\s+/g, ' ').trim();
+      const configuredDescription = String(this.settings.seoDescription || this.settings.websiteDescription || '').replace(/\s+/g, ' ').trim();
       const description = isProductPage
         ? `Découvrez ${cleanProductName} chez SOVANEX, dans la collection ${String(product.category || 'exclusive').trim()}. ${productDescription}`.slice(0, 160)
         : normalizedPath === '/shop'
           ? 'Explorez la boutique SOVANEX: montres, accessoires et articles en cuir sélectionnés avec soin au Maroc.'
-          : 'Découvrez SOVANEX, une sélection de montres, accessoires et articles en cuir d’exception au Maroc.';
+          : (configuredDescription || 'Découvrez SOVANEX, une sélection de montres, accessoires et articles en cuir d’exception au Maroc.');
       const title = isProductPage
         ? `${cleanProductName} | SOVANEX`
-        : normalizedPath === '/shop' ? 'Boutique SOVANEX | Montres et accessoires au Maroc' : 'SOVANEX | Montres, accessoires et articles en cuir';
+        : normalizedPath === '/shop' ? 'Boutique SOVANEX | Montres et accessoires au Maroc' : (this.settings.seoTitle || this.settings.websiteTitle || 'SOVANEX | Montres, accessoires et articles en cuir');
       const absoluteUrl = value => {
+        if (/^https?:\/\//i.test(String(value || ''))) return String(value);
         const base = /^https?:$/i.test(window.location.protocol) ? window.location.origin : '';
         return `${base}${value}`;
       };
@@ -1618,15 +1676,35 @@
       document.title = title;
       const descriptionMeta = document.querySelector('meta[name="description"]');
       if (descriptionMeta) descriptionMeta.setAttribute('content', description);
+      const keywordsMeta = document.querySelector('meta[name="keywords"]') || (() => {
+        const meta = document.createElement('meta');
+        meta.name = 'keywords';
+        document.head.appendChild(meta);
+        return meta;
+      })();
+      keywordsMeta.setAttribute('content', this.settings.seoKeywords || '');
       const robotsMeta = document.querySelector('meta[name="robots"]');
-      if (robotsMeta) robotsMeta.setAttribute('content', publicPage ? 'index,follow' : 'noindex,nofollow');
+      if (robotsMeta) robotsMeta.setAttribute('content', publicPage && this.settings.robotsIndexing !== false ? 'index,follow' : 'noindex,nofollow');
       let canonical = document.querySelector('link[rel="canonical"]');
       if (!canonical) {
         canonical = document.createElement('link');
         canonical.rel = 'canonical';
         document.head.appendChild(canonical);
       }
-      canonical.href = absoluteUrl(seoPath);
+      canonical.href = absoluteUrl(this.settings.canonicalURL || seoPath);
+
+      const setMeta = (property, content) => {
+        let meta = document.querySelector(`meta[property="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('property', property);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', content || '');
+      };
+      setMeta('og:title', this.settings.ogTitle || title);
+      setMeta('og:description', this.settings.ogDescription || description);
+      if (this.settings.ogImage) setMeta('og:image', absoluteUrl(this.settings.ogImage));
 
       const existingSchema = document.getElementById('sovanex-product-schema');
       if (existingSchema) existingSchema.remove();
@@ -1701,9 +1779,9 @@
               </button>
 
               <!-- Brand Logo / Name -->
-              <div id="nav-brand" class="flex items-center gap-3 cursor-pointer">
-                <span class="font-serif text-xl sm:text-2xl tracking-[0.25em] font-extrabold text-white">
-                  SOV<span class="text-luxuryGold font-sans font-light tracking-normal">ANEX</span>
+              <div id="nav-brand" class="flex items-center cursor-pointer">
+                <span class="brand-wordmark" aria-label="SOVANEX">
+                  <span class="sov">SOV</span><span class="anex">ANEX</span>
                 </span>
               </div>
             </div>
@@ -1808,8 +1886,8 @@
         <div class="absolute inset-y-0 left-0 w-4/5 max-w-sm bg-[#0A0A0A] border-r border-luxuryGold/30 flex flex-col justify-between p-6 text-white space-y-8 z-10 animate-fade-in shadow-2xl">
           <div class="space-y-8">
             <div class="flex items-center justify-between border-b border-luxuryGold/10 pb-4">
-              <span class="font-serif text-xl tracking-widest font-extrabold text-white">
-                SOV<span class="text-luxuryGold font-sans font-light">ANEX</span>
+              <span class="brand-wordmark text-[2rem]" aria-label="SOVANEX">
+                <span class="sov">SOV</span><span class="anex">ANEX</span>
               </span>
               <button id="mobile-menu-close" class="p-2 text-luxuryGold hover:text-white transition-premium bg-white/5 rounded-xl">✕</button>
             </div>
@@ -2034,7 +2112,7 @@
       const cachedSettings = localStorage.getItem("sovanex_settings");
       if (cachedSettings) {
         store.settings = { ...store.settings, ...JSON.parse(cachedSettings) };
-        updateFavicon(store.settings.logoURL);
+        updateFavicon(store.settings.faviconURL || store.settings.logoURL);
       }
       
       const cachedTelegram = localStorage.getItem("sovanex_telegram_settings");
@@ -2047,7 +2125,7 @@
         if (snap.exists()) {
           const data = snap.data();
           store.settings = { ...store.settings, ...data };
-          updateFavicon(store.settings.logoURL);
+          updateFavicon(store.settings.faviconURL || store.settings.logoURL);
           localStorage.setItem("sovanex_settings", JSON.stringify(store.settings));
           writePublicCache("sovanex_settings_firestore_cache", data);
           store.updateDOM();
@@ -3433,7 +3511,7 @@
                     <div class="text-luxuryGold mt-0.5">${getIconSvg('gift', 'w-5 h-5')}</div>
                     <div>
                       <h4 class="text-xs uppercase font-bold tracking-wider text-luxuryGold">${this.t('atelierAddress')}</h4>
-                      <p class="text-xs text-gray-400 font-light mt-1">Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040</p>
+                      <p class="text-xs text-gray-400 font-light mt-1">${escapeHtml(this.settings.businessAddress || 'Avenue de la Résistance, Centre Commercial La Perle de la Médina, Rabat, Morocco, 10040')}</p>
                     </div>
                   </div>
 
@@ -6169,18 +6247,67 @@
             <p class="text-xs text-gray-400">Modify dynamic website parameters, update brand logos, and edit social platforms dynamically.</p>
           </div>
 
-          <form id="general-settings-form" class="space-y-4">
-            <div>
-              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Brand Logo Image URL</label>
-              <div class="flex gap-2">
-                <input type="text" id="settings-logo-url" name="logoURL" placeholder="https://..." value="${this.settings.logoURL || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
-                <label class="cursor-pointer bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl flex items-center justify-center shrink-0">
-                  Upload
-                  <input type="file" accept="image/*" class="hidden" id="settings-logo-file">
-                </label>
+          <form id="general-settings-form" class="space-y-4" data-dirty="false">
+            <section class="rounded-2xl border border-luxuryGold/20 bg-black/30 p-5 space-y-4">
+              <div class="border-b border-white/10 pb-3">
+                <h4 class="font-serif text-lg text-luxuryGold">Identité du site</h4>
+                <p class="text-[9px] text-gray-400">Nom, marque, logo et informations principales du site.</p>
               </div>
-              <p class="text-[9px] text-gray-400 mt-1">Paste custom Instagram/external logo image URL here or upload directly. Automatically defaults to elegant brand asset if empty.</p>
-            </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Nom du site</label><input name="websiteName" value="${escapeHtml(this.settings.websiteName || this.settings.storeName || 'SOVANEX')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Nom de marque</label><input name="brandName" value="${escapeHtml(this.settings.brandName || this.settings.websiteName || 'SOVANEX')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Titre du site</label><input name="websiteTitle" value="${escapeHtml(this.settings.websiteTitle || this.settings.seoTitle || 'SOVANEX | Montres, accessoires et articles en cuir')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">URL du site</label><input type="url" name="websiteURL" value="${escapeHtml(this.settings.websiteURL || '')}" placeholder="https://..." class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+              </div>
+              <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Description courte</label><textarea name="shortDescription" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-16 resize-y">${escapeHtml(this.settings.shortDescription || '')}</textarea></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Logo</label><input type="text" id="settings-logo-url" name="logoURL" placeholder="https://..." value="${escapeHtml(this.settings.logoURL || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Favicon</label><input type="text" name="faviconURL" placeholder="/favicon.svg ou https://..." value="${escapeHtml(this.settings.faviconURL || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+              </div>
+              <label class="cursor-pointer inline-flex bg-luxuryGold hover:bg-luxuryGold/80 text-black text-[10px] uppercase font-bold px-3 py-2 rounded-xl items-center justify-center">Importer le logo<input type="file" accept="image/*" class="hidden" id="settings-logo-file"></label>
+            </section>
+
+            <section class="rounded-2xl border border-luxuryGold/20 bg-black/30 p-5 space-y-4">
+              <div class="border-b border-white/10 pb-3"><h4 class="font-serif text-lg text-luxuryGold">SEO</h4><p class="text-[9px] text-gray-400">Métadonnées utilisées par les moteurs de recherche et les réseaux sociaux.</p></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Titre SEO</label><input name="seoTitle" value="${escapeHtml(this.settings.seoTitle || this.settings.websiteTitle || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Mots-clés</label><input name="seoKeywords" value="${escapeHtml(this.settings.seoKeywords || '')}" placeholder="montres, accessoires, Maroc" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div class="md:col-span-2"><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Meta description</label><textarea name="seoDescription" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-16 resize-y">${escapeHtml(this.settings.seoDescription || this.settings.websiteDescription || '')}</textarea></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Titre Open Graph</label><input name="ogTitle" value="${escapeHtml(this.settings.ogTitle || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Image de partage</label><input name="ogImage" value="${escapeHtml(this.settings.ogImage || '')}" placeholder="https://..." class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+              </div>
+              <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Description Open Graph</label><textarea name="ogDescription" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-16 resize-y">${escapeHtml(this.settings.ogDescription || '')}</textarea></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center"><label class="flex items-center gap-2 text-xs text-white"><input type="checkbox" name="robotsIndexing" ${this.settings.robotsIndexing !== false ? 'checked' : ''} class="rounded text-luxuryGold"> Autoriser l’indexation</label><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">URL canonique</label><input type="url" name="canonicalURL" value="${escapeHtml(this.settings.canonicalURL || '')}" placeholder="Laisser vide pour l’URL courante" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div></div>
+            </section>
+
+            <section class="rounded-2xl border border-luxuryGold/20 bg-black/30 p-5 space-y-4">
+              <div class="border-b border-white/10 pb-3"><h4 class="font-serif text-lg text-luxuryGold">Informations de contact</h4></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">E-mail</label><input type="email" name="emailCoordinate" value="${escapeHtml(this.settings.emailCoordinate || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Téléphone</label><input name="phoneNumber" value="${escapeHtml(this.settings.phoneNumber || this.settings.whatsappHotline || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">WhatsApp</label><input name="whatsappHotline" value="${escapeHtml(this.settings.whatsappHotline || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+                <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Ville</label><input name="businessCity" value="${escapeHtml(this.settings.businessCity || 'Rabat')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Adresse</label><textarea name="businessAddress" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-16 resize-y">${escapeHtml(this.settings.businessAddress || '')}</textarea></div><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Pays</label><input name="businessCountry" value="${escapeHtml(this.settings.businessCountry || 'Maroc')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div></div>
+            </section>
+
+            <section class="rounded-2xl border border-luxuryGold/20 bg-black/30 p-5 space-y-4">
+              <div class="border-b border-white/10 pb-3"><h4 class="font-serif text-lg text-luxuryGold">Réseaux sociaux</h4></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${[['instagramURL','Instagram'],['facebookURL','Facebook'],['tiktokURL','TikTok'],['youtubeURL','YouTube'],['pinterestURL','Pinterest'],['otherSocialURL','Autre lien']].map(([name,label]) => `<div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">${label}</label><input type="url" name="${name}" value="${escapeHtml(this.settings[name] || '')}" placeholder="https://..." class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>`).join('')}</div>
+            </section>
+
+            <section class="rounded-2xl border border-luxuryGold/20 bg-black/30 p-5 space-y-4">
+              <div class="border-b border-white/10 pb-3"><h4 class="font-serif text-lg text-luxuryGold">Boutique et contenu global</h4></div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Nom de la boutique</label><input name="storeName" value="${escapeHtml(this.settings.storeName || this.settings.websiteName || 'SOVANEX')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Devise</label><input name="currency" value="${escapeHtml(this.settings.currency || 'MAD')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Langue par défaut</label><select name="defaultLanguage" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"><option value="fr" ${this.settings.defaultLanguage === 'fr' ? 'selected' : ''}>Français</option><option value="ar" ${this.settings.defaultLanguage === 'ar' ? 'selected' : ''}>العربية</option></select></div></div>
+              <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">À propos du site</label><textarea name="aboutWebsite" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-20 resize-y">${escapeHtml(this.settings.aboutWebsite || '')}</textarea></div>
+              <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Description principale</label><textarea name="websiteDescription" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-20 resize-y">${escapeHtml(this.settings.websiteDescription || '')}</textarea></div>
+            </section>
+
+            <section class="rounded-2xl border border-luxuryGold/20 bg-black/30 p-5 space-y-4">
+              <div class="border-b border-white/10 pb-3"><h4 class="font-serif text-lg text-luxuryGold">Header et footer</h4></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Description du footer</label><textarea name="footerDescription" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-16 resize-y">${escapeHtml(this.settings.footerDescription || this.settings.websiteDescription || '')}</textarea></div><div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Contact du footer</label><textarea name="footerContact" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-16 resize-y">${escapeHtml(this.settings.footerContact || this.settings.businessAddress || '')}</textarea></div></div>
+              <div><label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Copyright</label><input name="copyrightText" value="${escapeHtml(this.settings.copyrightText || '')}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white"></div>
+            </section>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
               <div>
@@ -6395,12 +6522,6 @@
               <input type="email" name="emailCoordinate" placeholder="contact@sovanex.com" value="${this.settings.emailCoordinate || ''}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
             </div>
 
-            <div>
-              <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Website Description Text</label>
-              <textarea name="websiteDescription" required class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white h-24 resize-none">${this.settings.websiteDescription}</textarea>
-              <p class="text-[9px] text-gray-400 mt-1">This text is loaded dynamically on the main landing/homepage hero section.</p>
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
               <div>
                 <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Shipping Conditions</label>
@@ -6415,7 +6536,8 @@
             </div>
 
             <div class="flex justify-end border-t border-white/10 pt-4">
-              <button type="submit" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Save Brand Preferences</button>
+              <button type="submit" id="general-settings-save-btn" class="px-6 py-2 bg-luxuryGold text-black rounded-lg text-xs uppercase font-bold">Enregistrer les modifications</button>
+              <span id="general-settings-status" class="text-[10px] text-gray-400" role="status" aria-live="polite"></span>
             </div>
           </form>
         </div>
@@ -6669,9 +6791,38 @@
         };
       });
 
-      document.getElementById("general-settings-form").onsubmit = async (e) => {
+      const generalSettingsForm = document.getElementById("general-settings-form");
+      const saveButton = document.getElementById("general-settings-save-btn");
+      const settingsStatus = document.getElementById("general-settings-status");
+      const setSettingsStatus = (message, type = 'info') => {
+        if (!settingsStatus) return;
+        settingsStatus.textContent = message;
+        settingsStatus.className = `text-[10px] ${type === 'error' ? 'text-red-300' : type === 'success' ? 'text-emerald-300' : 'text-gray-400'}`;
+      };
+      generalSettingsForm.querySelectorAll('input, textarea, select').forEach(field => {
+        field.addEventListener('input', () => { generalSettingsForm.dataset.dirty = 'true'; setSettingsStatus('Modifications non enregistrées.'); });
+        field.addEventListener('change', () => { generalSettingsForm.dataset.dirty = 'true'; setSettingsStatus('Modifications non enregistrées.'); });
+      });
+      const beforeUnloadHandler = event => {
+        if (generalSettingsForm.dataset.dirty === 'true') {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      };
+      if (this.generalSettingsBeforeUnloadHandler) {
+        window.removeEventListener('beforeunload', this.generalSettingsBeforeUnloadHandler);
+      }
+      this.generalSettingsBeforeUnloadHandler = beforeUnloadHandler;
+      window.addEventListener('beforeunload', beforeUnloadHandler);
+
+      generalSettingsForm.onsubmit = async (e) => {
         e.preventDefault();
         const form = e.target;
+        if (saveButton) {
+          saveButton.disabled = true;
+          saveButton.textContent = 'Enregistrement...';
+        }
+        setSettingsStatus('Enregistrement en cours...');
         
         // Get bank accounts from hidden input
         let bankAccounts = [];
@@ -6692,8 +6843,24 @@
           return;
         }
 
+        const getFieldValue = (name, fallback = '') => form.elements.namedItem(name)?.value ?? this.settings[name] ?? fallback;
         const payload = {
-          logoURL: form.logoURL.value,
+          ...this.settings,
+          logoURL: getFieldValue('logoURL', this.settings.logoURL || ''),
+          faviconURL: getFieldValue('faviconURL', this.settings.faviconURL || ''),
+          websiteName: getFieldValue('websiteName', this.settings.websiteName || 'SOVANEX'),
+          brandName: getFieldValue('brandName', this.settings.brandName || 'SOVANEX'),
+          websiteTitle: getFieldValue('websiteTitle', this.settings.websiteTitle || ''),
+          shortDescription: getFieldValue('shortDescription', this.settings.shortDescription || ''),
+          websiteURL: getFieldValue('websiteURL', this.settings.websiteURL || ''),
+          seoTitle: getFieldValue('seoTitle', this.settings.seoTitle || ''),
+          seoDescription: getFieldValue('seoDescription', this.settings.seoDescription || ''),
+          seoKeywords: getFieldValue('seoKeywords', this.settings.seoKeywords || ''),
+          ogTitle: getFieldValue('ogTitle', this.settings.ogTitle || ''),
+          ogDescription: getFieldValue('ogDescription', this.settings.ogDescription || ''),
+          ogImage: getFieldValue('ogImage', this.settings.ogImage || ''),
+          robotsIndexing: form.elements.namedItem('robotsIndexing')?.checked ?? this.settings.robotsIndexing !== false,
+          canonicalURL: getFieldValue('canonicalURL', this.settings.canonicalURL || ''),
           heroTitleEn: form.heroTitleEn.value,
           heroTitleAr: form.heroTitleAr.value,
           heroDescEn: form.heroDescEn.value,
@@ -6702,10 +6869,24 @@
           heroImg2: form.heroImg2.value,
           heroImg3: form.heroImg3.value,
           tagline: form.tagline.value,
+          storeName: getFieldValue('storeName', this.settings.storeName || 'SOVANEX'),
+          defaultLanguage: getFieldValue('defaultLanguage', this.settings.defaultLanguage || 'fr'),
+          currency: getFieldValue('currency', this.settings.currency || 'MAD'),
+          aboutWebsite: getFieldValue('aboutWebsite', this.settings.aboutWebsite || ''),
+          businessAddress: getFieldValue('businessAddress', this.settings.businessAddress || ''),
+          businessCity: getFieldValue('businessCity', this.settings.businessCity || ''),
+          businessCountry: getFieldValue('businessCountry', this.settings.businessCountry || ''),
+          phoneNumber: getFieldValue('phoneNumber', this.settings.phoneNumber || ''),
           whatsappHotline: form.whatsappHotline.value,
-          instagramURL: form.instagramURL.value,
-          facebookURL: form.facebookURL.value,
-          emailCoordinate: form.emailCoordinate.value,
+          instagramURL: getFieldValue('instagramURL', this.settings.instagramURL || ''),
+          facebookURL: getFieldValue('facebookURL', this.settings.facebookURL || ''),
+          tiktokURL: getFieldValue('tiktokURL', this.settings.tiktokURL || ''),
+          youtubeURL: getFieldValue('youtubeURL', this.settings.youtubeURL || ''),
+          pinterestURL: getFieldValue('pinterestURL', this.settings.pinterestURL || ''),
+          otherSocialURL: getFieldValue('otherSocialURL', this.settings.otherSocialURL || ''),
+          footerDescription: getFieldValue('footerDescription', this.settings.footerDescription || ''),
+          footerContact: getFieldValue('footerContact', this.settings.footerContact || ''),
+          copyrightText: getFieldValue('copyrightText', this.settings.copyrightText || ''),
           websiteDescription: form.websiteDescription.value,
           deliveryTerms: form.deliveryTerms.value,
           returnPolicy: form.returnPolicy.value,
@@ -6725,15 +6906,24 @@
 
         localStorage.setItem("sovanex_settings", JSON.stringify(payload));
         store.settings = { ...store.settings, ...payload };
-        updateFavicon(store.settings.logoURL);
+        updateFavicon(store.settings.faviconURL || store.settings.logoURL);
         store.bankAccounts = bankAccounts;
-        showToast("Settings saved successfully.");
-        store.updateDOM();
 
         try {
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), payload);
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), payload, { merge: true });
+          generalSettingsForm.dataset.dirty = 'false';
+          setSettingsStatus('Modifications enregistrées.', 'success');
+          showToast("Paramètres enregistrés avec succès.");
+          store.updateDOM();
         } catch (err) {
-          console.warn("Cloud save failed, locally stored successfully.", err);
+          console.error("Cloud save failed.", err);
+          setSettingsStatus('Erreur lors de la sauvegarde distante.', 'error');
+          showToast("Impossible d’enregistrer les paramètres dans Firebase.", "error");
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = 'Enregistrer les modifications';
+          }
         }
       };
     };
@@ -6749,8 +6939,8 @@
       container.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           <div class="space-y-4">
-            <h3 class="text-2xl font-serif tracking-widest text-luxuryGold font-extrabold">SOVANEX</h3>
-            <p class="text-sm text-gray-400 font-light leading-relaxed">${this.t('footerDesc')}</p>
+            <h3 class="text-2xl font-serif tracking-widest text-luxuryGold font-extrabold">${escapeHtml(this.settings.brandName || this.settings.websiteName || 'SOVANEX')}</h3>
+            <p class="text-sm text-gray-400 font-light leading-relaxed">${escapeHtml(this.settings.footerDescription || this.t('footerDesc'))}</p>
           </div>
 
           <div>
@@ -6763,7 +6953,7 @@
           <div>
             <h4 class="font-serif text-lg text-luxuryGold mb-4 tracking-wider">${this.t('contact')}</h4>
             <p class="text-sm text-gray-400 font-light leading-relaxed">
-              Avenue de la Resistance, Centre Commercial La Perle de la Medina, Rabat, Morocco, 10040<br>
+              ${escapeHtml(this.settings.footerContact || this.settings.businessAddress || 'Avenue de la Resistance, Centre Commercial La Perle de la Medina, Rabat, Morocco, 10040')}<br>
               Signature deliveries adjusted instantly by city of checkout.
             </p>
             <p class="text-xs text-luxuryGold mt-2">${this.t('operatingHours')}</p>
@@ -6780,11 +6970,13 @@
         </div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-white/10 text-center text-xs text-gray-500 font-light flex flex-col md:flex-row justify-between items-center gap-4" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
-          <p>${this.t('copyright')} <span id="footer-btn-admin" class="cursor-pointer text-xs ml-1 opacity-20 hover:opacity-100 transition select-none">⚜️</span></p>
+          <p>${escapeHtml(this.settings.copyrightText || this.t('copyright'))} <span id="footer-btn-admin" class="cursor-pointer text-xs ml-1 opacity-20 hover:opacity-100 transition select-none">⚜️</span></p>
           <div class="flex gap-6 items-center">
             <a href="#" id="footer-link-policies" class="hover:text-luxuryGold transition font-bold">${this.t('policies')}</a>
-            <a href="${this.settings.instagramURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Instagram</a>
-            <a href="${this.settings.facebookURL || '#'}" target="_blank" class="hover:text-luxuryGold transition font-normal">Facebook</a>
+            ${this.settings.instagramURL ? `<a href="${this.settings.instagramURL}" target="_blank" rel="noopener noreferrer" class="hover:text-luxuryGold transition font-normal">Instagram</a>` : ''}
+            ${this.settings.facebookURL ? `<a href="${this.settings.facebookURL}" target="_blank" rel="noopener noreferrer" class="hover:text-luxuryGold transition font-normal">Facebook</a>` : ''}
+            ${this.settings.tiktokURL ? `<a href="${this.settings.tiktokURL}" target="_blank" rel="noopener noreferrer" class="hover:text-luxuryGold transition font-normal">TikTok</a>` : ''}
+            ${this.settings.youtubeURL ? `<a href="${this.settings.youtubeURL}" target="_blank" rel="noopener noreferrer" class="hover:text-luxuryGold transition font-normal">YouTube</a>` : ''}
           </div>
         </div>
       `;
