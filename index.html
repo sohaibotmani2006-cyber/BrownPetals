@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SOVANEX — Sovereign Watches, Accessories & Fine Wallets</title>
+  <meta name="description" content="Découvrez SOVANEX, une sélection de montres, accessoires et articles en cuir d'exception au Maroc.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="/">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/favicon.svg">
   
@@ -1584,6 +1587,89 @@
       return `<span class="text-amber-500">${'★'.repeat(roundedRating)}${'☆'.repeat(Math.max(0, 5 - roundedRating))}</span>`;
     };
 
+    store.updateSeo = function(product = null) {
+      const pathname = window.location.pathname || '/';
+      const normalizedPath = pathname === '/' ? '/' : pathname.replace(/\/+$/, '') || '/';
+      if (!product && normalizedPath.startsWith('/product/')) {
+        const routeSlugOrId = decodeURIComponent(normalizedPath.replace('/product/', ''));
+        product = this.products.find(candidate => String(candidate.id) === routeSlugOrId || slugifyProductName(candidate.name) === slugifyProductName(routeSlugOrId)) || null;
+      }
+      if (!product && this.currentlyOpenProductId) {
+        product = this.products.find(candidate => String(candidate.id) === String(this.currentlyOpenProductId)) || null;
+      }
+      const isProductPage = Boolean(product && (normalizedPath.startsWith('/product/') || String(this.currentlyOpenProductId) === String(product.id)));
+      const seoPath = isProductPage ? getProductRoutePath(product) : normalizedPath;
+      const publicPage = !['/admin', '/cart', '/checkout', '/payment', '/bank-transfer', '/order-confirmation', '/orders', '/wishlist'].includes(seoPath);
+      const cleanProductName = product?.name ? String(product.name).replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, '').trim() : '';
+      const productDescription = String(product?.description || '').replace(/\s+/g, ' ').trim();
+      const description = isProductPage
+        ? `Découvrez ${cleanProductName} chez SOVANEX, dans la collection ${String(product.category || 'exclusive').trim()}. ${productDescription}`.slice(0, 160)
+        : normalizedPath === '/shop'
+          ? 'Explorez la boutique SOVANEX: montres, accessoires et articles en cuir sélectionnés avec soin au Maroc.'
+          : 'Découvrez SOVANEX, une sélection de montres, accessoires et articles en cuir d’exception au Maroc.';
+      const title = isProductPage
+        ? `${cleanProductName} | SOVANEX`
+        : normalizedPath === '/shop' ? 'Boutique SOVANEX | Montres et accessoires au Maroc' : 'SOVANEX | Montres, accessoires et articles en cuir';
+      const absoluteUrl = value => {
+        const base = /^https?:$/i.test(window.location.protocol) ? window.location.origin : '';
+        return `${base}${value}`;
+      };
+
+      document.title = title;
+      const descriptionMeta = document.querySelector('meta[name="description"]');
+      if (descriptionMeta) descriptionMeta.setAttribute('content', description);
+      const robotsMeta = document.querySelector('meta[name="robots"]');
+      if (robotsMeta) robotsMeta.setAttribute('content', publicPage ? 'index,follow' : 'noindex,nofollow');
+      let canonical = document.querySelector('link[rel="canonical"]');
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        document.head.appendChild(canonical);
+      }
+      canonical.href = absoluteUrl(seoPath);
+
+      const existingSchema = document.getElementById('sovanex-product-schema');
+      if (existingSchema) existingSchema.remove();
+      if (!isProductPage) return;
+
+      const rating = this.getProductRating(product.id);
+      const images = [product.imageURL, product.storeImage, product.homeImage, product.desktopImage, product.mobileImage, product.tabletImage]
+        .concat(Array.isArray(product.galleryImages) ? product.galleryImages : String(product.galleryImages || '').split(','))
+        .concat((product.variations || []).flatMap(variation => [variation?.imageURL, variation?.mobileImage]))
+        .filter(image => typeof image === 'string' && image.trim())
+        .map(image => absoluteUrl(image.trim()));
+      const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: cleanProductName,
+        description: productDescription || description,
+        image: [...new Set(images)],
+        brand: { '@type': 'Brand', name: 'SOVANEX' },
+        url: absoluteUrl(getProductRoutePath(product)),
+        offers: {
+          '@type': 'Offer',
+          price: Number(product.discountPrice || product.price || 0),
+          priceCurrency: 'MAD',
+          availability: product.isOutOfStock === true || Number(product.stock || 0) <= 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+          url: absoluteUrl(getProductRoutePath(product))
+        }
+      };
+      if (rating.count > 0) {
+        schema.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: rating.average,
+          reviewCount: rating.count,
+          bestRating: 5,
+          worstRating: 1
+        };
+      }
+      const schemaScript = document.createElement('script');
+      schemaScript.id = 'sovanex-product-schema';
+      schemaScript.type = 'application/ld+json';
+      schemaScript.textContent = JSON.stringify(schema).replace(/</g, '\\u003c');
+      document.head.appendChild(schemaScript);
+    };
+
     store.updateDOM = function() {
       this.updateTheme(); // Sync theme dynamically based on current selections
       this.renderHeader();
@@ -1591,6 +1677,7 @@
       this.renderFooter();
       this.renderCartDrawer();
       this.renderFloatingActions();
+      this.updateSeo();
     };
 
     store.renderHeader = function() {
@@ -4000,7 +4087,7 @@
         <div class="group relative bg-[#141414] rounded-2xl overflow-hidden border ${genderThemeBorder} shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between" dir="${this.language === 'ar' ? 'rtl' : 'ltr'}">
           <div>
             <div class="h-44 sm:h-64 md:h-80 overflow-hidden relative cursor-pointer card-img-trigger flex items-center justify-center bg-transparent" data-id="${product.id}">
-              <img src="${cardImageSource}" alt="${cleanName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" loading="lazy" decoding="async">
+              <img src="${cardImageSource}" alt="${cleanName}, produit SOVANEX" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" loading="lazy" decoding="async">
               <div class="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition"></div>
               ${product.discountPrice && Number(product.price) > Number(product.discountPrice) ? `<span class="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 bg-red-700 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">-${Math.round((1 - (Number(product.discountPrice) / Number(product.price))) * 100)}%</span>` : ''}
               
@@ -7851,6 +7938,7 @@
       if (window.location.pathname !== productPath) {
         try { history.pushState({ productId: product.id }, '', productPath); } catch (e) { window.location.pathname = productPath; }
       }
+      this.updateSeo(product);
 
       const cleanName = product.name.replace(/\s*\(\s*(Les Hommes|Les Filles|Men|Women|Men's Packs|Women's Packs)\s*\)\s*/gi, "").trim();
       const mainProductImage = mainColor?.imageURL || product.imageURL || fallbackImage;
@@ -7859,7 +7947,7 @@
 
       let galleryMarkup = `
         <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-luxuryGold scale-105" data-img="${defaultProductImage}" data-is-variation="false">
-          <img src="${defaultProductImage}" class="w-full h-full object-cover">
+          <img src="${defaultProductImage}" alt="${cleanName}, image principale du produit SOVANEX" class="w-full h-full object-cover">
         </div>
       `;
 
@@ -7869,7 +7957,7 @@
         const variantImage = isMobileViewport ? (v.mobileImage || v.imageURL || fallbackImage) : (v.imageURL || fallbackImage);
         galleryMarkup += `
           <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-transparent opacity-65 hover:opacity-100" data-img="${variantImage}" data-is-variation="true" data-index="${index}">
-            <img src="${variantImage}" class="w-full h-full object-cover">
+            <img src="${variantImage}" alt="${cleanName}, variante ${index + 1}, SOVANEX" class="w-full h-full object-cover">
           </div>
         `;
       });
@@ -7897,7 +7985,7 @@
       imagesArray.forEach((imgUrl) => {
         galleryMarkup += `
           <div class="gallery-thumb relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-300 flex-shrink-0 border-transparent opacity-65 hover:opacity-100" data-img="${imgUrl}" data-is-variation="false">
-            <img src="${imgUrl}" class="w-full h-full object-cover">
+            <img src="${imgUrl}" alt="${cleanName}, vue supplémentaire du produit SOVANEX" class="w-full h-full object-cover">
           </div>
         `;
       });
@@ -7933,7 +8021,7 @@
 
           <!-- Fully Covered Image Container - Compact on mobile (220px) to prevent covering titles, wide on PC (58%) -->
           <div class="w-full md:w-[58%] relative overflow-hidden flex-shrink-0 group/main cursor-zoom-in p-0 m-0 bg-black h-[220px] sm:h-[300px] md:h-auto md:min-h-[500px] rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl flex items-center justify-center" id="zoom-img-btn">
-            <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-500 ease-in-out transform group-hover/main:scale-105" alt="${cleanName}">
+            <img id="main-product-image" src="${this.activeImg || fallbackImage}" class="w-full h-full object-cover transition-all duration-500 ease-in-out transform group-hover/main:scale-105" alt="${cleanName}, produit SOVANEX">
             ${product.discountPrice && Number(product.price) > Number(product.discountPrice) ? `<span class="absolute top-4 left-4 bg-luxuryGold text-black text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full shadow-lg">-${Math.round((1 - (Number(product.discountPrice) / Number(product.price))) * 100)}%</span>` : ''}
             
             <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-luxuryGold/40 text-luxuryGold text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5 pointer-events-none animate-pulse">
