@@ -13,6 +13,44 @@ export default {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
+      if (pathname === '/google987caa5b12be50ea.html') {
+        if (!env.ASSETS) {
+          return new Response('Not Found', { status: 404 });
+        }
+
+        const verificationResponse = await env.ASSETS.fetch(request);
+        if (verificationResponse.status === 404) {
+          return new Response('Not Found', { status: 404 });
+        }
+
+        return new Response(request.method === 'HEAD' ? null : verificationResponse.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8'
+          }
+        });
+      }
+
+      if (pathname === '/sitemap.xml') {
+        if (!env.ASSETS) {
+          return new Response('Not Found', { status: 404 });
+        }
+
+        const sitemapResponse = await env.ASSETS.fetch(request);
+        if (sitemapResponse.status === 404) {
+          return new Response('Not Found', { status: 404 });
+        }
+
+        return new Response(request.method === 'HEAD' ? null : sitemapResponse.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+            'X-Content-Type-Options': 'nosniff'
+          }
+        });
+      }
+
     if (env.ASSETS) {
       const assetResponse = await env.ASSETS.fetch(request);
       if (assetResponse.status !== 404) {
