@@ -189,6 +189,34 @@
       object-fit: cover !important;
       background-color: transparent !important;
     }
+    .price-range-input {
+      appearance: none;
+      background: transparent;
+      pointer-events: none;
+      height: 1.25rem;
+      margin: 0;
+    }
+    .price-range-input::-webkit-slider-thumb {
+      appearance: none;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 9999px;
+      background: var(--accent-color);
+      border: 2px solid #0A0A0A;
+      box-shadow: 0 0 0 1px var(--accent-color);
+      cursor: grab;
+      pointer-events: auto;
+    }
+    .price-range-input::-moz-range-thumb {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 9999px;
+      background: var(--accent-color);
+      border: 2px solid #0A0A0A;
+      box-shadow: 0 0 0 1px var(--accent-color);
+      cursor: grab;
+      pointer-events: auto;
+    }
     .announcement-bar {
       min-height: 36px;
       display: flex;
@@ -583,6 +611,22 @@
         : (text || frenchTranslations.heroDesc);
     };
 
+    const escapeHtml = value => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    const formatReviewDate = value => {
+      const date = value?.toDate ? value.toDate() : new Date(value || 0);
+      return Number.isNaN(date.getTime()) ? 'Date inconnue' : date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    };
+
     const store = {
       user: null,
       isAdmin: false,
@@ -592,9 +636,13 @@
       mobileMenuOpen: false,
       searchQuery: "",
       selectedCategory: "All", // "All", "Watches", "Accessories"
+      priceMin: null,
+      priceMax: null,
       products: [],
       orders: [],
       reviews: [],
+      productReviews: [],
+      productReviewUnsubscribe: null,
       categories: (() => {
         const defaultCategories = [
           { id: 'default-watches', name: 'Watches', order: 0, isActive: true },
@@ -615,9 +663,18 @@
       promoCodeMessage: "",
       promoCodeMessageType: "",
       cart: JSON.parse(localStorage.getItem("bp_cart")) || [],
+      wishlist: (() => {
+        try {
+          const saved = JSON.parse(localStorage.getItem("sovanex_wishlist") || "[]");
+          return Array.isArray(saved) ? saved.map(String) : [];
+        } catch (error) {
+          return [];
+        }
+      })(),
       loadingProducts: true,
       loadingCategories: true,
       checkoutLoading: false,
+      wishlistPage: false,
 
       activeImg: "",
       activeName: "",
@@ -908,6 +965,8 @@
           { text: "Premium Customer Service", isActive: true, order: 3 }
         ],
         freeDeliveryThreshold: 300,
+        priceFilterMin: 0,
+        priceFilterMax: 2000,
         heroTitleEn: "SOVANEX <br>Masterpiece Creations",
         heroTitleAr: "سوفانكس <br>مقتنيات ملكية",
         heroDescEn: "An authentic luxury destination for high-end watches, premium handcrafted accessories, and masterfully tailored leather wallets designed to royal standards.",
@@ -1040,7 +1099,7 @@
         // Normalize path to page key
         const raw = pathname.replace(/^\/+/, '');
         const page = raw === '' ? 'home' : raw;
-        const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'checkout', 'payment', 'bank-transfer', 'order-confirmation'];
+        const validPages = ['home', 'shop', 'contact', 'orders', 'wishlist', 'policies', 'admin', 'cart', 'checkout', 'payment', 'bank-transfer', 'order-confirmation'];
         if (validPages.includes(page)) {
           const pageChanged = (this.currentPage !== page);
           if (pageChanged && this.currentPage === 'admin' && page !== 'admin') {
@@ -1509,6 +1568,22 @@
       ].join("\u001f")).join("\u001e");
     };
 
+    store.getApprovedProductReviews = function(productId) {
+      return this.reviews.filter(review => String(review.productId || '') === String(productId) && review.status === 'approved');
+    };
+
+    store.getProductRating = function(productId) {
+      const approvedReviews = this.getApprovedProductReviews(productId);
+      if (approvedReviews.length === 0) return { average: 0, count: 0 };
+      const total = approvedReviews.reduce((sum, review) => sum + Math.min(5, Math.max(1, Number(review.rating) || 0)), 0);
+      return { average: Math.round((total / approvedReviews.length) * 10) / 10, count: approvedReviews.length };
+    };
+
+    store.getRatingStarsMarkup = function(rating) {
+      const roundedRating = Math.round(Number(rating) || 0);
+      return `<span class="text-amber-500">${'★'.repeat(roundedRating)}${'☆'.repeat(Math.max(0, 5 - roundedRating))}</span>`;
+    };
+
     store.updateDOM = function() {
       this.updateTheme(); // Sync theme dynamically based on current selections
       this.renderHeader();
@@ -1571,6 +1646,7 @@
               <button id="nav-lang-btn" class="flex items-center gap-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl shadow-md transition-premium text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                 🌐 ${this.language === 'ar' ? 'Français' : 'العربية'}
               </button>
+              <button id="nav-link-wishlist" class="relative p-2 text-xl leading-none text-white hover:text-luxuryGold transition" title="Favoris" aria-label="Favoris">${this.wishlist.length ? '♥' : '♡'}</button>
 
               <!-- Cart Button -->
               <button id="nav-cart-btn" class="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-luxuryGold/10 hover:bg-luxuryGold border border-luxuryGold rounded-xl shadow-md transition-all duration-300 text-luxuryGold hover:text-black group" title="Open Cart">
@@ -1599,6 +1675,9 @@
     
     const ordersLink = document.getElementById("nav-link-orders");
     if (ordersLink) ordersLink.onclick = () => { this.setPage("orders"); };
+
+    const wishlistLink = document.getElementById("nav-link-wishlist");
+    if (wishlistLink) wishlistLink.onclick = () => { this.setPage("wishlist"); };
 
     const policiesLink = document.getElementById("nav-link-policies");
     if (policiesLink) policiesLink.onclick = () => { this.setPage("policies"); };
@@ -1653,6 +1732,7 @@
               <button id="mobile-nav-shop" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'shop' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('shop')}</button>
               <button id="mobile-nav-contact" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'contact' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('contact')}</button>
               <button id="mobile-nav-orders" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'orders' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('orders')}</button>
+              <button id="mobile-nav-wishlist" class="w-full text-left py-3.5 px-4 rounded-xl text-xl transition ${this.currentPage === 'wishlist' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}" title="Favoris" aria-label="Favoris">${this.wishlist.length ? '♥' : '♡'}</button>
               <button id="mobile-nav-policies" class="w-full text-left py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition ${this.currentPage === 'policies' ? 'bg-luxuryGold text-black shadow-lg' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent hover:border-luxuryGold/10'}">${this.t('policies')}</button>
             </div>
           </div>
@@ -1671,6 +1751,7 @@
       document.getElementById("mobile-nav-shop").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("shop"); };
       document.getElementById("mobile-nav-contact").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("contact"); };
       document.getElementById("mobile-nav-orders").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("orders"); };
+      document.getElementById("mobile-nav-wishlist").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("wishlist"); };
       document.getElementById("mobile-nav-policies").onclick = () => { this.mobileMenuOpen = false; this.renderMobileMenu(); this.setPage("policies"); };
     };
 
@@ -2212,12 +2293,12 @@
       const revQuery = query(revRef, orderBy("createdAt", "desc"), limit(store.isAdmin ? 100 : 20));
       const handleReviews = (snap) => {
         const list = getCollectionList(snap);
-        store.reviews = list;
+        store.reviews = store.isAdmin ? list : list.filter(review => review.status === 'approved');
 
         if (list.length === 0) {
           const defaultReviews = [
-            { customerName: "Kenza Berrada", customerLocation: "Rabat", rating: 5, comment: "The Rose Empress watch is spectacular. It redefined elegance for my accessories collection.", productId: "general", createdAt: new Date() },
-            { customerName: "Anas Alaoui", customerLocation: "Casablanca", rating: 5, comment: "The automatic chronograph from SOVANEX is purely royal. Authentic weight and quick premium shipping.", productId: "general", createdAt: new Date() }
+            { customerName: "Kenza Berrada", customerLocation: "Rabat", rating: 5, comment: "The Rose Empress watch is spectacular. It redefined elegance for my accessories collection.", productId: "general", status: "approved", createdAt: new Date() },
+            { customerName: "Anas Alaoui", customerLocation: "Casablanca", rating: 5, comment: "The automatic chronograph from SOVANEX is purely royal. Authentic weight and quick premium shipping.", productId: "general", status: "approved", createdAt: new Date() }
           ];
           defaultReviews.forEach(async (r) => {
             if (!store.isAdmin) store.reviews.push(r);
@@ -2226,6 +2307,10 @@
         }
         writePublicCache("sovanex_reviews_firestore_cache", store.reviews);
         store.updateDOM();
+        if (store.currentPage === 'shop' && store.currentlyOpenProductId) {
+          const openProduct = store.products.find(product => String(product.id) === String(store.currentlyOpenProductId));
+          if (openProduct) store.openProductDetailsModal(openProduct);
+        }
       };
       if (store.isAdmin) createAuditedSnapshot("public", 'reviews orderBy(createdAt desc) limit(admin ? 100 : 20)', revQuery, handleReviews, (err) => console.warn(err));
       else readCachedCollection("sovanex_reviews_firestore_cache", revQuery, 'reviews orderBy(createdAt desc) limit(20)', 'Load public reviews').then(handleReviews).catch(err => console.warn(err));
@@ -2303,6 +2388,10 @@
     };
 
     store.addToCart = function(product, customItem = null) {
+      if (product?.isOutOfStock === true) {
+        showToast("Ce produit est actuellement en rupture de stock.", "error");
+        return;
+      }
       const itemToSelect = customItem || {
         id: product.id,
         name: product.name,
@@ -2334,6 +2423,53 @@
       localStorage.setItem("bp_cart", JSON.stringify(this.cart));
       showToast('"' + itemToSelect.name + '" added to cart.');
       this.updateDOM();
+    };
+
+    store.isProductOutOfStock = function(product, variationIndex = null, sizeLabel = null) {
+      if (!product || product.isOutOfStock === true) return true;
+      const availableStock = sizeLabel
+        ? this.getProductSizeStock(product, sizeLabel, variationIndex)
+        : Number(this.getProductInventory(product, variationIndex).stock || 0);
+      return Number.isFinite(availableStock) && availableStock <= 0;
+    };
+
+    store.isWishlisted = function(productId) {
+      return this.wishlist.includes(String(productId));
+    };
+
+    store.toggleWishlist = function(productId) {
+      const normalizedId = String(productId);
+      this.wishlist = this.isWishlisted(normalizedId)
+        ? this.wishlist.filter(id => id !== normalizedId)
+        : [...this.wishlist, normalizedId];
+      localStorage.setItem("sovanex_wishlist", JSON.stringify(this.wishlist));
+      this.updateDOM();
+    };
+
+    store.renderWishlistPage = function() {
+      const container = document.getElementById("app-content");
+      if (!container) return;
+      const products = this.wishlist
+        .map(id => this.products.find(product => String(product.id) === String(id)))
+        .filter(Boolean);
+      container.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8 min-h-screen">
+          <div class="text-center space-y-3">
+            <span class="text-xs uppercase tracking-widest text-luxuryGold font-semibold">Vos créations favorites</span>
+            <h1 class="text-3xl md:text-5xl font-serif text-white uppercase tracking-wider">Favoris ❤️</h1>
+            <div class="w-12 h-0.5 bg-luxuryGold mx-auto"></div>
+          </div>
+          ${products.length ? `<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">${products.map(product => this.createProductCardMarkup(product, 'wishlist')).join('')}</div>` : `
+            <div class="bg-[#141414] rounded-3xl border border-luxuryGold/20 p-10 text-center space-y-4">
+              <div class="text-4xl">❤️</div>
+              <h2 class="font-serif text-2xl text-white">Votre liste de favoris est vide</h2>
+              <button id="wishlist-shop-btn" class="px-6 py-3 bg-luxuryGold text-black text-[10px] uppercase tracking-[0.2em] font-bold rounded-xl">Continuer mes achats</button>
+            </div>
+          `}
+        </div>
+      `;
+      this.bindProductCardClicks();
+      document.getElementById("wishlist-shop-btn")?.addEventListener("click", () => this.setPage("shop"));
     };
 
     store.loadOrderHistory = async function() {
@@ -2382,6 +2518,33 @@
       await this.loadOrderHistory();
       this.loadingMyOrders = false;
       this.renderCartDrawer();
+    };
+
+    store.initOrderHistorySubscription = function() {
+      const localHistory = JSON.parse(localStorage.getItem("sovanex_order_history")) || [];
+      const orderIds = localHistory.slice(-10);
+      const historyKey = orderIds.join("|");
+      if (this.activeSubscriptions.orderHistoryLiveKey === historyKey) return;
+      if (this.activeSubscriptions.orderHistoryLiveUnsubscribe) {
+        this.activeSubscriptions.orderHistoryLiveUnsubscribe();
+        this.activeSubscriptions.orderHistoryLiveUnsubscribe = null;
+      }
+      this.activeSubscriptions.orderHistoryLiveKey = historyKey;
+      if (orderIds.length === 0) return;
+
+      const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+      const q = query(ordersCol, where("orderId", "in", orderIds));
+      this.activeSubscriptions.orderHistoryLiveUnsubscribe = onSnapshot(q, (snap) => {
+        const list = [];
+        snap.forEach(orderDoc => list.push({ id: orderDoc.id, ...orderDoc.data() }));
+        list.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB - dateA;
+        });
+        this.myOrders = list;
+        if (this.currentPage === "orders") this.renderMyOrdersPage();
+      }, (err) => console.error("Customer order tracking error:", err));
     };
 
     store.updateQty = function(id, delta) {
@@ -2961,6 +3124,8 @@
         this.renderContactPage();
       } else if (this.currentPage === "orders") {
         this.renderMyOrdersPage();
+      } else if (this.currentPage === "wishlist") {
+        this.renderWishlistPage();
       } else if (this.currentPage === "policies") {
         this.renderPoliciesPage();
       } else if (this.currentPage === "admin") {
@@ -2988,6 +3153,7 @@
       }
 
       const orders = this.myOrders.length > 0 ? this.myOrders : [];
+      this.initOrderHistorySubscription();
 
       const resolveOrderItemImage = (item) => {
         if (!item) return fallbackImage;
@@ -3332,7 +3498,7 @@
         bestGrid = bestItems.map(p => this.createProductCardMarkup(p, 'home')).join('');
       }
 
-      let reviewsMarkup = this.reviews.slice(0, 6).map(r => {
+      let reviewsMarkup = this.reviews.filter(review => review.status === 'approved').slice(0, 6).map(r => {
         const productObj = this.products.find(p => p.id === r.productId);
         return `
           <div class="bg-black/80 p-6 rounded-2xl border border-luxuryGold/20 flex flex-col justify-between space-y-4 hover:border-luxuryGold/55 transition-premium">
@@ -3394,6 +3560,8 @@
                     <option value="5" class="text-white">5 Stars</option>
                     <option value="4" class="text-white">4 Stars</option>
                     <option value="3" class="text-white">3 Stars</option>
+                    <option value="2" class="text-white">2 Stars</option>
+                    <option value="1" class="text-white">1 Star</option>
                   </select>
                 </div>
               </div>
@@ -3641,11 +3809,72 @@
               ${lookbookGrid || '<p class="col-span-full text-center text-xs text-gray-400 italic py-8">No lookbook creations active.</p>'}
             </div>
           </section>
+
+          <!-- FAQ Section -->
+          <section class="bg-[#0E0E0E] border-y border-luxuryGold/20 py-16 sm:py-20" aria-labelledby="faq-title">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+              <div class="text-center space-y-3">
+                <p class="text-xs uppercase tracking-[0.3em] text-luxuryGold font-extrabold">Questions fréquentes</p>
+                <h2 id="faq-title" class="text-3xl md:text-5xl font-serif text-white">Tout savoir sur SOVANEX</h2>
+                <div class="w-16 h-0.5 bg-luxuryGold mx-auto"></div>
+              </div>
+              <div id="faq-list" class="space-y-3">
+                ${[
+                  ['Quels sont les délais de livraison ?', 'Les commandes sont préparées et expédiées dans les meilleurs délais. Le délai peut varier selon votre ville.'],
+                  ['Quels sont les modes de paiement disponibles ?', 'Vous pouvez choisir parmi les modes de paiement disponibles lors de la validation de votre commande.'],
+                  ['La livraison est-elle disponible partout au Maroc ?', 'Oui, nous livrons dans différentes villes du Maroc.'],
+                  ['Comment suivre ma commande ?', 'Vous pouvez suivre l’état de votre commande depuis la section dédiée au suivi des commandes.'],
+                  ['Puis-je modifier ou annuler ma commande ?', 'Contactez-nous le plus rapidement possible après votre commande afin de vérifier si une modification ou une annulation est encore possible.'],
+                  ['Comment choisir la bonne quantité ?', 'Utilisez le sélecteur de quantité avant d’ajouter le produit au panier ou de passer la commande.'],
+                  ['Les produits sont-ils disponibles immédiatement ?', 'La disponibilité est indiquée directement sur la page de chaque produit.'],
+                  ['Comment contacter SOVANEX ?', 'Utilisez les moyens de contact disponibles sur notre site pour contacter notre équipe.']
+                ].map(([question, answer], index) => `
+                  <div class="faq-item rounded-2xl border border-luxuryGold/20 bg-black/30 overflow-hidden transition-colors hover:border-luxuryGold/50">
+                    <button type="button" class="faq-question w-full min-h-16 flex items-center justify-between gap-4 px-4 sm:px-6 py-4 text-left text-sm sm:text-base font-semibold text-white hover:text-luxuryGold transition-colors" aria-expanded="false" aria-controls="faq-answer-${index}">
+                      <span>${question}</span>
+                      <span class="faq-icon flex-shrink-0 text-xl font-light text-luxuryGold transition-transform duration-300" aria-hidden="true">+</span>
+                    </button>
+                    <div id="faq-answer-${index}" class="faq-answer max-h-0 overflow-hidden transition-[max-height] duration-500 ease-in-out" aria-hidden="true">
+                      <p class="border-t border-white/5 px-4 sm:px-6 pb-5 pt-4 text-sm leading-7 text-gray-400">${answer}</p>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </section>
         </div>
       `;
 
       document.getElementById("hero-cta-shop").onclick = () => { store.setPage("shop"); };
       document.getElementById("browse-all-btn").onclick = () => { store.setPage("shop"); };
+
+      document.querySelectorAll('.faq-question').forEach(questionButton => {
+        questionButton.onclick = () => {
+          const selectedItem = questionButton.closest('.faq-item');
+          const selectedAnswer = selectedItem?.querySelector('.faq-answer');
+          const selectedIcon = selectedItem?.querySelector('.faq-icon');
+          const isExpanded = questionButton.getAttribute('aria-expanded') === 'true';
+
+          document.querySelectorAll('.faq-question').forEach(otherButton => {
+            otherButton.setAttribute('aria-expanded', 'false');
+            const otherItem = otherButton.closest('.faq-item');
+            const otherAnswer = otherItem?.querySelector('.faq-answer');
+            const otherIcon = otherItem?.querySelector('.faq-icon');
+            if (otherAnswer) {
+              otherAnswer.style.maxHeight = '0px';
+              otherAnswer.setAttribute('aria-hidden', 'true');
+            }
+            if (otherIcon) otherIcon.style.transform = 'rotate(0deg)';
+          });
+
+          if (!isExpanded && selectedAnswer) {
+            questionButton.setAttribute('aria-expanded', 'true');
+            selectedAnswer.style.maxHeight = `${selectedAnswer.scrollHeight}px`;
+            selectedAnswer.setAttribute('aria-hidden', 'false');
+            if (selectedIcon) selectedIcon.style.transform = 'rotate(45deg)';
+          }
+        };
+      });
 
       const formBtn = document.getElementById("open-review-form-btn");
       if (formBtn) {
@@ -3667,21 +3896,32 @@
       if (reviewForm) {
         reviewForm.onsubmit = async (e) => {
           e.preventDefault();
+          const rating = Number(reviewForm.rating.value);
+          const comment = String(reviewForm.comment.value || '').trim();
+          if (!Number.isInteger(rating) || rating < 1 || rating > 5 || comment.length < 3 || comment.length > 1000) {
+            showToast("Votre note doit être comprise entre 1 et 5 et votre avis entre 3 et 1000 caractères.", "error");
+            return;
+          }
           const payload = {
-            productId: reviewForm.productId.value,
-            customerName: reviewForm.customerName.value,
-            customerLocation: reviewForm.customerLocation.value,
-            rating: Number(reviewForm.rating.value),
-            comment: reviewForm.comment.value,
-            createdAt: new Date()
+            productId: String(reviewForm.productId.value || 'general'),
+            productName: String(reviewForm.productId.options[reviewForm.productId.selectedIndex]?.textContent || '').slice(0, 160),
+            customerName: String(reviewForm.customerName.value || '').trim().slice(0, 80) || 'Client SOVANEX',
+            customerLocation: String(reviewForm.customerLocation.value || '').trim().slice(0, 80),
+            rating,
+            comment,
+            status: "pending",
+            customerId: auth.currentUser?.uid || null,
+            customerEmail: auth.currentUser?.email || null,
+            photoURL: null,
+            photoStatus: 'none',
+            createdAt: serverTimestamp()
           };
           try {
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'reviews'), payload);
             if (payload.productId !== "general") {
               const productRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', payload.productId);
-              await updateDoc(productRef, { reviewsCount: increment(1) });
             }
-            showToast("Review submitted successfully! Thank you.");
+            showToast("Votre avis a été envoyé et sera publié après validation.");
             store.homeReviewFormOpen = false;
             store.renderHomePage();
           } catch (err) {
@@ -3742,6 +3982,8 @@
     };
 
     store.createProductCardMarkup = function(product, placement = 'store') {
+      const isOutOfStock = this.isProductOutOfStock(product);
+      const isWishlisted = this.isWishlisted(product.id);
       const normalizedGender = getNormalizedGender(product.gender);
       const isGirls = normalizedGender === "Women";
       const genderThemeBorder = 'border-luxuryGold/30 hover:border-luxuryGold';
@@ -3763,8 +4005,9 @@
               ${product.discountPrice && Number(product.price) > Number(product.discountPrice) ? `<span class="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 bg-red-700 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">-${Math.round((1 - (Number(product.discountPrice) / Number(product.price))) * 100)}%</span>` : ''}
               
               <div class="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1">
-                ${product.isBestSeller ? `<span class="w-7 h-7 bg-black/80 border border-luxuryGold/45 text-luxuryGold rounded-full shadow-lg flex items-center justify-center text-sm" title="Bestseller" aria-label="Bestseller">★</span>` : ''}
+                <button type="button" class="wishlist-toggle-btn z-20 w-8 h-8 rounded-full bg-black/75 border border-white/20 text-lg flex items-center justify-center hover:border-luxuryGold transition" data-id="${product.id}" aria-label="${isWishlisted ? 'Retirer des favoris' : 'Ajouter aux favoris'}" title="${isWishlisted ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isWishlisted ? '♥' : '♡'}</button>
               </div>
+              ${isOutOfStock ? '<span class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 z-10 bg-amber-500 text-black text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded-full shadow-lg uppercase tracking-wider">Rupture de stock</span>' : ''}
             </div>
 
             <div class="p-3 sm:p-6 space-y-1.5 sm:space-y-4">
@@ -3772,8 +4015,7 @@
               <h3 class="font-serif text-sm sm:text-lg text-white group-hover:text-luxuryGold transition cursor-pointer card-title-trigger h-10 sm:h-14 overflow-hidden" data-id="${product.id}">${cleanName}</h3>
               
               <div class="product-card-rating flex items-center gap-1 text-[10px] sm:text-xs">
-                <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-                <span class="text-gray-400 font-light">(${product.reviewsCount || 12})</span>
+                ${(() => { const productRating = this.getProductRating(product.id); return `${this.getRatingStarsMarkup(productRating.average)}<span class="text-gray-400 font-light">${productRating.average ? productRating.average.toFixed(1) : '0.0'} (${productRating.count})</span>`; })()}
               </div>
               ${product.freeDelivery ? `<p class="product-card-delivery text-[9px] text-luxuryGold font-bold uppercase tracking-wider">🚚 Free delivery</p>` : ''}
             </div>
@@ -3788,8 +4030,8 @@
             </div>
 
             <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
-              <button class="add-to-cart-btn px-1 py-1.5 sm:px-2 sm:py-2 border ${btnOutlineColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}">${this.t('addBtn')}</button>
-              <button class="order-now-btn px-1 py-1.5 sm:px-2 sm:py-2 ${btnSolidColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}">${this.t('buyBtn')}</button>
+              <button class="add-to-cart-btn px-1 py-1.5 sm:px-2 sm:py-2 border ${isOutOfStock ? 'border-white/10 text-gray-500 cursor-not-allowed' : btnOutlineColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200" data-id="${product.id}" data-direct-cart="${placement === 'wishlist'}" ${isOutOfStock ? 'disabled' : ''}>${isOutOfStock ? 'Rupture de stock' : this.t('addBtn')}</button>
+              <button class="order-now-btn px-1 py-1.5 sm:px-2 sm:py-2 ${isOutOfStock ? 'bg-white/10 text-gray-500 cursor-not-allowed' : btnSolidColor} text-[8px] sm:text-[10px] uppercase font-bold tracking-wider rounded-lg transition duration-200 shadow-sm" data-id="${product.id}" ${isOutOfStock ? 'disabled' : ''}>${isOutOfStock ? 'Rupture de stock' : this.t('buyBtn')}</button>
             </div>
           </div>
         </div>
@@ -3797,6 +4039,13 @@
     };
 
     store.bindProductCardClicks = function() {
+      document.querySelectorAll(".wishlist-toggle-btn").forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          this.toggleWishlist(el.getAttribute("data-id"));
+        };
+      });
+
       document.querySelectorAll(".card-img-trigger, .card-title-trigger").forEach(el => {
         el.onclick = () => {
           const id = el.getAttribute("data-id");
@@ -3808,15 +4057,21 @@
       document.querySelectorAll(".add-to-cart-btn").forEach(el => {
         el.onclick = (e) => {
           e.stopPropagation();
+          if (el.disabled) return;
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
-          if (prod) store.openProductDetailsModal(prod, 'add-to-cart');
+          if (prod && el.dataset.directCart === 'true') {
+            store.addToCart(prod);
+          } else if (prod) {
+            store.openProductDetailsModal(prod, 'add-to-cart');
+          }
         };
       });
 
       document.querySelectorAll(".order-now-btn").forEach(el => {
         el.onclick = (e) => {
           e.stopPropagation();
+          if (el.disabled) return;
           const id = el.getAttribute("data-id");
           const prod = store.products.find(p => p.id === id);
           if (prod) store.openProductDetailsModal(prod, 'order');
@@ -3827,13 +4082,23 @@
     store.renderShopPage = function() {
       const container = document.getElementById("app-content");
       if (!container) return;
+      const configuredMin = Math.max(0, Number(this.settings.priceFilterMin ?? 0));
+      const configuredMax = Math.max(configuredMin, Number(this.settings.priceFilterMax ?? 2000));
+      const selectedMin = Math.min(Math.max(this.priceMin ?? configuredMin, configuredMin), configuredMax);
+      const selectedMax = Math.max(Math.min(this.priceMax ?? configuredMax, configuredMax), selectedMin);
+      this.priceMin = selectedMin;
+      this.priceMax = selectedMax;
       
       const filtered = this.products.filter(p => {
         const isVisibleCatalogItem = isStorefrontProduct(p);
         const matchesCategory = this.selectedCategory === "All" || p.category === this.selectedCategory;
         const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                               p.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-        return isVisibleCatalogItem && matchesCategory && matchesSearch;
+        const productPrice = Number(p.discountPrice || p.price || 0);
+        const minimumPrice = selectedMin;
+        const maximumPrice = selectedMax;
+        const matchesPrice = productPrice >= minimumPrice && productPrice <= maximumPrice;
+        return isVisibleCatalogItem && matchesCategory && matchesSearch && matchesPrice;
       }).sort((a, b) => {
         const aPinned = a.isPinned ? 1 : 0;
         const bPinned = b.isPinned ? 1 : 0;
@@ -3861,9 +4126,15 @@
       // Check if products grid container is already rendered in the DOM to keep input focus intact
       const existingGridContainer = document.getElementById("shop-products-grid-container");
       if (existingGridContainer) {
-        existingGridContainer.innerHTML = productsGrid;
-        this.bindProductCardClicks();
-        return;
+        const existingPriceMin = document.getElementById("shop-price-min");
+        const existingPriceMax = document.getElementById("shop-price-max");
+        const boundsChanged = existingPriceMin && existingPriceMax && (Number(existingPriceMin.min) !== configuredMin || Number(existingPriceMax.max) !== configuredMax);
+        if (!boundsChanged) {
+          existingGridContainer.innerHTML = productsGrid;
+          this.bindProductCardClicks();
+          return;
+        }
+        existingGridContainer.removeAttribute("id");
       }
 
       let categoryButtons = `
@@ -3908,6 +4179,19 @@
                 <div class="flex flex-col gap-1.5">
                   ${categoryButtons}
                 </div>
+                <div class="border-t border-luxuryGold/10 pt-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Filtrer par prix</p>
+                    <span id="shop-price-range-label" class="text-[10px] text-white font-bold">${selectedMin} DH — ${selectedMax} DH</span>
+                  </div>
+                  <div class="relative h-8 flex items-center">
+                    <div class="absolute left-0 right-0 h-1 rounded-full bg-white/15"></div>
+                    <div id="shop-price-range-fill" class="absolute h-1 rounded-full bg-luxuryGold" style="left:${configuredMax === configuredMin ? 0 : ((selectedMin - configuredMin) / (configuredMax - configuredMin)) * 100}%;right:${configuredMax === configuredMin ? 0 : 100 - ((selectedMax - configuredMin) / (configuredMax - configuredMin)) * 100}%"></div>
+                    <input id="shop-price-min" type="range" min="${configuredMin}" max="${configuredMax}" step="1" value="${selectedMin}" aria-label="Prix minimum" class="price-range-input absolute w-full">
+                    <input id="shop-price-max" type="range" min="${configuredMin}" max="${configuredMax}" step="1" value="${selectedMax}" aria-label="Prix maximum" class="price-range-input absolute w-full">
+                  </div>
+                  <div class="flex justify-between text-[9px] text-gray-400"><span>${configuredMin} DH</span><span>${configuredMax} DH</span></div>
+                </div>
               </div>
             </div>
 
@@ -3938,6 +4222,27 @@
           store.renderShopPage();
         };
       });
+
+      const priceMinInput = document.getElementById("shop-price-min");
+      const priceMaxInput = document.getElementById("shop-price-max");
+      const updatePriceFilter = (handle, value) => {
+        const nextValue = Number(value);
+        if (handle === 'min') store.priceMin = Math.min(nextValue, store.priceMax);
+        else store.priceMax = Math.max(nextValue, store.priceMin);
+        const label = document.getElementById("shop-price-range-label");
+        if (label) label.textContent = `${store.priceMin} DH — ${store.priceMax} DH`;
+        const fill = document.getElementById("shop-price-range-fill");
+        if (fill) {
+          const range = configuredMax - configuredMin || 1;
+          fill.style.left = `${((store.priceMin - configuredMin) / range) * 100}%`;
+          fill.style.right = `${100 - ((store.priceMax - configuredMin) / range) * 100}%`;
+        }
+        if (priceMinInput) priceMinInput.value = String(store.priceMin);
+        if (priceMaxInput) priceMaxInput.value = String(store.priceMax);
+        store.renderShopPage();
+      };
+      if (priceMinInput) priceMinInput.oninput = (e) => updatePriceFilter('min', e.target.value);
+      if (priceMaxInput) priceMaxInput.oninput = (e) => updatePriceFilter('max', e.target.value);
 
       this.bindProductCardClicks();
     };
@@ -4676,6 +4981,9 @@
             <label class="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="limitedStock" ${product && product.limitedStock ? 'checked' : ''} class="rounded text-luxuryGold"> Limited Stock
             </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer text-amber-300">
+              <input type="checkbox" name="isOutOfStock" ${product && product.isOutOfStock ? 'checked' : ''} class="rounded text-luxuryGold"> Rupture de stock
+            </label>
             <label class="flex items-center gap-2 text-xs cursor-pointer text-luxuryGold font-bold">
               <input type="checkbox" name="freeDelivery" ${product && product.freeDelivery ? 'checked' : ''} class="rounded text-luxuryGold"> FREE DELIVERY
             </label>
@@ -5010,6 +5318,7 @@
           isPromotion: form.isPromotion.checked,
           isBestSeller: form.isBestSeller.checked,
           limitedStock: form.limitedStock.checked,
+          isOutOfStock: form.isOutOfStock.checked,
           freeDelivery: form.freeDelivery.checked,
           updatedAt: new Date()
         };
@@ -5040,6 +5349,26 @@
     };
 
     store.renderAdminOrders = function(container) {
+      const orderStatuses = [
+        { value: 'pending', label: 'Pending' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'shipped', label: 'Shipped' },
+        { value: 'delivered', label: 'Delivered' },
+        { value: 'cancelled', label: 'Cancelled' },
+        { value: 'refused', label: 'Refused' }
+      ];
+      const normalizeOrderStatus = (status) => {
+        const normalized = String(status || 'pending').toLowerCase();
+        return normalized === 'rejected' ? 'refused' : normalized === 'processed' ? 'delivered' : normalized;
+      };
+      const statusStyles = {
+        pending: 'bg-amber-500/15 text-amber-300 border border-amber-400/30',
+        confirmed: 'bg-sky-950 text-sky-300',
+        shipped: 'bg-indigo-950 text-indigo-300',
+        delivered: 'bg-emerald-950 text-emerald-300',
+        cancelled: 'bg-white/5 text-gray-500',
+        refused: 'bg-red-950 text-red-300'
+      };
       container.innerHTML = `
         <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
           <div class="overflow-x-auto">
@@ -5082,13 +5411,12 @@
                     </td>
                     <td class="p-4 font-serif font-bold text-luxuryGold">${o.total} MAD</td>
                     <td class="p-4">
-                      <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${o.status === 'pending' ? 'bg-red-950 text-red-300' : o.status === 'cancelled' ? 'bg-white/5 text-gray-500' : 'bg-emerald-950 text-emerald-300'}">${o.status || 'pending'}</span>
+                      <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${statusStyles[normalizeOrderStatus(o.status)] || statusStyles.pending}">${normalizeOrderStatus(o.status)}</span>
                     </td>
-                    <td class="p-4 text-right space-x-2">
-                      ${o.status === 'pending' ? `
-                        <button class="fulfill-order-btn px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] uppercase font-bold" data-id="${o.id}">Fulfill</button>
-                        <button class="cancel-order-btn px-3 py-1 bg-red-700 hover:bg-red-850 text-white rounded text-[10px] uppercase font-bold" data-id="${o.id}">Cancel</button>
-                      ` : `<span class="text-[10px] text-gray-500">Archived</span>`}
+                    <td class="p-4 text-right">
+                      <select class="order-status-select bg-black border border-luxuryGold/30 text-white rounded px-2 py-1 text-[10px] uppercase font-bold" data-id="${o.id}" aria-label="Order status">
+                        ${orderStatuses.map(status => `<option value="${status.value}" ${normalizeOrderStatus(o.status) === status.value ? 'selected' : ''}>${status.label}</option>`).join('')}
+                      </select>
                     </td>
                   </tr>
                 `).join('')}
@@ -5098,59 +5426,105 @@
         </div>
       `;
 
-      document.querySelectorAll(".fulfill-order-btn").forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute("data-id");
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "processed" });
-          showToast("Order fulfilled successfully!");
-        };
-      });
-
-      document.querySelectorAll(".cancel-order-btn").forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute("data-id");
-          const order = store.orders.find(o => o.id === id);
-          if (!order) return;
-
-          triggerConfirm("Cancel Order", "Remove this order from database tracking?", async () => {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: "cancelled" });
-            this.orders = this.orders.filter(item => item.id !== id);
-            this.renderAdminOrders(container);
-            showToast("Order cancelled.");
-          });
+      document.querySelectorAll(".order-status-select").forEach(select => {
+        select.onchange = async () => {
+          const id = select.getAttribute("data-id");
+          const nextStatus = select.value;
+          select.disabled = true;
+          try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: nextStatus });
+            showToast(`Order status updated to ${nextStatus}.`);
+          } catch (err) {
+            console.error("Could not update order status:", err);
+            showToast("Could not update order status.", "error");
+            select.value = normalizeOrderStatus(this.orders.find(order => order.id === id)?.status);
+          } finally {
+            select.disabled = false;
+          }
         };
       });
     };
 
     store.renderAdminReviews = function(container) {
+      if (!this.isAdmin) return;
+      const activeFilter = this.adminReviewFilter || 'all';
+      const statusLabels = { pending: 'En attente', approved: 'Approuvé', rejected: 'Refusé' };
+      const filteredReviews = this.reviews.filter(review => activeFilter === 'all' || (review.status || 'pending') === activeFilter);
       container.innerHTML = `
         <div class="bg-[#141414] rounded-3xl p-6 border border-luxuryGold/20 space-y-6">
-          <h3 class="font-serif text-xl text-luxuryGold">Moderation Grid</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            ${this.reviews.map(r => `
-              <div class="p-5 bg-black/60 rounded-2xl border border-luxuryGold/20 flex flex-col justify-between gap-4">
-                <div>
-                  <div class="flex justify-between">
-                    <h4 class="font-serif font-bold text-luxuryGold">${r.customerName} (${r.customerLocation || 'Morocco'})</h4>
-                    <span class="text-xs text-amber-500">${"★".repeat(r.rating || 5)}</span>
+          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Avis clients</p>
+              <h3 class="font-serif text-xl text-white">Modération des avis</h3>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${[['all', 'Tous'], ['pending', 'En attente'], ['approved', 'Approuvé'], ['rejected', 'Refusé']].map(([value, label]) => `<button class="admin-review-filter rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider ${activeFilter === value ? 'bg-luxuryGold text-black' : 'border border-white/10 text-gray-400 hover:text-white'}" data-filter="${value}">${label}</button>`).join('')}
+            </div>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            ${filteredReviews.length ? filteredReviews.map(review => `
+              <article class="p-5 bg-black/60 rounded-2xl border border-luxuryGold/20 flex flex-col justify-between gap-4">
+                <div class="space-y-2">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 class="font-serif font-bold text-luxuryGold">${escapeHtml(review.productName || this.products.find(product => String(product.id) === String(review.productId))?.name || 'Produit')}</h4>
+                      <p class="text-[10px] text-gray-500">${escapeHtml(review.customerName || 'Client SOVANEX')} ${review.customerEmail ? `· ${escapeHtml(review.customerEmail)}` : ''}</p>
+                    </div>
+                    <span class="rounded-full border border-white/10 px-2 py-1 text-[9px] font-bold uppercase text-gray-300">${statusLabels[review.status || 'pending'] || 'En attente'}</span>
                   </div>
-                  <p class="text-xs text-gray-300 mt-3 italic">"${r.comment}"</p>
+                  <div class="text-sm text-amber-500">${this.getRatingStarsMarkup(review.rating)}</div>
+                  <p class="text-xs text-gray-300 italic">"${escapeHtml(review.comment)}"</p>
+                  <p class="text-[10px] text-gray-500">${formatReviewDate(review.createdAt)}</p>
                 </div>
-                <div class="text-right">
-                  <button class="delete-review-btn text-[10px] text-red-400 uppercase font-bold" data-id="${r.id}">✕ Delete Feedback</button>
+                <div class="flex flex-wrap justify-end gap-2">
+                  ${review.status !== 'approved' ? `<button class="review-status-btn rounded-lg bg-emerald-700 px-3 py-2 text-[9px] font-bold uppercase text-white" data-id="${review.id}" data-status="approved">Approuver</button>` : ''}
+                  ${review.status !== 'rejected' ? `<button class="review-status-btn rounded-lg bg-amber-700 px-3 py-2 text-[9px] font-bold uppercase text-white" data-id="${review.id}" data-status="rejected">Refuser</button>` : ''}
+                  <button class="delete-review-btn rounded-lg bg-red-800 px-3 py-2 text-[9px] font-bold uppercase text-white" data-id="${review.id}">Supprimer</button>
                 </div>
-              </div>
-            `).join('')}
+              </article>
+            `).join('') : '<p class="text-xs text-gray-500">Aucun avis dans cette catégorie.</p>'}
           </div>
         </div>
       `;
 
+      document.querySelectorAll('.admin-review-filter').forEach(button => {
+        button.onclick = () => {
+          this.adminReviewFilter = button.dataset.filter || 'all';
+          this.renderAdminReviews(container);
+        };
+      });
+
+      document.querySelectorAll('.review-status-btn').forEach(button => {
+        button.onclick = async () => {
+          if (!this.isAdmin) return;
+          button.disabled = true;
+          try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reviews', button.dataset.id), {
+              status: button.dataset.status,
+              moderatedAt: serverTimestamp(),
+              moderatedBy: auth.currentUser?.uid || null
+            });
+            showToast(button.dataset.status === 'approved' ? 'Avis approuvé.' : 'Avis refusé.');
+          } catch (error) {
+            console.error('Review moderation failed:', error);
+            showToast('Impossible de modifier cet avis.', 'error');
+            button.disabled = false;
+          }
+        };
+      });
+
       document.querySelectorAll(".delete-review-btn").forEach(btn => {
         btn.onclick = () => {
+          if (!this.isAdmin) return;
           const id = btn.getAttribute("data-id");
-          triggerConfirm("Delete Review", "Are you sure you want to delete this client's review?", async () => {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reviews', id));
-            showToast("Review deleted successfully.");
+          triggerConfirm("Supprimer l’avis", "Voulez-vous vraiment supprimer cet avis client ?", async () => {
+            try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reviews', id));
+              showToast("Avis supprimé.");
+            } catch (error) {
+              console.error('Review deletion failed:', error);
+              showToast('Impossible de supprimer cet avis.', 'error');
+            }
           });
         };
       });
@@ -5762,6 +6136,17 @@
               </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-luxuryGold/20 pt-4">
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Prix minimum (DH)</label>
+                <input type="number" name="priceFilterMin" min="0" step="1" required value="${Number(this.settings.priceFilterMin ?? 0)}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-luxuryGold mb-1">Prix maximum (DH)</label>
+                <input type="number" name="priceFilterMax" min="0" step="1" required value="${Number(this.settings.priceFilterMax ?? 2000)}" class="w-full px-3 py-2 text-xs rounded-xl border border-luxuryGold/20 bg-black text-white">
+              </div>
+            </div>
+
             <div class="border-t border-luxuryGold/20 pt-4 space-y-4">
               <div>
                 <h4 class="font-serif text-lg text-luxuryGold mb-2">Payment Configuration</h4>
@@ -6154,6 +6539,13 @@
           }
         }
 
+        const configuredPriceMin = Math.max(0, Number(form.priceFilterMin.value || 0));
+        const configuredPriceMax = Math.max(0, Number(form.priceFilterMax.value || 0));
+        if (configuredPriceMax < configuredPriceMin) {
+          showToast("Le prix maximum doit être supérieur ou égal au prix minimum.", "error");
+          return;
+        }
+
         const payload = {
           logoURL: form.logoURL.value,
           heroTitleEn: form.heroTitleEn.value,
@@ -6172,6 +6564,8 @@
           deliveryTerms: form.deliveryTerms.value,
           returnPolicy: form.returnPolicy.value,
           freeDeliveryThreshold: Number(form.freeDeliveryThreshold?.value || this.getFreeDeliveryThreshold()),
+          priceFilterMin: configuredPriceMin,
+          priceFilterMax: configuredPriceMax,
           paymentMethods: {
             cod: form.codEnabled.checked,
             bank: form.bankEnabled.checked
@@ -7512,9 +7906,24 @@
       let sizeOptions = this.getProductSizes(product, null);
       let selectedProductSize = null;
       let selectedQty = 1;
+      const isOutOfStock = this.isProductOutOfStock(product);
       const getCurrentAvailableStock = () => selectedProductSize
         ? this.getProductSizeStock(product, selectedProductSize, this.activeVariationIndex)
         : Number(this.getProductInventory(product, this.activeVariationIndex).stock || 0);
+      const productRating = this.getProductRating(product.id);
+      const productReviews = this.getApprovedProductReviews(product.id);
+      const productReviewsMarkup = productReviews.length > 0
+        ? productReviews.map(review => `
+            <article class="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-bold text-white">${escapeHtml(review.customerName || 'Client SOVANEX')}</span>
+                <span class="text-[10px] text-gray-500">${formatReviewDate(review.createdAt)}</span>
+              </div>
+              <div class="text-sm text-amber-500">${this.getRatingStarsMarkup(review.rating)}</div>
+              <p class="text-xs leading-relaxed text-gray-300">${escapeHtml(review.comment)}</p>
+            </article>
+          `).join('')
+        : '<p class="text-xs text-gray-500">Aucun avis pour le moment</p>';
 
       modal.innerHTML = `
         ${isProductPage ? '' : '<div class="fixed inset-0 bg-black/85 backdrop-blur-xs transition-opacity duration-300 opacity-0" id="product-modal-backdrop"></div>'}
@@ -7541,15 +7950,12 @@
               <h2 id="modal-product-title" class="text-xl md:text-3xl font-serif text-white font-bold tracking-tight">${cleanName}</h2>
               ${action ? `<p id="product-details-prompt" class="rounded-lg border border-luxuryGold/40 bg-luxuryGold/10 px-3 py-2 text-[11px] font-semibold text-luxuryGold">Veuillez d'abord choisir les caractéristiques du produit.</p>` : ''}
               
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1">
-                  <span class="text-amber-500">${"★".repeat(Math.round(product.rating || 5))}</span>
-                  <span class="text-xs text-gray-300 font-semibold ml-1">${product.rating || 5.0} (${product.reviewsCount || 0} avis)</span>
-                </div>
+              ${(() => { const productRating = this.getProductRating(product.id); return `<div class="flex items-center justify-between"><div class="flex items-center gap-1">${this.getRatingStarsMarkup(productRating.average)}<span class="text-xs text-gray-300 font-semibold ml-1">${productRating.average ? productRating.average.toFixed(1) : '0.0'} (${productRating.count} avis)</span></div>`; })()}
                 <button id="modal-share-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                   ${this.t('shareLink')}
                 </button>
+                <button id="modal-wishlist-btn" type="button" class="flex items-center justify-center w-9 h-9 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-luxuryGold border border-white/10 rounded-lg text-xl transition" aria-label="${this.isWishlisted(product.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}" title="${this.isWishlisted(product.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${this.isWishlisted(product.id) ? '♥' : '♡'}</button>
               </div>
 
               <div id="modal-product-price-wrapper" class="flex items-center gap-3 pt-1"></div>
@@ -7587,27 +7993,49 @@
                 </div>
               ` : ''}
 
-              <div class="space-y-2">
-                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Quantité</p>
-                <div class="flex items-center gap-3">
-                  <button type="button" id="modal-qty-decrease" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">−</button>
-                  <span id="modal-qty-value" class="min-w-6 text-center text-lg font-bold text-white">${selectedQty}</span>
-                  <button type="button" id="modal-qty-increase" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">+</button>
-                </div>
-              </div>
-
               <p id="modal-stock-status" class="text-[11px] font-medium text-gray-400">
-                État du stock : ${product.limitedStock ? `<span class="text-red-400 font-bold">Stock limité (${getCurrentAvailableStock()} restant)</span>` : `<span class="text-emerald-400 font-bold">En stock</span>`}
+                État du stock : ${isOutOfStock ? '<span class="text-amber-300 font-bold">Rupture de stock</span>' : product.limitedStock ? `<span class="text-red-400 font-bold">Stock limité (${getCurrentAvailableStock()} restant)</span>` : `<span class="text-emerald-400 font-bold">En stock</span>`}
               </p>
             </div>
 
             <div class="space-y-3 pt-3 border-t border-white/5 flex-shrink-0">
+              <div class="space-y-2">
+                <p class="text-[10px] font-bold text-luxuryGold uppercase tracking-wider">Quantité</p>
+                <div class="flex items-center gap-3">
+                  <button type="button" id="modal-qty-decrease" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">-</button>
+                  <span id="modal-qty-value" class="min-w-6 text-center text-lg font-bold text-white">${selectedQty}</span>
+                  <button type="button" id="modal-qty-increase" class="h-9 w-9 rounded-full border border-white/15 bg-black/30 text-lg text-white hover:border-luxuryGold">+</button>
+                </div>
+              </div>
               <div class="grid grid-cols-2 gap-3">
-                <button id="modal-add-to-cart-btn" class="py-2.5 md:py-3.5 border border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition shadow-xs">${this.t('addToCart')}</button>
-                <button id="modal-order-now-btn" class="py-2.5 md:py-3.5 bg-luxuryGold hover:bg-luxuryGold/90 text-black font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition transform hover:scale-[1.02]">${this.t('orderNow')}</button>
+                <button id="modal-order-now-btn" ${isOutOfStock ? 'disabled' : ''} class="py-2.5 md:py-3.5 ${isOutOfStock ? 'bg-white/10 text-gray-500 cursor-not-allowed' : 'bg-luxuryGold hover:bg-luxuryGold/90 text-black'} font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition transform hover:scale-[1.02]">${isOutOfStock ? 'Rupture de stock' : this.t('orderNow')}</button>
+                <button id="modal-add-to-cart-btn" ${isOutOfStock ? 'disabled' : ''} class="py-2.5 md:py-3.5 border ${isOutOfStock ? 'border-white/10 text-gray-500 cursor-not-allowed' : 'border-luxuryGold text-luxuryGold hover:bg-luxuryGold hover:text-black'} font-extrabold uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl transition shadow-xs">${isOutOfStock ? 'Rupture de stock' : this.t('addToCart')}</button>
               </div>
               <p class="text-[9px] md:text-[10px] text-center text-gray-500">${this.t('customCardTip')}</p>
             </div>
+
+            <section class="space-y-4 pt-4 border-t border-white/10" aria-labelledby="product-reviews-title">
+              <div class="flex items-end justify-between gap-3">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[0.25em] text-luxuryGold font-bold">Avis clients</p>
+                  <h3 id="product-reviews-title" class="font-serif text-xl text-white">${productRating.average ? productRating.average.toFixed(1) : '0.0'}/5 <span class="text-xs text-gray-400">(${productRating.count} avis)</span></h3>
+                </div>
+                ${this.getRatingStarsMarkup(productRating.average)}
+              </div>
+              <div class="space-y-3 max-h-64 overflow-y-auto">${productReviewsMarkup}</div>
+              <form id="product-review-form" class="space-y-3 rounded-2xl border border-luxuryGold/20 bg-black/30 p-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-luxuryGold">Écrire un avis</h4>
+                <input type="text" name="customerName" maxlength="80" value="${escapeHtml(this.user?.displayName || '')}" placeholder="Votre nom" class="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-luxuryGold focus:outline-none">
+                <div>
+                  <label class="mb-1 block text-[10px] uppercase tracking-wider text-gray-400">Votre note</label>
+                  <select name="rating" required class="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-luxuryGold focus:outline-none">
+                    ${[5, 4, 3, 2, 1].map(value => `<option value="${value}">${value} étoile${value > 1 ? 's' : ''}</option>`).join('')}
+                  </select>
+                </div>
+                <textarea name="comment" required minlength="3" maxlength="1000" placeholder="Votre avis" class="h-20 w-full resize-none rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-luxuryGold focus:outline-none"></textarea>
+                <button type="submit" class="w-full rounded-xl bg-luxuryGold px-4 py-3 text-[10px] font-extrabold uppercase tracking-widest text-black transition hover:bg-luxuryGold/90">Envoyer</button>
+              </form>
+            </section>
           </div>
         </div>
       `;
@@ -7878,7 +8306,9 @@
         if (sizeStockEl) {
           sizeStockEl.textContent = `Disponible : ${maxAvailable} pièces`;
         }
-        if (stockStatusEl && product.limitedStock) {
+        if (stockStatusEl && isOutOfStock) {
+          stockStatusEl.innerHTML = 'État du stock : <span class="text-amber-300 font-bold">Rupture de stock</span>';
+        } else if (stockStatusEl && product.limitedStock) {
           stockStatusEl.innerHTML = `État du stock : <span class="text-red-400 font-bold">Stock limité (${maxAvailable} restant)</span>`;
         }
         if (qtyValueEl) {
@@ -7954,13 +8384,61 @@
         };
       }
 
+      const productReviewForm = document.getElementById('product-review-form');
+      if (productReviewForm) {
+        productReviewForm.onsubmit = async event => {
+          event.preventDefault();
+          const rating = Number(productReviewForm.rating.value);
+          const comment = String(productReviewForm.comment.value || '').trim();
+          const customerName = String(productReviewForm.customerName.value || '').trim().slice(0, 80);
+          if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+            showToast('Votre note doit être comprise entre 1 et 5.', 'error');
+            return;
+          }
+          if (comment.length < 3 || comment.length > 1000) {
+            showToast('Votre avis doit contenir entre 3 et 1000 caractères.', 'error');
+            return;
+          }
+          const submitButton = productReviewForm.querySelector('button[type="submit"]');
+          if (submitButton) submitButton.disabled = true;
+          try {
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'reviews'), {
+              productId: String(product.id),
+              productName: String(product.name || '').slice(0, 160),
+              customerId: this.user?.uid || null,
+              customerEmail: this.user?.email || null,
+              customerName: customerName || this.user?.displayName || 'Client SOVANEX',
+              rating,
+              comment,
+              status: 'pending',
+              photoURL: null,
+              photoStatus: 'none',
+              createdAt: serverTimestamp()
+            });
+            showToast('Votre avis est en attente de validation.');
+            productReviewForm.reset();
+          } catch (error) {
+            console.error('Review submission failed:', error);
+            showToast('Impossible d’envoyer votre avis.', 'error');
+          } finally {
+            if (submitButton) submitButton.disabled = false;
+          }
+        };
+      }
+
       document.getElementById("modal-share-btn").onclick = (e) => {
         e.stopPropagation();
         const shareUrl = window.location.origin + getProductRoutePath(product);
         store.copyTextToClipboard(shareUrl);
       };
 
+      document.getElementById("modal-wishlist-btn").onclick = (e) => {
+        e.stopPropagation();
+        this.toggleWishlist(product.id);
+      };
+
       document.getElementById("modal-add-to-cart-btn").onclick = () => {
+        if (isOutOfStock) return;
         if (!validateProductDetails()) return;
         const activeSize = selectedProductSize || null;
         const maxAvailable = getCurrentAvailableStock();
@@ -7983,6 +8461,7 @@
       };
 
       document.getElementById("modal-order-now-btn").onclick = () => {
+        if (isOutOfStock) return;
         if (!validateProductDetails()) return;
         const activeSize = selectedProductSize || null;
         const maxAvailable = getCurrentAvailableStock();
@@ -8115,7 +8594,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const validPages = ['home', 'shop', 'contact', 'policies', 'admin', 'cart', 'bank-transfer', 'order-confirmation'];
+      const validPages = ['home', 'shop', 'contact', 'orders', 'wishlist', 'policies', 'admin', 'cart', 'bank-transfer', 'order-confirmation'];
       const initialPage = (window.location.pathname || '/').replace(/^\/+/, '') || 'home';
       store.currentPage = validPages.includes(initialPage) ? initialPage : 'home';
       history.scrollRestoration = 'manual';
